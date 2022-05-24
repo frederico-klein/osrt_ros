@@ -23,7 +23,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(acceleration_based_phase_detector src/AccelerationBasedPhaseDetector.cpp)
+add_executable(acceleration_based_phase_detector src/AccelerationBasedPhaseDetector.cpp src/grfm_ros.cpp)
 
 add_dependencies(acceleration_based_phase_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -33,7 +33,7 @@ target_link_libraries(acceleration_based_phase_detector
   ${opensimrt_LIBRARIES}
 )
 
-add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp)
+add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp src/grfm_ros.cpp)
 
 add_dependencies(contact_force_based_phase_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
