@@ -1,4 +1,5 @@
 //#include "ros/ros.h"
+#include "INIReader.h"
 #include "experimental/AccelerationBasedPhaseDetector.h"
 #include "experimental/GaitPhaseDetector.h"
 #include "opensimrt_msgs/CommonTimed.h"
@@ -7,6 +8,7 @@
 #include "SignalProcessing.h"
 #include "Visualization.h"
 #include <Common/TimeSeriesTable.h>
+#include <Simulation/Model/Model.h>
 
 #ifndef GRFMROS_H
 #define GRFMROS_H
@@ -23,7 +25,7 @@
 		
 		OpenSimRT::GRFMPrediction* grfm;
 		double sumDelayMS;
-		int sumDelayMSCounter;
+		int sumDelayMSCounter, windowSize;
 		//int i;
 		OpenSimRT::InverseDynamics* id;
 
@@ -33,9 +35,11 @@
 		OpenSim::TimeSeriesTable grfRightLogger;
 		OpenSim::TimeSeriesTable grfLeftLogger;
 		OpenSim::TimeSeriesTable tauLogger;
+		OpenSim::Model model;
 		SimTK::Vec3 grfOrigin;
-		std::string subjectDir , section;
-
+		std::string subjectDir , section, rFootBodyName, lFootBodyName;
+		
+		INIReader ini;
 		double previousTime, previousTimeDifference;
 
 	//public:
