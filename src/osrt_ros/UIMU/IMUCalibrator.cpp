@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  */
-#include "IMUCalibrator.h"
+#include "osrt_ros/UIMU/IMUCalibrator.h"
 #include "Exception.h"
 #include <SimTKcommon/internal/Quaternion.h>
 

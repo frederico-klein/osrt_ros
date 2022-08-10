@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include "CometaServer.h"
+#include "osrt_ros/UIMU/CometaServer.h"
 
 #include <iostream>
 #include <sstream>

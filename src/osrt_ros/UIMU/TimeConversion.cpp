@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  */
-#include "TimeConversion.h"
+#include "osrt_ros/UIMU/TimeConversion.h"
 #include <chrono>
 #include <iomanip>
 #include <string>

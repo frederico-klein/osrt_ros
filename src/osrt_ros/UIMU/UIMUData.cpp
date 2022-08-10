@@ -17,7 +17,7 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  */
-#include "UIMUData.h"
+#include "osrt_ros/UIMU/UIMUData.h"
 
 using namespace OpenSimRT;
 using namespace SimTK;

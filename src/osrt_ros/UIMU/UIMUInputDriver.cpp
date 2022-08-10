@@ -17,13 +17,13 @@
  * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
  * -----------------------------------------------------------------------------
  */
-#include "UIMUInputDriver.h"
+#include "osrt_ros/UIMU/UIMUInputDriver.h"
 #include "Exception.h"
 #include <iostream>
 #include <vector>
 #include "ros/ros.h"
-#include "TfServer.h"
-#include "CometaServer.h"
+#include "osrt_ros/UIMU/TfServer.h"
+#include "osrt_ros/UIMU/CometaServer.h"
 
 using namespace OpenSimRT;
 using namespace SimTK;

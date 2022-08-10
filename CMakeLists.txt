@@ -74,7 +74,7 @@ set(target osrtRosUIMU)
 
 add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
 
-target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
+target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES})
 
 add_subdirectory(src/osrt_ros/UIMU)
 
