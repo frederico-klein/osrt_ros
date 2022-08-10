@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>opensimrt_ros</name>
+  <name>opensimrt_ros_pipeline</name>
   <version>0.0.1</version>
-  <description>opensimrt_ros publishes the ros topics for the opensimrt_core integration. 
-See https://github.com/mysablehats/opensimrt_ros.git
+  <description>opensimrt_ros_pipeline publishes the ros topics for the opensimrt_core integration. 
+See https://github.com/mysablehats/opensimrt_ros_pipeline.git
   </description>
 
   <maintainer email="frekle@kth.se">Frederico Klein</maintainer>

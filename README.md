@@ -1,1 +1,1 @@
-# opensimrt_ros
+# opensimrt_ros_pipeline
