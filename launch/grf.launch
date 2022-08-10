@@ -3,7 +3,7 @@
 
 	<arg name="grf_mot_file" 	default="/srv/data/gait1992/experimental_data/task_grf.mot" />
 
-        <node pkg="opensimrt_ros_pipeline" type="grf_dump" 	name="grf_from_file" output="screen">
+        <node pkg="osrt_ros" type="grf_dump" 	name="grf_from_file" output="screen">
 		<param name="grf_mot_file" 			value="$(arg grf_mot_file)" />
 		<param name="grf_right_apply_to_body"		value="calcn_r"/>
 		<param name="grf_right_force_expressed_in_body"	value="ground"/>
