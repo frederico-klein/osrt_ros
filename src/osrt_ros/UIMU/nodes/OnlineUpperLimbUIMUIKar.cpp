@@ -23,10 +23,10 @@
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
-#include "IMUCalibrator.h"
+#include "osrt_ros/UIMU/IMUCalibrator.h"
 #include "INIReader.h"
 #include "InverseKinematics.h"
-#include "UIMUInputDriver.h"
+#include "osrt_ros/UIMU/UIMUInputDriver.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Visualization.h"
@@ -42,7 +42,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-#include "TfServer.h"
+#include "osrt_ros/UIMU/TfServer.h"
 
 using namespace std;
 using namespace OpenSim;

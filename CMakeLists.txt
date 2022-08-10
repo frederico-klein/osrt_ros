@@ -64,6 +64,18 @@ target_link_libraries(osrtRosPipeline ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
 
 
 add_subdirectory(src/osrt_ros/Pipeline)
+
+
+
+file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp")
+file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
+
+set(target osrtRosUIMU)
+
+add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
+
+target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
+
 add_subdirectory(src/osrt_ros/UIMU)
 
 #add_executable(acceleration_based_phase_detector src/AccelerationBasedPhaseDetector.cpp src/grfm_ros.cpp)
