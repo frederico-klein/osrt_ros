@@ -2,7 +2,7 @@
 #define PIPELINE_ID_HEADER_FBK_27072022
 
 #include "InverseDynamics.h"
-#include "Pipeline/include/dualsink_pipe.h"
+#include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "SignalProcessing.h"
 #include "Visualization.h"
 #include "opensimrt_msgs/CommonTimed.h"

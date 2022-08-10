@@ -8,7 +8,7 @@
 #include <Common/TimeSeriesTable.h>
 #include "ros/service_server.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/common_node.h"
+#include "osrt_ros/Pipeline/common_node.h"
 
 namespace Pipeline
 {

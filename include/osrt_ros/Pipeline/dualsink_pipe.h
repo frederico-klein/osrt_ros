@@ -5,7 +5,7 @@
 #include "message_filters/time_synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/common_node.h"
+#include "osrt_ros/Pipeline/common_node.h"
 
 namespace Pipeline
 {

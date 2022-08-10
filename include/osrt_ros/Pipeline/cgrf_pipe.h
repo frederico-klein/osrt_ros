@@ -2,7 +2,7 @@
 #define PIPELINE_CGRFM_HEADER_FBK_01062022
 
 #include "experimental/ContactForceBasedPhaseDetector.h"
-#include "Pipeline/include/grf_pipe.h"
+#include "osrt_ros/Pipeline/grf_pipe.h"
 
 namespace Pipeline
 {

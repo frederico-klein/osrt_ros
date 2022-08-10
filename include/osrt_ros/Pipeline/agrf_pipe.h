@@ -2,7 +2,7 @@
 #define PIPELINE_AGRFM_HEADER_FBK_31052022
 
 #include "experimental/AccelerationBasedPhaseDetector.h"
-#include "Pipeline/include/grf_pipe.h"
+#include "osrt_ros/Pipeline/grf_pipe.h"
 
 namespace Pipeline
 {
