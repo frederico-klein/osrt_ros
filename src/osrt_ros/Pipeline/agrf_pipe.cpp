@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Labels.h"
-#include "experimental/ContactForceBasedPhaseDetector.h"
+#include "experimental/AccelerationBasedPhaseDetector.h"
 #include "experimental/GRFMPrediction.h"
 #include "INIReader.h"
 #include "OpenSimUtils.h"
@@ -13,19 +13,20 @@
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
+#include <exception>
+#include <numeric>
 #include <utility>
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/cgrf_pipe.h"
+#include "osrt_ros/Pipeline/agrf_pipe.h"
 
 using namespace std;
 using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-
-Pipeline::Fc::Fc()
+Pipeline::Acc::Acc()
 {
 	// subject data
 	INIReader ini(INI_FILE);
@@ -60,9 +61,6 @@ Pipeline::Fc::Fc()
 		ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 	grfOrigin = ini.getSimtkVec(section, "GRF_ORIGIN", Vec3(0));
 
-	// virtual contact surface as ground
-	auto platform_offset = ini.getReal(section, "PLATFORM_OFFSET", 0.0);
-
 	// repeat cyclic motion X times
 	//simulationLoops = ini.getInteger(section, "SIMULATION_LOOPS", 0);
 	// remove last N samples in motion for smooth transition between loops
@@ -76,22 +74,27 @@ Pipeline::Fc::Fc()
 	auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
 	// acceleration-based detector parameters
+	auto heelAccThreshold = ini.getReal(section, "HEEL_ACC_THRESHOLD", 0);
+	auto toeAccThreshold = ini.getReal(section, "TOE_ACC_THRESHOLD", 0);
 	auto windowSize = ini.getInteger(section, "WINDOW_SIZE", 0);
-	auto threshold = ini.getReal(section, "THRESHOLD", 0);
-
 	auto rFootBodyName = ini.getString(section, "RIGHT_FOOT_BODY_NAME", "");
 	auto lFootBodyName = ini.getString(section, "LEFT_FOOT_BODY_NAME", "");
-
-	auto rHeelSphereLocation =
-		    ini.getSimtkVec(section, "RIGHT_HEEL_SPHERE_LOCATION", Vec3(0));
-	auto lHeelSphereLocation =
-		    ini.getSimtkVec(section, "LEFT_HEEL_SPHERE_LOCATION", Vec3(0));
-	auto rToeSphereLocation =
-		    ini.getSimtkVec(section, "RIGHT_TOE_SPHERE_LOCATION", Vec3(0));
-	auto lToeSphereLocation =
-		    ini.getSimtkVec(section, "LEFT_TOE_SPHERE_LOCATION", Vec3(0));
-	auto contactSphereRadius = ini.getReal(section, "SPHERE_RADIUS", 0);
-
+	auto rHeelLocation =
+		ini.getSimtkVec(section, "RIGHT_HEEL_LOCATION_IN_FOOT", Vec3(0));
+	auto lHeelLocation =
+		ini.getSimtkVec(section, "LEFT_HEEL_LOCATION_IN_FOOT", Vec3(0));
+	auto rToeLocation =
+		ini.getSimtkVec(section, "RIGHT_TOE_LOCATION_IN_FOOT", Vec3(0));
+	auto lToeLocation =
+		ini.getSimtkVec(section, "LEFT_TOE_LOCATION_IN_FOOT", Vec3(0));
+	auto accLPFilterFreq = ini.getInteger(section, "ACC_LP_FILTER_FREQ", 0);
+	auto velLPFilterFreq = ini.getInteger(section, "VEL_LP_FILTER_FREQ", 0);
+	auto posLPFilterFreq = ini.getInteger(section, "POS_LP_FILTER_FREQ", 0);
+	auto accLPFilterOrder = ini.getInteger(section, "ACC_LP_FILTER_ORDER", 0);
+	auto velLPFilterOrder = ini.getInteger(section, "VEL_LP_FILTER_ORDER", 0);
+	auto posLPFilterOrder = ini.getInteger(section, "POS_LP_FILTER_ORDER", 0);
+	auto posDiffOrder = ini.getInteger(section, "POS_DIFF_ORDER", 0);
+	auto velDiffOrder = ini.getInteger(section, "VEL_DIFF_ORDER", 0);
 
 	// grfm parameters
 	auto grfmMethod = ini.getString(section, "METHOD", "");
@@ -120,6 +123,7 @@ Pipeline::Fc::Fc()
 			grfRightTorqueIdentifier);
 	auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
 	grfRightLogger = &grfRightLoggerTemp;
+
 	ExternalWrench::Parameters grfLeftFootPar{
 		grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
 	auto grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
@@ -127,10 +131,10 @@ Pipeline::Fc::Fc()
 			grfLeftTorqueIdentifier);
 	auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
 	grfLeftLogger = &grfLeftLoggerTemp;
-	
+
 	output_labels.insert(output_labels.end(),grfRightLabels.begin(),grfRightLabels.end());
 	output_labels.insert(output_labels.end(),grfLeftLabels.begin(),grfLeftLabels.end());
-	
+
 
 	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
@@ -146,6 +150,7 @@ Pipeline::Fc::Fc()
 
 	// setup filters
 	LowPassSmoothFilter::Parameters filterParam;
+
 	filterParam.numSignals = model.getNumCoordinates();
 	filterParam.memory = memory;
 	filterParam.delay = delay;
@@ -154,19 +159,27 @@ Pipeline::Fc::Fc()
 	filterParam.calculateDerivatives = true;
 	filter = new LowPassSmoothFilter(filterParam);
 
-	// contact force based event detection
-	ContactForceBasedPhaseDetector::Parameters detectorParameters;
-	detectorParameters.threshold = threshold;
+	// acceleration-based event detector
+	AccelerationBasedPhaseDetector::Parameters detectorParameters;
+	detectorParameters.heelAccThreshold = heelAccThreshold;
+	detectorParameters.toeAccThreshold = toeAccThreshold;
 	detectorParameters.windowSize = windowSize;
-	detectorParameters.plane_origin = Vec3(0.0, platform_offset, 0.0);
-	detectorParameters.rHeelSphereLocation = rHeelSphereLocation;
-	detectorParameters.lHeelSphereLocation = lHeelSphereLocation;
-	detectorParameters.rToeSphereLocation = rToeSphereLocation;
-	detectorParameters.lToeSphereLocation = lToeSphereLocation;
-	detectorParameters.sphereRadius = contactSphereRadius;
 	detectorParameters.rFootBodyName = rFootBodyName;
 	detectorParameters.lFootBodyName = lFootBodyName;
-	detector = new ContactForceBasedPhaseDetector(model, detectorParameters);
+	detectorParameters.rHeelLocationInFoot = rHeelLocation;
+	detectorParameters.lHeelLocationInFoot = lHeelLocation;
+	detectorParameters.rToeLocationInFoot = rToeLocation;
+	detectorParameters.lToeLocationInFoot = lToeLocation;
+	detectorParameters.samplingFrequency = 1 / 0.01;
+	detectorParameters.accLPFilterFreq = accLPFilterFreq;
+	detectorParameters.velLPFilterFreq = velLPFilterFreq;
+	detectorParameters.posLPFilterFreq = posLPFilterFreq;
+	detectorParameters.accLPFilterOrder = accLPFilterOrder;
+	detectorParameters.velLPFilterOrder = velLPFilterOrder;
+	detectorParameters.posLPFilterOrder = posLPFilterOrder;
+	detectorParameters.posDiffOrder = posDiffOrder;
+	detectorParameters.velDiffOrder = velDiffOrder;
+	detector = new AccelerationBasedPhaseDetector(model, detectorParameters);
 
 	// grfm prediction
 	GRFMPrediction::Parameters grfmParameters;
@@ -200,10 +213,12 @@ Pipeline::Fc::Fc()
 
 	//loopCounter = 0;
 	//i = 0;
+	counter = 0;
 }
 
-Pipeline::Fc::~Fc()
+Pipeline::Acc::~Acc()
 {
-	ROS_INFO_STREAM("Shutting down Fc.");
+	ROS_INFO_STREAM("Shutting down Acc");
 }
+
 

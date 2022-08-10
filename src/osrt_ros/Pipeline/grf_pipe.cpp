@@ -1,4 +1,4 @@
-#include "common_node.h"
+#include "osrt_ros/Pipeline/common_node.h"
 #include "ros/message_traits.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
@@ -23,7 +23,7 @@
 #include "ros/time.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/grf_pipe.h"
+#include "osrt_ros/Pipeline/grf_pipe.h"
 
 using namespace std;
 using namespace OpenSim;

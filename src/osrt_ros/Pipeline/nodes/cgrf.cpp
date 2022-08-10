@@ -1,8 +1,8 @@
-#include "grf_pipe.h"
 #include "ros/ros.h"
 #include "ros/service_server.h"
 #include "signal.h"
-#include "Pipeline/include/id_so_jr.h"
+#include "osrt_ros/Pipeline/cgrf_pipe.h"
+#include "osrt_ros/Pipeline/grf_pipe.h"
 
 void mySigintHandler(int sig)
 {
@@ -11,22 +11,22 @@ void mySigintHandler(int sig)
     ros::shutdown();
 }
 int main(int argc, char **argv) {
-	ros::init(argc, argv, "id_combined_show");
-	ROS_INFO_STREAM("called node InverseDynamics.");
+	ros::init(argc, argv, "cgrf_show");
+	ROS_INFO_STREAM("called node ContactForceBasedPhaseDetector.");
+			ros::NodeHandle n;
     try {
-	Pipeline::IdSoJr perenial;
+	Pipeline::Fc perenial;
 
 	//	signal(SIGINT, mySigintHandler);
 	perenial.onInit();		
 			//ros::Subscriber sub = n.subscribe<opensimrt_msgs::CommonTimed>("r_data", 1, perenial);	
-	ROS_WARN_STREAM("entering spin");
+	ros::ServiceServer seecsv = n.advertiseService("see", &Pipeline::Fc::see, (Pipeline::Grf*)&perenial);
 	ros::spin();
-    	ROS_INFO_STREAM("Goodbye!");
-    	return 0;
     } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
         return -1;
     }
+    ROS_INFO_STREAM("Goodbye!");
+    return 0;
 }
-
 

@@ -1,5 +1,5 @@
-#include "Pipeline/include/dualsink_pipe.h"
-#include "common_node.h"
+#include "osrt_ros/Pipeline/dualsink_pipe.h"
+#include "osrt_ros/Pipeline/common_node.h"
 #include "message_filters/synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "ros/node_handle.h"

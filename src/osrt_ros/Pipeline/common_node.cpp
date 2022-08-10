@@ -1,4 +1,4 @@
-#include "Pipeline/include/common_node.h"
+#include "osrt_ros/Pipeline/common_node.h"
 #include "ros/init.h"
 #include "ros/node_handle.h"
 #include "ros/publisher.h"

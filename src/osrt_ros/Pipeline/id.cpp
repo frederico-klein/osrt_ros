@@ -1,4 +1,4 @@
-#include "dualsink_pipe.h"
+#include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
@@ -21,7 +21,7 @@
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/id.h"
+#include "osrt_ros/Pipeline/id.h"
 
 using namespace std;
 using namespace OpenSim;

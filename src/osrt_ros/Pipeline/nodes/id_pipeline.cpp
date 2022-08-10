@@ -1,8 +1,9 @@
-#include "grf_pipe.h"
+
 #include "ros/ros.h"
 #include "ros/service_server.h"
 #include "signal.h"
 #include "Pipeline/include/id.h"
+#include "osrt_ros/Pipeline/grf_pipe.h"
 
 void mySigintHandler(int sig)
 {
