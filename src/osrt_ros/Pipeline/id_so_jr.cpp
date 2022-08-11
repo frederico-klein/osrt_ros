@@ -181,9 +181,6 @@ void Pipeline::IdSoJr::callback(const opensimrt_msgs::CommonTimedConstPtr& messa
 	    i = 0;
 	    loopCounter++;
 	}*/
-	if (!ikFiltered.isValid) {
-		ROS_DEBUG_STREAM("filter results are NOT valid");
-		return; }
 
         auto grfRightFiltered =
                 grfRightFilter->filter({t, grfRightWrench.toVector()});
@@ -194,6 +191,7 @@ void Pipeline::IdSoJr::callback(const opensimrt_msgs::CommonTimedConstPtr& messa
 
         if (!ikFiltered.isValid || !grfRightFiltered.isValid ||
             !grfLeftFiltered.isValid) {
+		ROS_DEBUG_STREAM("filter results are NOT valid");
             return;
         }
 

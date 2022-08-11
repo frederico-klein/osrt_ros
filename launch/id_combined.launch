@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
-        <node pkg="osrt_ros" type="id_combined" 	name="id_node" output="screen">
+        <node pkg="osrt_ros" type="id_so_jr" 	name="id_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<remap from="/id_node/input" 	to="/inverse_kinematics_from_file/r_data"/>
 		<remap from="/in_labels" 	to="/inverse_kinematics_from_file/out_labels"/>
