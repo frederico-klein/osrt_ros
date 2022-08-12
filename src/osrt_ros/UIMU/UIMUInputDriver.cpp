@@ -30,7 +30,7 @@ using namespace SimTK;
 
 UIMUInputDriver::UIMUInputDriver(const double& sendRate)
         : terminationFlag(false), rate(sendRate) {
-        imu_names = {"torax", "humerus", "radius" };
+        imu_names = {"thorax", "humerus", "radius" };
 	server = new TfServer(imu_names);	
 	ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
         }
@@ -39,7 +39,7 @@ UIMUInputDriver::UIMUInputDriver(const int port,
         : terminationFlag(false), rate(sendRate) {
         server = new CometaServer(port, 4096);
 
-	imu_names = {"torax", "humerus", "radius" };
+	imu_names = {"thorax", "humerus", "radius" };
 	ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
 
         }
