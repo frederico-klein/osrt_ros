@@ -18,7 +18,7 @@ add_executable(OnlineUpperLimb nodes/OnlineUpperLimbUIMUIK.cpp)
 add_dependencies(OnlineUpperLimb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(OnlineUpperLimb
-  ${DEPENDENCY_LIBS}
+  ${DEPENDENCY_LIBS} osrtRosPipeline
 )
 
 add_executable(OnlineUpperLimbAr nodes/OnlineUpperLimbUIMUIKar.cpp)

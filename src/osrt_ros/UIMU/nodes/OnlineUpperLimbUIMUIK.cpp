@@ -1,36 +1,12 @@
-/**
- * -----------------------------------------------------------------------------
- * Copyright 2019-2021 OpenSimRT developers.
- *
- * This file is part of OpenSimRT.
- *
- * OpenSimRT is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * OpenSimRT is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * OpenSimRT. If not, see <https://www.gnu.org/licenses/>.
- * -----------------------------------------------------------------------------
- *
- * @file TestUpperLimbIMUIKFromFile.cpp
- *
- * @brief Test IK with prerecorded NGIMU data on the upper body.
- *
- * @author Filip Konstantinos <filip.k@ece.upatras.gr>
- */
 #include "osrt_ros/UIMU/IMUCalibrator.h"
-#include "INIReader.h"
+//#include "INIReader.h"
 #include "InverseKinematics.h"
 #include "osrt_ros/UIMU/UIMUInputDriver.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
 #include "Visualization.h"
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
+#include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
 //#include <OpenSim/Common/STOFileAdapter.h>
 
@@ -43,6 +19,9 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include "osrt_ros/UIMU/TfServer.h"
+#include "osrt_ros/Pipeline/common_node.h"
+#define BOOST_STACKTRACE_USE_ADDR2LINE
+#include <boost/stacktrace.hpp>
 
 using namespace std;
 using namespace OpenSim;
@@ -52,121 +31,185 @@ using namespace SimTK;
 ros::Publisher chatter_pub;
 ros::Publisher poser_pub;
 
-class orientationprovider
+class orientationprovider: Pipeline::CommonNode
 {
 	public:
-	void run() {
-	    INIReader ini(INI_FILE);
-	    auto section = "UPPER_LIMB_NGIMU";
-	    // imu calibration settings
-	    auto imuDirectionAxis = ini.getString(section, "IMU_DIRECTION_AXIS", "");
-	    auto imuBaseBody = ini.getString(section, "IMU_BASE_BODY", "");
-	    auto xGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_X", 0.0);
-	    auto yGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Y", 0.0);
-	    auto zGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Z", 0.0);
-	    auto imuObservationOrder =
-		    ini.getVector(section, "IMU_BODIES", vector<string>());
+		std::string DATA_DIR = "/srv/data";
+		std::string imuDirectionAxis;
+		std::string imuBaseBody;
+		double xGroundRotDeg, yGroundRotDeg, zGroundRotDeg;
+		std::vector<std::string> imuObservationOrder;
+		double rate;
+		
+		std::string subjectDir, modelFile;
+	    
+		static tf::TransformBroadcaster br;
+		static tf::TransformListener listener;
+		double sumDelayMS = 0, numFrames = 0; 
+		OpenSim::TimeSeriesTable imuLogger, qLogger;
+		
+		UIMUInputDriver *driver;
+		InverseKinematics * ik;
+		IMUCalibrator * clb;
+		BasicModelVisualizer *visualizer;
+		
+		void get_params()
+		{
+        		ros::NodeHandle nh("~");
+			
+			    //auto section = "UPPER_LIMB_NGIMU";
+			    // imu calibration settings
+			
+			
+			nh.param<std::string>("imu_direction_axis", imuDirectionAxis, "");
 
-	    // driver send rate
-	    auto rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
+			//    imuDirectionAxis = ini.getString(section, "IMU_DIRECTION_AXIS", "");
+			nh.param<std::string>("imu_base_body", imuBaseBody, "");
 
-	    // subject data
-	    auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-	    //auto ngimuDataFile =
-	    //        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
+			//    imuBaseBody = ini.getString(section, "IMU_BASE_BODY", "");
+			nh.param<double>("imu_ground_rotation_x", xGroundRotDeg, 0.0);
+			//   xGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_X", 0.0);
+			nh.param<double>("imu_ground_rotation_y", yGroundRotDeg, 0.0);
+			//    yGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Y", 0.0);
+			nh.param<double>("imu_ground_rotation_z", zGroundRotDeg, 0.0);
+			//    zGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Z", 0.0);
+			nh.getParam("imu_observation_order", imuObservationOrder);
+			//    imuObservationOrder =
+			//	    ini.getVector(section, "IMU_BODIES", vector<string>());
 
-	    // setup model
-	    Object::RegisterType(Schutte1993Muscle_Deprecated());
-	    Model model(modelFile);
-	    OpenSimUtils::removeActuators(model);
+			    // driver send rate
+			nh.param<double>("rate", rate, 0.0);
+			
+			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
 
-	    // marker tasks
-	    vector<InverseKinematics::MarkerTask> markerTasks;
-	    vector<string> markerObservationOrder;
-	    InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
-								markerObservationOrder);
+			    // subject data
+			std::string subjectDir_;
+			nh.param<std::string>("subject_dir", subjectDir_, "");
+			subjectDir = DATA_DIR + subjectDir_;
+			ROS_INFO_STREAM("using subjectDir:" << subjectDir);
+			//    subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+			std::string modelFile_;
+			nh.param<std::string>("model_file", modelFile_, "");
+			modelFile = subjectDir + modelFile_;
+			ROS_INFO_STREAM("Using modelFile:" << modelFile);
+			//    modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+			    //auto ngimuDataFile =
+			    //        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
 
-	    // imu tasks
-	    vector<InverseKinematics::IMUTask> imuTasks;
-	    InverseKinematics::createIMUTasksFromObservationOrder(
-		    model, imuObservationOrder, imuTasks);
+			ROS_DEBUG_STREAM("Finished getting params.");	
 
-	    // ngimu input data driver from file
-	    //UIMUInputDriver driver(ngimuDataFile, rate);
-	    UIMUInputDriver driver(imuObservationOrder,400); //tf server
-	    //UIMUInputDriver driver(imuObservationOrder,rate); //tf server
-	    //TfServer* srv = dynamic_cast<TfServer*>(driver.server);
-	//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
-	    driver.startListening();
-	    auto imuLogger = driver.initializeLogger();
-
-	    // calibrator
-	    IMUCalibrator clb(model, &driver, imuObservationOrder);
-	    clb.recordNumOfSamples(10);
-	    clb.setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
-	    clb.computeHeadingRotation(imuBaseBody, imuDirectionAxis);
-	    clb.calibrateIMUTasks(imuTasks);
-
-	    // initialize ik (lower constraint weight and accuracy -> faster tracking)
-	    InverseKinematics ik(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
-	    auto qLogger = ik.initializeLogger();
-
-	    // visualizer
-	    ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
-	    BasicModelVisualizer visualizer(model);
-
-	    // mean delay
-	    int sumDelayMS = 0;
-	    int numFrames = 0;
-
-	    static tf::TransformBroadcaster br;
-	    static tf::TransformListener listener;
-
-	    try { // main loop
-		while (!driver.shouldTerminate()) {
-
-		    // get input from imus
-		    auto imuData = driver.getFrame();
-		    numFrames++;
-
-		    // solve ik
-		    chrono::high_resolution_clock::time_point t1;
-		    t1 = chrono::high_resolution_clock::now();
-
-		    auto pose = ik.solve(
-			    {imuData.first, {}, clb.transform(imuData.second)});
-		    
-		   
-		    chrono::high_resolution_clock::time_point t2;
-		    t2 = chrono::high_resolution_clock::now();
-		    sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
-					  .count();
-
-		    // visualize
-		    visualizer.update(pose.q);
-
-		    // record
-		    imuLogger.appendRow(pose.t, driver.frame);//
-		    qLogger.appendRow(pose.t, ~pose.q);
-		    if(!ros::ok())
-			    break;
 		}
-	    } catch (std::exception& e) {
-		cout << e.what() << endl;
+		void onInit() 
+		
+			{
+			    get_params();
+			    Pipeline::CommonNode::onInit(0); //we are not reading from anything, we are a source
+			    // setup model
+			    ROS_DEBUG_STREAM("Setting up model.");
+			    Object::RegisterType(Schutte1993Muscle_Deprecated());
+			    Model model(modelFile);
+			    OpenSimUtils::removeActuators(model);
 
-		driver.shouldTerminate(true);
-	    }
+			    // marker tasks
+			    ROS_DEBUG_STREAM("Setting up markerTasks");
+			    vector<InverseKinematics::MarkerTask> markerTasks;
+			    vector<string> markerObservationOrder;
+			    InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
+										markerObservationOrder);
 
-	    cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
+			    // imu tasks
+			    ROS_DEBUG_STREAM("Setting up imuTasks");
+			    vector<InverseKinematics::IMUTask> imuTasks;
+			    InverseKinematics::createIMUTasksFromObservationOrder(
+				    model, imuObservationOrder, imuTasks);
 
-	    CSVFileAdapter::write( qLogger, "test_upper.csv");
-	    CSVFileAdapter::write( imuLogger, "test_upper_imus.csv");
+			    // ngimu input data driver from file
+			    //UIMUInputDriver driver(ngimuDataFile, rate);
+			    ROS_DEBUG_STREAM("Starting driver");
+			    driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
+										    //
+			    //UIMUInputDriver driver(imuObservationOrder,rate); //tf server
+			    //TfServer* srv = dynamic_cast<TfServer*>(driver.server);
+			//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
+			    driver->startListening();
+			    imuLogger = driver->initializeLogger();
+			    initializeLoggers("imu_logger",&imuLogger);
 
-	    // // store results
-	    // STOFileAdapter::write(
-	    //         qLogger, subjectDir + "real_time/inverse_kinematics/q_imu.sto");
-	}
+			    // calibrator
+			    ROS_DEBUG_STREAM("Setting up IMUCalibrator");
+			    clb = new IMUCalibrator(model, driver, imuObservationOrder);
+			    ROS_DEBUG_STREAM("clb samples");
+			    clb->recordNumOfSamples(10);
+			    ROS_DEBUG_STREAM("r");
+			    clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
+			    ROS_DEBUG_STREAM("heading");
+			    clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
+				
+			    std::cout << boost::stacktrace::stacktrace() << std::endl;
+			    clb->calibrateIMUTasks(imuTasks);
+			    ROS_DEBUG_STREAM("Setting up IMUCalibrator");
+
+			    // initialize ik (lower constraint weight and accuracy -> faster tracking)
+			    ROS_DEBUG_STREAM("Setting up IK");
+			    ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
+			    qLogger = ik->initializeLogger();
+			    initializeLoggers("q_logger",&qLogger);
+
+			    // visualizer
+			    ROS_DEBUG_STREAM("Setting up visualizer");
+			    ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
+			    visualizer = new BasicModelVisualizer(model);
+
+			    // mean delay
+			    ROS_DEBUG_STREAM("onInit finished just fine.");
+			}
+
+
+			void run() {
+			    try { // main loop
+				while (!driver->shouldTerminate()) {
+
+				    // get input from imus
+				    auto imuData = driver->getFrame();
+				    numFrames++;
+
+				    // solve ik
+				    chrono::high_resolution_clock::time_point t1;
+				    t1 = chrono::high_resolution_clock::now();
+
+				    auto pose = ik->solve(
+					    {imuData.first, {}, clb->transform(imuData.second)});
+				    
+				   
+				    chrono::high_resolution_clock::time_point t2;
+				    t2 = chrono::high_resolution_clock::now();
+				    sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
+							  .count();
+
+				    // visualize
+				    visualizer->update(pose.q);
+
+				    // record
+				    imuLogger.appendRow(pose.t, driver->frame);//
+				    qLogger.appendRow(pose.t, ~pose.q);
+				    if(!ros::ok())
+					    break;
+				}
+			    } catch (std::exception& e) {
+				cout << e.what() << endl;
+
+				driver->shouldTerminate(true);
+			    }
+
+			    cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
+
+			    CSVFileAdapter::write( qLogger, "test_upper.csv");
+			    CSVFileAdapter::write( imuLogger, "test_upper_imus.csv");
+
+			    // // store results
+			    // STOFileAdapter::write(
+			    //         qLogger, subjectDir + "real_time/inverse_kinematics/q_imu.sto");
+			}
 
 
 
@@ -181,6 +224,7 @@ int main(int argc, char** argv) {
        	chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
        	poser_pub = n.advertise<geometry_msgs::Pose>("poser", 1000);
         orientationprovider o;
+	o.onInit();
 	o.run();
     } catch (exception& e) {
         cout << e.what() << endl;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+	<arg name="name" 		default="ar_marker_10" />
+
+<node pkg="tf" type="static_transform_publisher" name="fake_ar_broadcaster" args="1 0 0 0 0 0 1 map $(arg name) 1" />
+
+</launch>
+

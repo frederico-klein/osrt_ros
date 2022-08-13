@@ -92,6 +92,11 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                           imuBodiesObservationOrder.end(), baseImuName));
 
         // get initial measurement of base imu
+	cout << baseBodyIndex << endl;
+	for (int g= 0; g < staticPoseQuaternions.size();g++)
+	{
+		cout << staticPoseQuaternions[g] << endl;
+	}
         const auto q0 = staticPoseQuaternions[baseBodyIndex];
         const auto base_R = R_GoGi * ~Rotation(q0);
 

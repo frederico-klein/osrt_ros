@@ -14,7 +14,7 @@
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
-#include "Pipeline/include/id_so_jr.h"
+#include "osrt_ros/Pipeline/id_so_jr.h"
 #include "MuscleOptimization.h"
 
 using namespace std;

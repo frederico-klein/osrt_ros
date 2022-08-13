@@ -43,20 +43,22 @@ void Pipeline::CommonNode::onInit(int num_sinks)
     //output_labels = qTable.getColumnLabels();
     opensimrt_msgs::LabelsSrv l;
     //while(!ros::service::call("in_labels", l))
-    while(ros::ok())
-    {
-    	if(ros::service::call("in_labels", l))
+    if (num_sinks > 0)
 	{
-	    input_labels = l.response.data;
-	    ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
-	    ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
-	    break;
+	    while(ros::ok())
+	    {
+		if(ros::service::call("in_labels", l))
+		{
+		    input_labels = l.response.data;
+		    ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
+		    ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
+		    break;
+		}
+		ros::spinOnce();
+		ROS_INFO_STREAM("Waiting to read input labels."); 
+		r.sleep();
+	    }
 	}
-	ros::spinOnce();
-	ROS_INFO_STREAM("Waiting to read input labels."); 
-	r.sleep();
-    }
-
 
 
 }
