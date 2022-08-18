@@ -45,8 +45,15 @@ UIMUInputDriver::UIMUInputDriver(const int port,
         }
 UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const double& sendRate)
         : terminationFlag(false), rate(sendRate) {
-        imu_names = imuObservationOrder;
-	server = new TfServer(imu_names);	
+        ROS_WARN("starting the dreaded thing");
+		imu_names = imuObservationOrder;
+	if (imuObservationOrder.size() == 0)
+		ROS_FATAL("no imuObservationOrder provided. why didn't you?");
+	for(auto imu_name:imuObservationOrder)
+	{
+		ROS_INFO_STREAM(imu_name);
+	}
+	server = new TfServer(imuObservationOrder);	
         }
 
         // i maybe want to start the server!
@@ -86,6 +93,7 @@ void UIMUInputDriver::startListening() {
                 //this will crash because table was not initialized.
                     time = table.getIndependentColumn()[i];
                     frame = table.getMatrix()[i];
+		    ROS_INFO_STREAM("FRAME" << frame );
                     newRow = true;
                     i++;
                 }
@@ -145,7 +153,8 @@ UIMUInputDriver::getData() const {
     cond.wait(lock,
               [&]() { return (newRow == true) || terminationFlag.load(); });
     newRow = false;
-    return fromVector(frame.getAsVector());
+    ROS_INFO_STREAM("frame inside getData" << frame);
+    return fromVector((~frame).getAsVector());
 }
 
 std::pair<double, std::vector<UIMUData>> UIMUInputDriver::getFrame() {
@@ -159,7 +168,7 @@ std::pair<double, Vector> UIMUInputDriver::getFrameAsVector() const {
               [&]() { return (newRow == true) || terminationFlag.load(); });
     newRow = false;
 
-    return std::make_pair(time, frame.getAsVector());
+    return std::make_pair(time, (~frame).getAsVector());
 }
 
 OpenSim::TimeSeriesTable UIMUInputDriver::initializeLogger() const {

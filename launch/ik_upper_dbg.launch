@@ -6,7 +6,7 @@
 		<param name="subject_dir" 		value="/mobl2016/" />
 		<param name="model_file" 		value="mobl2016_v03.osim" />
 		<param name="imu_base_body" 		value="thorax" />
-		<param name="imu_observation_order" 		value="[thorax,humerus,radius]" />
+		<rosparam param="imu_observation_order" >['thorax','humerus','radius']</rosparam>
 		<param name="imu_direction_axis" 		value="z" />
 		<param name="imu_ground_rotation_x" 		value="-90" />
 		<param name="imu_ground_rotation_y" 		value="-90" />

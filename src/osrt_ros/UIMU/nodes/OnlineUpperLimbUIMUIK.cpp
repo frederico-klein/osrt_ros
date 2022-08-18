@@ -14,6 +14,7 @@
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
 
+#include <exception>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_broadcaster.h>
@@ -74,6 +75,11 @@ class orientationprovider: Pipeline::CommonNode
 			nh.param<double>("imu_ground_rotation_z", zGroundRotDeg, 0.0);
 			//    zGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Z", 0.0);
 			nh.getParam("imu_observation_order", imuObservationOrder);
+			if (imuObservationOrder.size() == 0)
+			{
+				ROS_FATAL("IMU observation order not defined!");
+				throw(std::invalid_argument("imuObservationOrder not defined."));
+			}
 			//    imuObservationOrder =
 			//	    ini.getVector(section, "IMU_BODIES", vector<string>());
 
@@ -126,6 +132,10 @@ class orientationprovider: Pipeline::CommonNode
 			    // ngimu input data driver from file
 			    //UIMUInputDriver driver(ngimuDataFile, rate);
 			    ROS_DEBUG_STREAM("Starting driver");
+			    for(auto a:imuObservationOrder)
+			    {
+				ROS_INFO_STREAM("Using imu observation " << a);
+			    }
 			    driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
 										    //
 			    //UIMUInputDriver driver(imuObservationOrder,rate); //tf server
