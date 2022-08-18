@@ -22,6 +22,8 @@
 #include "osrt_ros/Pipeline/common_node.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
+#include <signal.h>
+
 
 using namespace std;
 using namespace OpenSim;
@@ -131,18 +133,23 @@ class orientationprovider: Pipeline::CommonNode
 			    //UIMUInputDriver driver(imuObservationOrder,rate); //tf server
 			    //TfServer* srv = dynamic_cast<TfServer*>(driver.server);
 			//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
+			    ROS_DEBUG_STREAM("Starting listening");
 			    driver->startListening();
-			    imuLogger = driver->initializeLogger();
-			    initializeLoggers("imu_logger",&imuLogger);
+			    ROS_DEBUG_STREAM("Starting imuLogger");
+
+			    //imuLogger = driver->initializeLogger();
+			    //initializeLoggers("imu_logger",&imuLogger);
 
 			    // calibrator
 			    ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			    clb = new IMUCalibrator(model, driver, imuObservationOrder);
 			    ROS_DEBUG_STREAM("clb samples");
+raise(SIGTRAP); // At the location of the BP.
 			    clb->recordNumOfSamples(10);
 			    ROS_DEBUG_STREAM("r");
 			    clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
-			    ROS_DEBUG_STREAM("heading");
+			    ROS_DEBUG_STREAM("computing heading: imuBaseBody:" << imuBaseBody << " imuDirectionAxis: " << imuDirectionAxis );
+raise(SIGTRAP); // At the location of the BP.
 			    clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
 				
 			    std::cout << boost::stacktrace::stacktrace() << std::endl;

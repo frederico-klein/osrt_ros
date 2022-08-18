@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   opensimrt
   opensimrt_msgs
   roscpp
+  message_runtime
   tf
 )
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
@@ -50,7 +51,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   )
 
-file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp")
+file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/${PROJECT_NAME}/Pipeline/*.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
 set(target osrtRosPipeline)
@@ -64,11 +65,11 @@ add_library(osrtRosPipeline ${Pipeline_HEADERS} ${Pipeline_SOURCES} )
 target_link_libraries(osrtRosPipeline ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
 
 
-add_subdirectory(src/osrt_ros/Pipeline)
+add_subdirectory(src/${PROJECT_NAME}/Pipeline)
 
 
 
-file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp")
+file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/${PROJECT_NAME}/UIMU/*.cpp")
 file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 
 set(target osrtRosUIMU)
@@ -77,7 +78,7 @@ add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
 
 target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES})
 
-add_subdirectory(src/osrt_ros/UIMU)
+add_subdirectory(src/${PROJECT_NAME}/UIMU)
 
 #add_executable(acceleration_based_phase_detector src/AccelerationBasedPhaseDetector.cpp src/grfm_ros.cpp)
 

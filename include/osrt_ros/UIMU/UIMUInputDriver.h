@@ -19,29 +19,29 @@
  *
  * @file UIMUInputDriver.h
  *
- * @brief Concrete implementation of the IMUInputDriver to stream NGIMU data
+ * @brief Concrete implementation of the IMUInputDriver to stream UIMU data
  * from file in a separate thread.
  *
  * @author Filip Konstantinos <filip.k@ece.upatras.gr>
  */
 #pragma once
-#include "InputDriver.h"
-#include "UIMUData.h"
+#include "osrt_ros/UIMU/InputDriver.h"
+#include "osrt_ros/UIMU/UIMUData.h"
 #include <Common/TimeSeriesTable.h>
 #include <condition_variable>
 #include <thread>
-#include "OrientationProvider.h"
+#include "osrt_ros/UIMU/OrientationProvider.h"
 #include <vector>
 
 namespace OpenSimRT {
 
 /**
- * @brief xio NGIMU Input driver for streaming data from file.
+ * @brief xio UIMU Input driver for streaming data from file.
  */
 class  UIMUInputDriver : public InputDriver<UIMUData> {
  public:
     /**
-     * Create a NGIMU driver that streams data from file at a constant rate.
+     * Create a UIMU driver that streams data from file at a constant rate.
      */
     UIMUInputDriver(const double& sendRate = 50);
     UIMUInputDriver(const int port,
@@ -97,7 +97,7 @@ class  UIMUInputDriver : public InputDriver<UIMUData> {
 
  protected:
     /**
-     * Reconstruct a list of NGIMU from a SimTK::Vector.
+     * Reconstruct a list of UIMU from a SimTK::Vector.
      */
     IMUDataList fromVector(const SimTK::Vector&) const;
 

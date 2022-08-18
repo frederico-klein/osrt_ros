@@ -24,163 +24,183 @@
 #include "ros/ros.h"
 #include "osrt_ros/UIMU/TfServer.h"
 #include "osrt_ros/UIMU/CometaServer.h"
+#include <signal.h>
 
 using namespace OpenSimRT;
 using namespace SimTK;
 
 UIMUInputDriver::UIMUInputDriver(const double& sendRate)
-        : terminationFlag(false), rate(sendRate) {
-        imu_names = {"thorax", "humerus", "radius" };
-	server = new TfServer(imu_names);	
-	ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
-        }
+	: terminationFlag(false), rate(sendRate) {
+		imu_names = {"thorax", "humerus", "radius" };
+		server = new TfServer(imu_names);	
+		ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
+	}
 UIMUInputDriver::UIMUInputDriver(const int port,
-                                                   const double& sendRate)
-        : terminationFlag(false), rate(sendRate) {
-        server = new CometaServer(port, 4096);
+		const double& sendRate)
+	: terminationFlag(false), rate(sendRate) {
+		server = new CometaServer(port, 4096);
 
-	imu_names = {"thorax", "humerus", "radius" };
-	ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
+		imu_names = {"thorax", "humerus", "radius" };
+		ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
 
-        }
+	}
 UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const double& sendRate)
-        : terminationFlag(false), rate(sendRate) {
-        imu_names = imuObservationOrder;
-	server = new TfServer(imu_names);	
-        }
+	: terminationFlag(false), rate(sendRate) {
+		imu_names = imuObservationOrder;
+		server = new TfServer(imu_names);	
+		ROS_INFO("Started UIMUInputDriver");
+	}
 
-        // i maybe want to start the server!
+// i maybe want to start the server!
 
 UIMUInputDriver::~UIMUInputDriver() { t.join(); }
 
-void UIMUInputDriver::startListening() {
-    static auto f = [&]() {
-        try {
-            int i = 0;
-            std::cout << "Rate: " << rate << std::endl ;
-            for (;;) {
-                if (shouldTerminate())
-                    THROW_EXCEPTION("??? this is not great. File stream terminated.");
-                {
-                    std::lock_guard<std::mutex> lock(mu);
-                    // get something from the udp stream
-                    //TODO: rosdebug
-		    ROS_DEBUG_STREAM( "Acquired lock. receiving.");
-                    if (! server->receive()){
-                            ROS_INFO_STREAM( "Received goodbye message!" );
-                            terminationFlag = true;
-                            break;
-                    }
-                    std::vector<double> output = server->output;
-                    ROS_DEBUG_STREAM("Received.");
+void UIMUInputDriver::startListening() 
+{
+	ROS_WARN("STARTED LISTENING!");
+	static auto f = [&]() {
+		try {
+			int i = 0;
+			ROS_ERROR("before for loop");
+			std::cout << "Rate: " << rate << std::endl ;
+			raise(SIGTRAP);
+			for (;;) {
+				if (shouldTerminate())
+				{
+					THROW_EXCEPTION("??? this is not great. File stream terminated.");
+					ROS_ERROR_STREAM( "Received shouldTerminate()!" );
+				}
+				else
+				{
+					std::lock_guard<std::mutex> lock(mu);
+					// get something from the udp stream
+					//TODO: rosdebug
+					ROS_DEBUG_STREAM( "Acquired lock. receiving.");
+					if (! server->receive()){
+						ROS_INFO_STREAM( "Received goodbye message!" );
+						terminationFlag = true;
+						break;
+					}
+					std::vector<double> output = server->output;
+					ROS_DEBUG_STREAM("Received.");
 
-                    // there is no table, so this will be empty
-                    //std::stringstream s(server.buffer);
-                    //time = output[0]; // probably a double
-                    //SimTK::readUnformatted<SimTK::Vector>(s, frame);// I will keep
+					// there is no table, so this will be empty
+					//std::stringstream s(server.buffer);
+					//time = output[0]; // probably a double
+					//SimTK::readUnformatted<SimTK::Vector>(s, frame);// I will keep
 
-		    ROS_DEBUG_STREAM("read input size from OrientationProvider" << output.size());
-                    table.appendRow(output[0], output.begin()+1, output.end()); // superflex!
-		    ROS_DEBUG_STREAM( "added to table alright." );
-		    //table.getMatrix()[0]; // OpenSim::TimeSeriesTable
-                //this will crash because table was not initialized.
-                    time = table.getIndependentColumn()[i];
-                    frame = table.getMatrix()[i];
-                    newRow = true;
-                    i++;
-                }
-                cond.notify_one();
+					ROS_DEBUG_STREAM("read input size from OrientationProvider" << output.size());
+					table.appendRow(output[0], output.begin()+1, output.end()); // superflex!
+					ROS_DEBUG_STREAM( "added to table alright." );
+					//table.getMatrix()[0]; // OpenSim::TimeSeriesTable
+					//this will crash because table was not initialized.
+					time = table.getIndependentColumn()[i];
+					frame = table.getMatrix()[i];
+					newRow = true;
+					i++;
+				}
+				cond.notify_one();
 
-                // artificial delay
-                // maybe i don't need this.
-                std::this_thread::sleep_for(std::chrono::milliseconds(
-                        static_cast<int>(1 / rate * 1000)));
-            }
-            terminationFlag = true;
-            cond.notify_one();
+				// artificial delay
+				// maybe i don't need this.
+				std::this_thread::sleep_for(std::chrono::milliseconds(
+							static_cast<int>(1 / rate * 1000)));
+			}
+			ROS_INFO_STREAM("left for loop for some reason!");
+			terminationFlag = true;
+			cond.notify_one();
 
-        } catch (const std::exception& e) {
-            std::cout << "Failed in acquiring thread." << e.what() << std::endl;
-
-            terminationFlag = true;
-            cond.notify_one();
-        }
-    };
-    t = std::thread(f);
-    // this is threaded, so this guy should work too!
-    std::cout << "Acquisition thread ended!" << std::endl;
+		} catch (const std::exception& e) {
+			std::cout << "Failed in acquiring thread." << e.what() << std::endl;
+			ROS_DEBUG_STREAM("Failed in acquiring thread." << e.what());
+			terminationFlag = true;
+			cond.notify_one();
+		} catch (...)
+		{
+			ROS_ERROR("something else even worse happened");
+		}
+	};
+	t = std::thread(f);
+	// this is threaded, so this guy should work too!
+	ROS_ERROR("why does this happen twice?");
+	std::cout << "Acquisition thread ended!" << std::endl;
 }
 
 bool UIMUInputDriver::shouldTerminate() {
-    return terminationFlag.load();
+	return terminationFlag.load();
 }
 
 void UIMUInputDriver::shouldTerminate(bool flag) {
-    terminationFlag = flag;
-    cond.notify_one();
+	terminationFlag = flag;
+	cond.notify_one();
 }
 
 UIMUInputDriver::IMUDataList
 UIMUInputDriver::fromVector(const Vector& v) const {
-    IMUDataList list;
-    UIMUData data;
-    int n = UIMUData::size();
+	IMUDataList list;
+	UIMUData data;
+	int n = UIMUData::size();
 
-    //std::cout << v << std::endl;
-    //std::cout << "size of UIMUData: " << n  << std::endl;
-    //std::cout << "size of v: " << v.size() << std::endl;
+	//std::cout << v << std::endl;
+	//std::cout << "size of UIMUData: " << n  << std::endl;
+	//std::cout << "size of v: " << v.size() << std::endl;
 
-    for (int i = 0; i < v.size(); i += n) {
-        data.fromVector(v(i, n));
-        list.push_back(data);
-        //i have 8 right now so this should tell me 8
-        //std::cout << i << "number of vectors I pushed back" << std::endl;
-    }
-    return list;
+	for (int i = 0; i < v.size(); i += n) {
+		data.fromVector(v(i, n));
+		list.push_back(data);
+		//i have 8 right now so this should tell me 8
+		//std::cout << i << "number of vectors I pushed back" << std::endl;
+	}
+	return list;
 }
 
 UIMUInputDriver::IMUDataList
 UIMUInputDriver::getData() const {
-    std::unique_lock<std::mutex> lock(mu);
-    cond.wait(lock,
-              [&]() { return (newRow == true) || terminationFlag.load(); });
-    newRow = false;
-    return fromVector(frame.getAsVector());
+	std::unique_lock<std::mutex> lock(mu);
+	cond.wait(lock,
+			[&]() { return (newRow == true) || terminationFlag.load(); });
+	newRow = false;
+	ROS_WARN("DO I GET THIS");
+	auto a = fromVector(frame.getAsVector());
+	ROS_WARN("DO I GET THIS.yes");
+
+	return a;
+
 }
 
 std::pair<double, std::vector<UIMUData>> UIMUInputDriver::getFrame() {
-    auto temp = getFrameAsVector();
-    return std::make_pair(temp.first, fromVector(temp.second));
+	auto temp = getFrameAsVector();
+	return std::make_pair(temp.first, fromVector(temp.second));
 }
 
 std::pair<double, Vector> UIMUInputDriver::getFrameAsVector() const {
-    std::unique_lock<std::mutex> lock(mu);
-    cond.wait(lock,
-              [&]() { return (newRow == true) || terminationFlag.load(); });
-    newRow = false;
+	std::unique_lock<std::mutex> lock(mu);
+	cond.wait(lock,
+			[&]() { return (newRow == true) || terminationFlag.load(); });
+	newRow = false;
 
-    return std::make_pair(time, frame.getAsVector());
+	return std::make_pair(time, frame.getAsVector());
 }
 
 OpenSim::TimeSeriesTable UIMUInputDriver::initializeLogger() const {
-        std::vector<std::string> suffixes = {
-            "_q1",       "_q2",       "_q3",      "_q4",        "_ax",
-            "_ay",       "_az",       "_gx",      "_gy",        "_gz",
-            "_mx",       "_my",       "_mz",      "_barometer", "_linAcc_x",
-            "_linAcc_y", "_linAcc_z", "_altitude"};
+	std::vector<std::string> suffixes = {
+		"_q1",       "_q2",       "_q3",      "_q4",        "_ax",
+		"_ay",       "_az",       "_gx",      "_gy",        "_gz",
+		"_mx",       "_my",       "_mz",      "_barometer", "_linAcc_x",
+		"_linAcc_y", "_linAcc_z", "_altitude"};
 
-    // create column names for each combination of imu names and measurement
-    // suffixes
-        std::vector<std::string> columnNames;
-    for (const auto& imu : imu_names) {
-        for (const auto& suffix : suffixes) {
-            columnNames.push_back(imu + suffix);
-        }
-    }
+	// create column names for each combination of imu names and measurement
+	// suffixes
+	std::vector<std::string> columnNames;
+	for (const auto& imu : imu_names) {
+		for (const auto& suffix : suffixes) {
+			columnNames.push_back(imu + suffix);
+		}
+	}
 
-    // return table
-    OpenSim::TimeSeriesTable q;
-    q.setColumnLabels(columnNames);
-    return q;
+	// return table
+	OpenSim::TimeSeriesTable q;
+	q.setColumnLabels(columnNames);
+	return q;
 }
 

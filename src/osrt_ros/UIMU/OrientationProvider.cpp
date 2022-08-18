@@ -3,11 +3,12 @@
 
 OrientationProvider::OrientationProvider()
 {
-
+	ROS_INFO("orientationprovider started");
 };	
 
 OrientationProvider::~OrientationProvider()
 {
+	ROS_INFO("orientationprovider destroyed");
 
 };	
 

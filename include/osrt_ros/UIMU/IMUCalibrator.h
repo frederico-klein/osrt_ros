@@ -25,7 +25,7 @@
  */
 #pragma once
 
-#include "InputDriver.h"
+#include "osrt_ros/UIMU/InputDriver.h"
 #include "InverseKinematics.h"
 //#include "U?->NGIMUInputDriver.h"
 #include "Utils.h"
@@ -33,6 +33,7 @@
 #include <Simulation/Model/Model.h>
 #include <string>
 #include <type_traits>
+#include <ros/ros.h>
 
 namespace OpenSimRT {
 
@@ -67,6 +68,8 @@ class  IMUCalibrator {
                       std::forward<const InputDriver<T>* const>(driver))),
               model(*otherModel.clone()) {
         setup(observationOrder);
+	std::cout << "instantiated okay" << std::endl;
+		ROS_DEBUG_STREAM("instanced ok");
     }
 
     /**
@@ -134,7 +137,11 @@ class  IMUCalibrator {
      */
     template <typename T> class DriverErasure : public DriverErasureBase {
      public:
-        DriverErasure(const InputDriver<T>* const driver) : m_driver(driver) {}
+        DriverErasure(const InputDriver<T>* const driver) : m_driver(driver) {
+	std::cout << "wtf" << std::endl;
+	ROS_DEBUG_STREAM("instanced driver erasure ok");
+
+	}
 
         virtual void recordTime(const double& timeout) override {
             std::cout << "Recording Static Pose..." << std::endl;

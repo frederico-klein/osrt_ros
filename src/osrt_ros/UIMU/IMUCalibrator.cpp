@@ -20,6 +20,7 @@
 #include "osrt_ros/UIMU/IMUCalibrator.h"
 #include "Exception.h"
 #include <SimTKcommon/internal/Quaternion.h>
+#include <ros/ros.h>
 
 using namespace OpenSimRT;
 using namespace OpenSim;
@@ -63,11 +64,16 @@ SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
 SimTK::Rotation
 IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                                       const std::string& imuDirectionAxis) {
-    if (!imuDirectionAxis.empty() && !baseImuName.empty()) {
+	ROS_DEBUG_STREAM("0001");
+    
+	if (!imuDirectionAxis.empty() && !baseImuName.empty()) {
         // set coordinate direction based on given imu direction axis given as
         // string
+	ROS_DEBUG_STREAM("01");
         std::string imuAxis = IO::Lowercase(imuDirectionAxis);
+	ROS_DEBUG_STREAM("boobies 1");
         SimTK::CoordinateDirection baseHeadingDirection(SimTK::ZAxis);
+	ROS_DEBUG_STREAM("taxes");
         int direction = 1;
         if (imuAxis.front() == '-') direction = -1;
         const char& back = imuAxis.back();
@@ -84,7 +90,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
             THROW_EXCEPTION("Invalid specification of heading axis '" +
                             imuAxis + "' found.");
         }
-
+	ROS_DEBUG_STREAM("found correct axis.");
         // find base imu body index in observation order
         auto baseBodyIndex = std::distance(
                 imuBodiesObservationOrder.begin(),
@@ -93,11 +99,15 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
         // get initial measurement of base imu
 	cout << baseBodyIndex << endl;
+	ROS_DEBUG_STREAM(baseBodyIndex);
 	for (int g= 0; g < staticPoseQuaternions.size();g++)
 	{
 		cout << staticPoseQuaternions[g] << endl;
+		ROS_DEBUG_STREAM(staticPoseQuaternions[g]);
 	}
+	ROS_DEBUG_STREAM("1");
         const auto q0 = staticPoseQuaternions[baseBodyIndex];
+	ROS_DEBUG_STREAM("2");
         const auto base_R = R_GoGi * ~Rotation(q0);
 
         // get initial direction from the imu measurement (the axis looking
@@ -105,7 +115,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         UnitVec3 baseSegmentXheading = base_R(baseHeadingDirection.getAxis());
         if (baseHeadingDirection.getDirection() < 0)
             baseSegmentXheading = baseSegmentXheading.negate();
-
+	ROS_DEBUG_STREAM("3");
         // get frame of imu body
         const PhysicalFrame* baseFrame = nullptr;
         if (!(baseFrame = model.findComponent<PhysicalFrame>(baseImuName))) {
@@ -113,23 +123,29 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                     "Frame of given body name does not exist in the model.");
         }
 
+	ROS_DEBUG_STREAM("4");
         // express unit x axis of local body frame to ground frame
         Vec3 baseFrameX = UnitVec3(1, 0, 0);
         const SimTK::Transform& baseXForm =
                 baseFrame->getTransformInGround(state);
+	ROS_DEBUG_STREAM("5");
         Vec3 baseFrameXInGround = baseXForm.xformFrameVecToBase(baseFrameX);
+	ROS_DEBUG_STREAM("6");
 
         // compute the angular difference between the model heading and imu
         // heading
         auto angularDifference =
                 acos(~baseSegmentXheading * baseFrameXInGround);
+	ROS_DEBUG_STREAM("7");
 
         // compute sign
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
         if (xproduct.get(1) > 0) { angularDifference *= -1; }
+	ROS_DEBUG_STREAM("8");
 
         // set heading rotation (rotation about Y axis)
         R_heading = Rotation(angularDifference, SimTK::YAxis);
+	ROS_DEBUG_STREAM("1");
 
     } else {
         cout << "No heading correction is applied. Heading rotation is set to "
@@ -154,6 +170,7 @@ void IMUCalibrator::calibrateIMUTasks(
 }
 
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
+    ROS_DEBUG_STREAM("whats up");
     impl->recordNumOfSamples(numSamples);
     staticPoseQuaternions = impl->computeAvgStaticPose();
 }
