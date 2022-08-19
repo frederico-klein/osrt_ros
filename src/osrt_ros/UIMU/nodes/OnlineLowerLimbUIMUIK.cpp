@@ -76,6 +76,12 @@ void run() {
     Object::RegisterType(Thelen2003Muscle());
     Model model(modelFile);
     OpenSimUtils::removeActuators(model);
+			// marker tasks
+			ROS_DEBUG_STREAM("Setting up markerTasks");
+			vector<InverseKinematics::MarkerTask> markerTasks;
+			vector<string> markerObservationOrder;
+			InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
+					markerObservationOrder);
 
     // imu tasks
     vector<InverseKinematics::IMUTask> imuTasks;
@@ -106,7 +112,7 @@ void run() {
     clb.calibrateIMUTasks(imuTasks);
 
     // initialize ik (lower constraint weight and accuracy -> faster tracking)
-    InverseKinematics ik(model, {}, imuTasks, SimTK::Infinity, 1e-5);
+    InverseKinematics ik(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
     auto qLogger = ik.initializeLogger();
 
     // visualizer
