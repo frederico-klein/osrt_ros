@@ -1,6 +1,0 @@
-DataType=double
-version=3
-OpenSimVersion=4.1
-endheader
-time,thorax_q1,thorax_q2,thorax_q3,thorax_q4,thorax_ax,thorax_ay,thorax_az,thorax_gx,thorax_gy,thorax_gz,thorax_mx,thorax_my,thorax_mz,thorax_barometer,thorax_linAcc_x,thorax_linAcc_y,thorax_linAcc_z,thorax_altitude,humerus_q1,humerus_q2,humerus_q3,humerus_q4,humerus_ax,humerus_ay,humerus_az,humerus_gx,humerus_gy,humerus_gz,humerus_mx,humerus_my,humerus_mz,humerus_barometer,humerus_linAcc_x,humerus_linAcc_y,humerus_linAcc_z,humerus_altitude,radius_q1,radius_q2,radius_q3,radius_q4,radius_ax,radius_ay,radius_az,radius_gx,radius_gy,radius_gz,radius_mx,radius_my,radius_mz,radius_barometer,radius_linAcc_x,radius_linAcc_y,radius_linAcc_z,radius_altitude
-1660295567.875458,0.6835746091099107,-0.678407335737864,-0.1821218173364944,-0.1982949425662144,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,0.6835746091099107,-0.678407335737864,-0.1821218173364944,-0.1982949425662144,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,0.6835746091099107,-0.678407335737864,-0.1821218173364944,-0.1982949425662144,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01
