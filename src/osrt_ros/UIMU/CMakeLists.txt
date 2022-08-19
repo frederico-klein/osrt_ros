@@ -21,13 +21,6 @@ target_link_libraries(OnlineUpperLimb
   ${DEPENDENCY_LIBS} osrtRosPipeline
 )
 
-add_executable(OnlineUpperLimbAr nodes/OnlineUpperLimbUIMUIKar.cpp)
-
-add_dependencies(OnlineUpperLimbAr ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(OnlineUpperLimbAr
-  ${DEPENDENCY_LIBS}
-)
 
 #add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp src/grfm_ros.cpp)
 
