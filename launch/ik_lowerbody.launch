@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+        <node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
+		<!-- param name="resample_period" 		value="0.01" / -->
+		<param name="subject_dir" 		value="/gait1992/" />
+		<param name="model_file" 		value="scale/model_scaled.osim" />
+		<param name="imu_base_body" 		value="pelvis" />
+		<rosparam param="imu_observation_order" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam>
+		<param name="imu_direction_axis" 		value="z" />
+		<param name="imu_ground_rotation_x" 		value="-90" />
+		<param name="imu_ground_rotation_y" 		value="-90" />
+		<param name="imu_ground_rotation_z" 		value="0" />
+		<param name="rate" 		value="30" />
+		<param name="csv_filename_ik" 		value="test_ik_lower.csv" />
+		<param name="csv_filename_imus" 		value="test_imus_lower.csv" />
+		
+		<!-- remap from="/agrf_node/input" to="/inverse_kinematics_from_file/r_data"/>
+		<remap from="/in_labels" to="/inverse_kinematics_from_file/out_labels"/ -->
+        </node>
+
+</launch>
+
