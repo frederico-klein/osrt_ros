@@ -15,10 +15,6 @@
 #include "geometry_msgs/PoseStamped.h"
 
 #include <exception>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
 #include "osrt_ros/UIMU/TfServer.h"
 #include "osrt_ros/Pipeline/common_node.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
@@ -32,7 +28,7 @@ using namespace SimTK;
 ros::Publisher chatter_pub;
 ros::Publisher poser_pub;
 
-class orientationprovider: Pipeline::CommonNode
+class UIMUnode: Pipeline::CommonNode
 {
 	public:
 		std::string DATA_DIR = "/srv/data";
@@ -44,8 +40,6 @@ class orientationprovider: Pipeline::CommonNode
 		
 		std::string subjectDir, modelFile;
 	    
-		static tf::TransformBroadcaster br;
-		static tf::TransformListener listener;
 		double sumDelayMS = 0, numFrames = 0; 
 		OpenSim::TimeSeriesTable imuLogger, qLogger;
 		
@@ -233,7 +227,7 @@ int main(int argc, char** argv) {
         ros::NodeHandle n;
        	chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
        	poser_pub = n.advertise<geometry_msgs::Pose>("poser", 1000);
-        orientationprovider o;
+        UIMUnode o;
 	o.onInit();
 	o.run();
     } catch (exception& e) {
