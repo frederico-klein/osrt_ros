@@ -25,9 +25,6 @@ using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
 
-ros::Publisher chatter_pub;
-ros::Publisher poser_pub;
-
 class UIMUnode: Pipeline::CommonNode
 {
 	public:
@@ -37,25 +34,25 @@ class UIMUnode: Pipeline::CommonNode
 		double xGroundRotDeg, yGroundRotDeg, zGroundRotDeg;
 		std::vector<std::string> imuObservationOrder;
 		double rate;
-		
+
 		std::string subjectDir, modelFile;
-	    
+
 		double sumDelayMS = 0, numFrames = 0; 
 		OpenSim::TimeSeriesTable imuLogger, qLogger;
-		
+
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
 		BasicModelVisualizer *visualizer;
-		
+
 		void get_params()
 		{
-        		ros::NodeHandle nh("~");
-			
-			    //auto section = "UPPER_LIMB_NGIMU";
-			    // imu calibration settings
-			
-			
+			ros::NodeHandle nh("~");
+
+			//auto section = "UPPER_LIMB_NGIMU";
+			// imu calibration settings
+
+
 			nh.param<std::string>("imu_direction_axis", imuDirectionAxis, "");
 
 			//    imuDirectionAxis = ini.getString(section, "IMU_DIRECTION_AXIS", "");
@@ -77,12 +74,12 @@ class UIMUnode: Pipeline::CommonNode
 			//    imuObservationOrder =
 			//	    ini.getVector(section, "IMU_BODIES", vector<string>());
 
-			    // driver send rate
+			// driver send rate
 			nh.param<double>("rate", rate, 0.0);
-			
+
 			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
 
-			    // subject data
+			// subject data
 			std::string subjectDir_;
 			nh.param<std::string>("subject_dir", subjectDir_, "");
 			subjectDir = DATA_DIR + subjectDir_;
@@ -93,127 +90,132 @@ class UIMUnode: Pipeline::CommonNode
 			modelFile = subjectDir + modelFile_;
 			ROS_INFO_STREAM("Using modelFile:" << modelFile);
 			//    modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-			    //auto ngimuDataFile =
-			    //        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
+			//auto ngimuDataFile =
+			//        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
 
 			ROS_DEBUG_STREAM("Finished getting params.");	
 
 		}
-		void onInit() 
+		void registerType(Object* muscleModel) //do I even need this?
+		{
 		
+			Object::registerType(*muscleModel);
+
+		}
+		void onInit() 
+
+		{
+			get_params();
+			Pipeline::CommonNode::onInit(0); //we are not reading from anything, we are a source
+							 // setup model
+			ROS_DEBUG_STREAM("Setting up model.");
+			Model model(modelFile);
+			OpenSimUtils::removeActuators(model);
+
+			// marker tasks
+			ROS_DEBUG_STREAM("Setting up markerTasks");
+			vector<InverseKinematics::MarkerTask> markerTasks;
+			vector<string> markerObservationOrder;
+			InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
+					markerObservationOrder);
+
+			// imu tasks
+			ROS_DEBUG_STREAM("Setting up imuTasks");
+			vector<InverseKinematics::IMUTask> imuTasks;
+			InverseKinematics::createIMUTasksFromObservationOrder(
+					model, imuObservationOrder, imuTasks);
+
+			// ngimu input data driver from file
+			//UIMUInputDriver driver(ngimuDataFile, rate);
+			ROS_DEBUG_STREAM("Starting driver");
+			for(auto a:imuObservationOrder)
 			{
-			    get_params();
-			    Pipeline::CommonNode::onInit(0); //we are not reading from anything, we are a source
-			    // setup model
-			    ROS_DEBUG_STREAM("Setting up model.");
-			    Object::RegisterType(Schutte1993Muscle_Deprecated());
-			    Model model(modelFile);
-			    OpenSimUtils::removeActuators(model);
-
-			    // marker tasks
-			    ROS_DEBUG_STREAM("Setting up markerTasks");
-			    vector<InverseKinematics::MarkerTask> markerTasks;
-			    vector<string> markerObservationOrder;
-			    InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
-										markerObservationOrder);
-
-			    // imu tasks
-			    ROS_DEBUG_STREAM("Setting up imuTasks");
-			    vector<InverseKinematics::IMUTask> imuTasks;
-			    InverseKinematics::createIMUTasksFromObservationOrder(
-				    model, imuObservationOrder, imuTasks);
-
-			    // ngimu input data driver from file
-			    //UIMUInputDriver driver(ngimuDataFile, rate);
-			    ROS_DEBUG_STREAM("Starting driver");
-			    for(auto a:imuObservationOrder)
-			    {
 				ROS_INFO_STREAM("Using imu observation " << a);
-			    }
-			    driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
-										    //
-			    //UIMUInputDriver driver(imuObservationOrder,rate); //tf server
-			    //TfServer* srv = dynamic_cast<TfServer*>(driver.server);
-			//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
-			    driver->startListening();
-			    imuLogger = driver->initializeLogger();
-			    initializeLoggers("imu_logger",&imuLogger);
-
-			    // calibrator
-			    ROS_DEBUG_STREAM("Setting up IMUCalibrator");
-			    clb = new IMUCalibrator(model, driver, imuObservationOrder);
-			    ROS_DEBUG_STREAM("clb samples");
-			    clb->recordNumOfSamples(10);
-			    ROS_DEBUG_STREAM("r");
-			    clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
-			    ROS_DEBUG_STREAM("heading");
-			    clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
-				
-			    std::cout << boost::stacktrace::stacktrace() << std::endl;
-			    clb->calibrateIMUTasks(imuTasks);
-			    ROS_DEBUG_STREAM("Setting up IMUCalibrator");
-
-			    // initialize ik (lower constraint weight and accuracy -> faster tracking)
-			    ROS_DEBUG_STREAM("Setting up IK");
-			    ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
-			    qLogger = ik->initializeLogger();
-			    initializeLoggers("q_logger",&qLogger);
-
-			    // visualizer
-			    ROS_DEBUG_STREAM("Setting up visualizer");
-			    ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
-			    visualizer = new BasicModelVisualizer(model);
-
-			    // mean delay
-			    ROS_DEBUG_STREAM("onInit finished just fine.");
 			}
+			driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
+										//
+										//UIMUInputDriver driver(imuObservationOrder,rate); //tf server
+										//TfServer* srv = dynamic_cast<TfServer*>(driver.server);
+										//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
+			driver->startListening();
+			imuLogger = driver->initializeLogger();
+			initializeLoggers("imu_logger",&imuLogger);
+
+			// calibrator
+			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
+			clb = new IMUCalibrator(model, driver, imuObservationOrder);
+			ROS_DEBUG_STREAM("clb samples");
+			clb->recordNumOfSamples(10);
+			ROS_DEBUG_STREAM("r");
+			clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
+			ROS_DEBUG_STREAM("heading");
+			clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
+
+			std::cout << boost::stacktrace::stacktrace() << std::endl;
+			clb->calibrateIMUTasks(imuTasks);
+			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
+
+			// initialize ik (lower constraint weight and accuracy -> faster tracking)
+			ROS_DEBUG_STREAM("Setting up IK");
+			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
+			qLogger = ik->initializeLogger();
+			initializeLoggers("q_logger",&qLogger);
+
+			// visualizer
+			ROS_DEBUG_STREAM("Setting up visualizer");
+			ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
+			visualizer = new BasicModelVisualizer(model);
+
+			// mean delay
+			ROS_DEBUG_STREAM("onInit finished just fine.");
+		}
 
 
-			void run() {
-			    try { // main loop
+		void run() {
+			try { // main loop
 				while (!driver->shouldTerminate()) {
 
-				    // get input from imus
-				    auto imuData = driver->getFrame();
-				    numFrames++;
+					// get input from imus
+					auto imuData = driver->getFrame();
+					numFrames++;
 
-				    // solve ik
-				    chrono::high_resolution_clock::time_point t1;
-				    t1 = chrono::high_resolution_clock::now();
+					// solve ik
+					chrono::high_resolution_clock::time_point t1;
+					t1 = chrono::high_resolution_clock::now();
 
-				    auto pose = ik->solve(
-					    {imuData.first, {}, clb->transform(imuData.second)});
-				    
-				   
-				    chrono::high_resolution_clock::time_point t2;
-				    t2 = chrono::high_resolution_clock::now();
-				    sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
-							  .count();
+					auto pose = ik->solve(
+							{imuData.first, {}, clb->transform(imuData.second)});
 
-				    // visualize
-				    visualizer->update(pose.q);
 
-				    // record
-				    imuLogger.appendRow(pose.t, driver->frame);//
-				    qLogger.appendRow(pose.t, ~pose.q);
-				    if(!ros::ok())
-					    break;
+					chrono::high_resolution_clock::time_point t2;
+					t2 = chrono::high_resolution_clock::now();
+					sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
+						.count();
+
+					// visualize
+					visualizer->update(pose.q);
+
+					// record
+					imuLogger.appendRow(pose.t, driver->frame);//
+					qLogger.appendRow(pose.t, ~pose.q);
+					if(!ros::ok())
+						break;
 				}
-			    } catch (std::exception& e) {
+			} catch (std::exception& e) {
 				cout << e.what() << endl;
 
 				driver->shouldTerminate(true);
-			    }
-
-			    cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
-
-			    CSVFileAdapter::write( qLogger, "test_upper.csv");
-			    CSVFileAdapter::write( imuLogger, "test_upper_imus.csv");
-
-			    // // store results
-			    // STOFileAdapter::write(
-			    //         qLogger, subjectDir + "real_time/inverse_kinematics/q_imu.sto");
 			}
+
+			cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
+
+			CSVFileAdapter::write( qLogger, "test_upper.csv");
+			CSVFileAdapter::write( imuLogger, "test_upper_imus.csv");
+
+			// // store results
+			// STOFileAdapter::write(
+			//         qLogger, subjectDir + "real_time/inverse_kinematics/q_imu.sto");
+		}
 
 
 
@@ -222,19 +224,22 @@ class UIMUnode: Pipeline::CommonNode
 
 
 int main(int argc, char** argv) {
-    try {
-        ros::init(argc, argv, "talker");
-        ros::NodeHandle n;
-       	chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-       	poser_pub = n.advertise<geometry_msgs::Pose>("poser", 1000);
-        UIMUnode o;
-	o.onInit();
-	o.run();
-    } catch (exception& e) {
-        cout << e.what() << endl;
-        return -1;
-    }
-    return 0;
+	try {
+		ros::init(argc, argv, "talker");
+		ros::NodeHandle n;
+		UIMUnode o;
+		// either like this:
+		Object* muscleModel = new Schutte1993Muscle_Deprecated();
+		o.registerType(muscleModel);
+		// or alternatively, more simply:
+		// Object::registerType(Schutte1993Muscle_Deprecated());
+ 		o.onInit();
+		o.run();
+	} catch (exception& e) {
+		cout << e.what() << endl;
+		return -1;
+	}
+	return 0;
 }
 
 

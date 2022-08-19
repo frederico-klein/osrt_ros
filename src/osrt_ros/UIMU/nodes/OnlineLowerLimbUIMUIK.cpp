@@ -28,10 +28,6 @@
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
 
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Labels.h"
 #include "std_msgs/Header.h"
@@ -123,9 +119,6 @@ void run() {
     double previousTime = 0;
     double previousDt = 0;
     
-    static tf::TransformBroadcaster br;
-    static tf::TransformListener listener;
-
     try { // main loop
         while (!(driver.shouldTerminate())) {
             // get input from sensors
