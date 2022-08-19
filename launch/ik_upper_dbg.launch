@@ -11,9 +11,10 @@
 		<param name="imu_ground_rotation_x" 		value="-90" />
 		<param name="imu_ground_rotation_y" 		value="-90" />
 		<param name="imu_ground_rotation_z" 		value="0" />
-		<param name="rate" 		value="30" />
-		<param name="csv_filename_ik" 		value="test_ik_upper.csv" />
-		<param name="csv_filename_imus" 		value="test_imus_upper.csv" />
+		<param name="rate" 				value="400" />
+		<param name="logger_filename_ik" 		value="_ik_lower" />
+		<param name="logger_filename_imus" 		value="_imus_lower" />
+		<param name="data_save_dir" 		value="/tmp/test" />
 		<!-- remap from="/agrf_node/input" to="/inverse_kinematics_from_file/r_data"/>
 		<remap from="/in_labels" to="/inverse_kinematics_from_file/out_labels"/ -->
         </node>

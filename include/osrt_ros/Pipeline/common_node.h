@@ -35,7 +35,13 @@ namespace Pipeline
 
 			ros::Publisher pub; //output
 			NamedTables loggers;
-			std::string data_save_dir{"/data/"};
+			std::string data_save_dir()
+			{
+				std::string data_save_dir_str; 
+				nh.param<std::string>("data_save_dir",data_save_dir_str,"/tmp/");
+				return data_save_dir_str;
+
+			};
 			bool at_least_one_logger_initialized = false;
 			void onInit(int num_sinks = 1);
 			virtual void callback(const opensimrt_msgs::CommonTimedConstPtr& message) 
@@ -44,6 +50,7 @@ namespace Pipeline
 			}
 			void saveStos();
 			void saveCsvs();
+			ros::ServiceServer write_csv, write_sto;
 		protected:
 			ros::ServiceServer outLabelsSrv;
 			bool outLabels(opensimrt_msgs::LabelsSrv::Request & req, opensimrt_msgs::LabelsSrv::Response& res );

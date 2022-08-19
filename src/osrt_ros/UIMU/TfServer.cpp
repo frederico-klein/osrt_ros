@@ -76,19 +76,14 @@ bool TfServer::receive()
 std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 {
 	ROS_DEBUG_STREAM("Trying to find transform " << tf_name);
-	//rosreceive its wrong it should be on a callback basis, 
 	tf::StampedTransform transform;
 	try{
-		/*listener.waitForTransform("/map", tf_name, ros::Time(0), ros::Duration(3.0));
-		  listener.lookupTransform("/map", tf_name,
-		  ros::Time(0), transform);*/
 		listener.waitForTransform(world_tf_reference, tf_name, ros::Time(0), ros::Duration(3.0));
 		listener.lookupTransform(world_tf_reference, tf_name,
 				ros::Time(0), transform);
 	}
 	catch (tf::TransformException ex){
 		ROS_ERROR("%s",ex.what());
-		//ros::Duration(1.0).sleep();
 	}
 	std::vector<double> myvec;
 	// now i need to set this myvec with the values i read for the quaternions somehow
@@ -99,6 +94,7 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	myvec.push_back(myq.y());
 	myvec.push_back(myq.w());
 	// now it is a bunch of zeros
+	// TODO: maybe read other data and place here? this will be a lot of rather useless work
 	myvec.insert(myvec.end(), 14, -0.010 );
 	//for( auto i:myvec)
 	//	ROS_INFO_STREAM("THIS THING" << i);

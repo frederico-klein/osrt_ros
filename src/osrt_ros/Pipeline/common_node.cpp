@@ -50,8 +50,6 @@ void Pipeline::CommonNode::onInit(int num_sinks)
 			if(ros::service::call("in_labels", l))
 			{
 				input_labels = l.response.data;
-				ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
-				ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
 				break;
 			}
 			ros::spinOnce();
@@ -62,10 +60,15 @@ void Pipeline::CommonNode::onInit(int num_sinks)
 	else if (num_sinks==0)
 	{
 		ROS_INFO_STREAM("Source node registered (num_sinks = 0)");	    
-		ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
-		ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
 
 	}
+	else
+	{
+		ROS_ERROR_STREAM("Unexpected number of sinks:" << num_sinks);
+
+	}
+	write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
+	write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
 
 
 }
@@ -110,13 +113,20 @@ bool Pipeline::CommonNode::writeSto(std_srvs::Empty::Request &req, std_srvs::Emp
 void Pipeline::CommonNode::saveStos()
 {
 	for(NamedTable named_table:loggers)
-		OpenSim::CSVFileAdapter::write(*named_table.first, data_save_dir+named_table.second);
-
+	{
+		auto loggerfilename = data_save_dir()+named_table.second+".sto";
+		ROS_INFO_STREAM("trying to save: " << loggerfilename);
+		OpenSim::STOFileAdapter::write(*named_table.first, loggerfilename);
+	}
 }
 void Pipeline::CommonNode::saveCsvs()
 {
 	for(NamedTable named_table:loggers)
-		OpenSim::CSVFileAdapter::write(*named_table.first, data_save_dir+named_table.second);
+	{
+		auto loggerfilename = data_save_dir()+named_table.second+".csv";
+		ROS_INFO_STREAM("trying to save: " << loggerfilename);
+		OpenSim::CSVFileAdapter::write(*named_table.first, loggerfilename);
+	}
 
 }
 

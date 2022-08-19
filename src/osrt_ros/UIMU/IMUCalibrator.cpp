@@ -20,7 +20,7 @@
 #include "osrt_ros/UIMU/IMUCalibrator.h"
 #include "Exception.h"
 #include <SimTKcommon/internal/Quaternion.h>
-
+#include <ros/ros.h>
 using namespace OpenSimRT;
 using namespace OpenSim;
 using namespace SimTK;
@@ -92,10 +92,12 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                           imuBodiesObservationOrder.end(), baseImuName));
 
         // get initial measurement of base imu
-	cout << baseBodyIndex << endl;
+	//cout << baseBodyIndex << endl;
+	ROS_DEBUG_STREAM("baseBodyIndex:" << baseBodyIndex );
 	for (int g= 0; g < staticPoseQuaternions.size();g++)
 	{
-		cout << staticPoseQuaternions[g] << endl;
+		//cout << staticPoseQuaternions[g] << endl;
+		ROS_DEBUG_STREAM("Quaternion for imu[" << g << "]" << staticPoseQuaternions[g]);
 	}
         const auto q0 = staticPoseQuaternions[baseBodyIndex];
         const auto base_R = R_GoGi * ~Rotation(q0);
@@ -132,9 +134,8 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         R_heading = Rotation(angularDifference, SimTK::YAxis);
 
     } else {
-        cout << "No heading correction is applied. Heading rotation is set to "
-                "default"
-             << endl;
+        ROS_WARN("No heading correction is applied. Heading rotation is set to "
+                "default");
     }
 
     return R_heading;

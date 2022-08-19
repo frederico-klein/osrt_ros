@@ -41,7 +41,7 @@ class UIMUnode: Pipeline::CommonNode
 		double rate;
 		ros::Rate* r;
 		std::string subjectDir, modelFile;
-		std::string csvFileNameIK,csvFileNameIMUs;
+		std::string loggerFileNameIK,loggerFileNameIMUs;
 		double sumDelayMS = 0, numFrames = 0; 
 		double previousTime = 0;
 		double previousDt = 0;
@@ -99,8 +99,8 @@ class UIMUnode: Pipeline::CommonNode
 			//    modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 			//auto ngimuDataFile =
 			//        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
-			nh.param<std::string>("csv_filename_ik", csvFileNameIK, "test_ik.csv");
-			nh.param<std::string>("csv_filename_imus", csvFileNameIMUs, "test_imus.csv");
+			nh.param<std::string>("logger_filename_ik", loggerFileNameIK, "test_ik");
+			nh.param<std::string>("logger_filename_imus", loggerFileNameIMUs, "test_imus");
 
 			ROS_DEBUG_STREAM("Finished getting params.");	
 
@@ -145,22 +145,19 @@ class UIMUnode: Pipeline::CommonNode
 			//ros::NodeHandle n;
 			//pub = nh.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
 			//ros::Publisher labels_pub = n.advertise<opensimrt_msgs::Labels>("r_labels", 1000, true); //latching topic
-			//TODO: publish labels
-			ROS_WARN_STREAM("not publishing labels!");
-			//
 			//UIMUInputDriver driver(imuObservationOrder,rate); //tf server
 			//TfServer* srv = dynamic_cast<TfServer*>(driver.server);
 			//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
 			driver->startListening();
 			imuLogger = driver->initializeLogger();
-			initializeLoggers("imu_logger",&imuLogger);
-
+			initializeLoggers(loggerFileNameIMUs,&imuLogger);
+			
 			// calibrator
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
-			ROS_DEBUG_STREAM("r");
+			ROS_DEBUG_STREAM("setGroundOrientationSeq");
 			clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
 			ROS_DEBUG_STREAM("heading");
 			clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
@@ -173,7 +170,15 @@ class UIMUnode: Pipeline::CommonNode
 			ROS_DEBUG_STREAM("Setting up IK");
 			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
 			qLogger = ik->initializeLogger();
-			initializeLoggers("q_logger",&qLogger);
+			initializeLoggers(loggerFileNameIK,&qLogger);
+			
+			//TODO: publish correct ROS topics
+			//ROS_WARN_STREAM("not publishing labels!");
+			output_labels = qLogger.getColumnLabels();
+			string all_labels;
+			for (auto l:output_labels)
+				all_labels+=l+",";
+			ROS_DEBUG_STREAM("Publisher labels: "<<all_labels);
 
 			// visualizer
 			ROS_DEBUG_STREAM("Setting up visualizer");
@@ -252,8 +257,8 @@ class UIMUnode: Pipeline::CommonNode
 
 			cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
 
-			CSVFileAdapter::write( qLogger, csvFileNameIK);
-			CSVFileAdapter::write( imuLogger, csvFileNameIMUs);
+			//CSVFileAdapter::write( qLogger, loggerFileNameIK);
+			//CSVFileAdapter::write( imuLogger, loggerFileNameIMUs);
 
 			// // store results
 			// STOFileAdapter::write(
