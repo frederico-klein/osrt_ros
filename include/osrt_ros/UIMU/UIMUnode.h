@@ -51,6 +51,7 @@ class UIMUnode: Pipeline::CommonNode
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
 		BasicModelVisualizer *visualizer;
+		bool showMarkers;
 		//ros::Publisher re_pub; 
 		void get_params()
 		{
@@ -58,7 +59,6 @@ class UIMUnode: Pipeline::CommonNode
 
 			//auto section = "UPPER_LIMB_NGIMU";
 			// imu calibration settings
-
 
 			nh.param<std::string>("imu_direction_axis", imuDirectionAxis, "");
 
@@ -102,6 +102,8 @@ class UIMUnode: Pipeline::CommonNode
 			nh.param<std::string>("logger_filename_ik", loggerFileNameIK, "test_ik");
 			nh.param<std::string>("logger_filename_imus", loggerFileNameIMUs, "test_imus");
 
+			nh.param<bool>("show_markers", showMarkers, false);
+
 			ROS_DEBUG_STREAM("Finished getting params.");	
 
 		}
@@ -124,9 +126,12 @@ class UIMUnode: Pipeline::CommonNode
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
 			vector<InverseKinematics::MarkerTask> markerTasks;
-			vector<string> markerObservationOrder;
-			InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
-					markerObservationOrder);
+			if (showMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here. 
+			{
+				vector<string> markerObservationOrder;
+				InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
+						markerObservationOrder);
+			}
 
 			// imu tasks
 			ROS_DEBUG_STREAM("Setting up imuTasks");
@@ -137,21 +142,25 @@ class UIMUnode: Pipeline::CommonNode
 			// ngimu input data driver from file
 			//UIMUInputDriver driver(ngimuDataFile, rate);
 			ROS_DEBUG_STREAM("Starting driver");
-			for(auto a:imuObservationOrder)
 			{
-				ROS_INFO_STREAM("Using imu observation " << a);
+				string imuObservationOrderStr;
+				for(auto a:imuObservationOrder)
+				{
+					imuObservationOrderStr +=a+",";
+				}
+				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
 			driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
-			//ros::NodeHandle n;
-			//pub = nh.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
-			//ros::Publisher labels_pub = n.advertise<opensimrt_msgs::Labels>("r_labels", 1000, true); //latching topic
-			//UIMUInputDriver driver(imuObservationOrder,rate); //tf server
-			//TfServer* srv = dynamic_cast<TfServer*>(driver.server);
-			//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
+										//ros::NodeHandle n;
+										//pub = nh.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
+										//ros::Publisher labels_pub = n.advertise<opensimrt_msgs::Labels>("r_labels", 1000, true); //latching topic
+										//UIMUInputDriver driver(imuObservationOrder,rate); //tf server
+										//TfServer* srv = dynamic_cast<TfServer*>(driver.server);
+										//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
 			driver->startListening();
 			imuLogger = driver->initializeLogger();
 			initializeLoggers(loggerFileNameIMUs,&imuLogger);
-			
+
 			// calibrator
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
@@ -171,7 +180,7 @@ class UIMUnode: Pipeline::CommonNode
 			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
 			qLogger = ik->initializeLogger();
 			initializeLoggers(loggerFileNameIK,&qLogger);
-			
+
 			//TODO: publish correct ROS topics
 			//ROS_WARN_STREAM("not publishing labels!");
 			output_labels = qLogger.getColumnLabels();

@@ -40,7 +40,7 @@ void TfServer::set_tfs(std::vector<std::string> tf_names)
 	if (tf_names.size() == 0)
 		ROS_FATAL("NO TF NAMES");
 	for (auto i:tf_strs)
-		ROS_INFO_STREAM("Using reference frame: " << i);
+		ROS_DEBUG_STREAM("TfServer: Using reference frame: " << i);
 }
 
 void TfServer::set_world_reference(std::string world_name)

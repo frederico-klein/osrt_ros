@@ -28,31 +28,18 @@
 using namespace OpenSimRT;
 using namespace SimTK;
 
-UIMUInputDriver::UIMUInputDriver(const double& sendRate)
-	: terminationFlag(false), rate(sendRate) {
-		imu_names = {"thorax", "humerus", "radius" };
-		server = new TfServer(imu_names);	
-		ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
-	}
-UIMUInputDriver::UIMUInputDriver(const int port,
-		const double& sendRate)
-	: terminationFlag(false), rate(sendRate) {
-		server = new CometaServer(port, 4096);
-
-		imu_names = {"thorax", "humerus", "radius" };
-		ROS_WARN("IMU names are hardcoded!!! This needs to be solved or saving the TimeSeriesTable as CSV will be wrong!");
-
-	}
 UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const double& sendRate)
 	: terminationFlag(false), rate(sendRate) {
-		ROS_WARN("starting the dreaded thing");
+		ROS_INFO_STREAM("Starting UIMUInputDriver interface.");
 		imu_names = imuObservationOrder;
 		if (imuObservationOrder.size() == 0)
 			ROS_FATAL("no imuObservationOrder provided. why didn't you?");
+		std::string wholeObservationOrderStr;
 		for(auto imu_name:imuObservationOrder)
 		{
-			ROS_INFO_STREAM(imu_name);
+			wholeObservationOrderStr+=imu_name+",";
 		}
+		ROS_INFO_STREAM("Using observationOrder of:" << wholeObservationOrderStr);
 		server = new TfServer(imuObservationOrder);	
 	}
 
@@ -112,6 +99,7 @@ void UIMUInputDriver::startListening() {
 
 			terminationFlag = true;
 			cond.notify_one();
+			return;
 		}
 	};
 	t = std::thread(f);
