@@ -10,6 +10,8 @@
 #include <OpenSim/Common/CSVFileAdapter.h>
 //#include <OpenSim/Common/STOFileAdapter.h>
 
+#include "ros/init.h"
+#include "ros/rate.h"
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -29,13 +31,15 @@ using namespace SimTK;
 class UIMUnode: Pipeline::CommonNode
 {
 	public:
+		UIMUnode(): Pipeline::CommonNode(false)
+	{}
 		std::string DATA_DIR = "/srv/data";
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
 		double xGroundRotDeg, yGroundRotDeg, zGroundRotDeg;
 		std::vector<std::string> imuObservationOrder;
 		double rate;
-
+		ros::Rate* r;
 		std::string subjectDir, modelFile;
 		std::string csvFileNameIK,csvFileNameIMUs;
 		double sumDelayMS = 0, numFrames = 0; 
@@ -47,7 +51,7 @@ class UIMUnode: Pipeline::CommonNode
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
 		BasicModelVisualizer *visualizer;
-		ros::Publisher re_pub; 
+		//ros::Publisher re_pub; 
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -79,7 +83,7 @@ class UIMUnode: Pipeline::CommonNode
 
 			// driver send rate
 			nh.param<double>("rate", rate, 0.0);
-
+			r = new ros::Rate(rate);
 			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
 
 			// subject data
@@ -138,8 +142,8 @@ class UIMUnode: Pipeline::CommonNode
 				ROS_INFO_STREAM("Using imu observation " << a);
 			}
 			driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
-			ros::NodeHandle n;
-			re_pub = n.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
+			//ros::NodeHandle n;
+			//pub = nh.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
 			//ros::Publisher labels_pub = n.advertise<opensimrt_msgs::Labels>("r_labels", 1000, true); //latching topic
 			//TODO: publish labels
 			ROS_WARN_STREAM("not publishing labels!");
@@ -225,7 +229,7 @@ class UIMUnode: Pipeline::CommonNode
 						msg.data.push_back(joint_angle);
 					}
 
-					re_pub.publish(msg);
+					pub.publish(msg);
 
 					// visualize
 					visualizer->update(pose.q);
@@ -237,6 +241,8 @@ class UIMUnode: Pipeline::CommonNode
 					previousDt = Dt;
 					if(!ros::ok())
 						break;
+					ros::spinOnce();
+					r->sleep();
 				}
 			} catch (std::exception& e) {
 				cout << e.what() << endl;

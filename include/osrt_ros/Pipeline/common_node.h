@@ -24,7 +24,7 @@ namespace Pipeline
 	class CommonNode
 	{
 		public:
-			CommonNode();
+			CommonNode(bool Debug=true);
 			~CommonNode();
 			std::vector<std::string> input_labels;
 			std::vector<std::string> output_labels;

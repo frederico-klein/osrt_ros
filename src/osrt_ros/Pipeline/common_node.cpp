@@ -15,49 +15,56 @@
 #include <OpenSim/Common/CSVFileAdapter.h>
 
 //constructor
-Pipeline::CommonNode::CommonNode()
+Pipeline::CommonNode::CommonNode(bool Debug)
 {
-	if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
-	   ros::console::notifyLoggerLevelsChanged();
+	if( Debug && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+		ros::console::notifyLoggerLevelsChanged();
 	}
 
 } 
 void Pipeline::CommonNode::onInit(int num_sinks)
 {
-    pub = nh.advertise<opensimrt_msgs::CommonTimed>("output", 1000);
-    outLabelsSrv = nh.advertiseService("out_labels", &CommonNode::outLabels, this);
-    
-    if (num_sinks == 1)
-    {
-	    ROS_INFO_STREAM("registering callback");
-	    //register the callback
-    	    sub.subscribe(nh, "input",10);
-	    sub.registerCallback(&CommonNode::callback,this);
-	    //sub = nh.subscribe("input",5, &CommonNode::callback, this);
-    }
-    else
-    {
-	    ROS_INFO_STREAM("not single_sink, callback isnt registered yet!");
-    }
-    ros::Rate r(1);
-    //output_labels = qTable.getColumnLabels();
-    opensimrt_msgs::LabelsSrv l;
-    //while(!ros::service::call("in_labels", l))
-    if (num_sinks > 0)
+	pub = nh.advertise<opensimrt_msgs::CommonTimed>("output", 1000);
+	outLabelsSrv = nh.advertiseService("out_labels", &CommonNode::outLabels, this);
+
+	if (num_sinks == 1)
 	{
-	    while(ros::ok())
-	    {
-		if(ros::service::call("in_labels", l))
+		ROS_INFO_STREAM("registering callback");
+		//register the callback
+		sub.subscribe(nh, "input",10);
+		sub.registerCallback(&CommonNode::callback,this);
+		//sub = nh.subscribe("input",5, &CommonNode::callback, this);
+	}
+	else
+	{
+		ROS_INFO_STREAM("not single_sink, callback isnt registered yet!");
+	}
+	ros::Rate r(1);
+	//output_labels = qTable.getColumnLabels();
+	opensimrt_msgs::LabelsSrv l;
+	//while(!ros::service::call("in_labels", l))
+	if (num_sinks > 0)
+	{
+		while(ros::ok())
 		{
-		    input_labels = l.response.data;
-		    ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
-		    ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
-		    break;
+			if(ros::service::call("in_labels", l))
+			{
+				input_labels = l.response.data;
+				ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
+				ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
+				break;
+			}
+			ros::spinOnce();
+			ROS_INFO_STREAM("Waiting to read input labels."); 
+			r.sleep();
 		}
-		ros::spinOnce();
-		ROS_INFO_STREAM("Waiting to read input labels."); 
-		r.sleep();
-	    }
+	}
+	else if (num_sinks==0)
+	{
+		ROS_INFO_STREAM("Source node registered (num_sinks = 0)");	    
+		ros::ServiceServer write_csv = nh.advertiseService("write_csv", &CommonNode::writeCsv, this);
+		ros::ServiceServer write_sto = nh.advertiseService("write_sto", &CommonNode::writeSto, this);
+
 	}
 
 
@@ -86,7 +93,7 @@ void Pipeline::CommonNode::initializeLoggers(std::string logger_name, OpenSim::T
 	ROS_INFO_STREAM("At least one logger was initialized! Will be able to save this with service");
 	NamedTable this_named_table = std::make_pair(logger,logger_name);	
 	loggers.push_back(this_named_table);
-	
+
 }
 bool Pipeline::CommonNode::writeCsv(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {

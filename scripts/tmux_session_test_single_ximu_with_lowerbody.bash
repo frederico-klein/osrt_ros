@@ -11,7 +11,7 @@ tmux split-window -h
 tmux split-window -h 
 tmux select-layout even-horizontal
 
-tmux send -t mysession:1.0 "rosrun osrt_ros OnlineLowerLimb" C-m
+tmux send -t mysession:1.0 "roslaunch osrt_ros ik_lowerbody.launch" C-m
 tmux send -t mysession:1.1 "roslaunch osrt_ros ximu_lower_body.launch" C-m
 #tmux send -t mysession:1.2 "roslaunch osrt_ros id.launch" C-m
 #tmux send -t mysession:1.3 "roslaunch osrt_ros agrfm.launch" C-m

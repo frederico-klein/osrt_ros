@@ -66,7 +66,7 @@ bool TfServer::receive()
 	}
 	//for( auto i:myvec)
 	//	ROS_INFO_STREAM("THIS THING" << i);
-	ROS_INFO_STREAM("THIS THING:" << myvec.size());
+	ROS_DEBUG_STREAM("THIS THING:" << myvec.size());
 
 	output = myvec;
 	return true;	
