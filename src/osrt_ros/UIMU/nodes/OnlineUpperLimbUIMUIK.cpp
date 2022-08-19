@@ -9,7 +9,7 @@
 
 int main(int argc, char** argv) {
 	try {
-		ros::init(argc, argv, "talker");
+		ros::init(argc, argv, "online_upper_limb_uimu_ik");
 		ros::NodeHandle n;
 		UIMUnode o;
 		// either like this:
@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
  		o.onInit();
 		o.run();
 	} catch (std::exception& e) {
-		std::cout << e.what() << std::endl;
+		cout << "Program crashed while running. Reason: " << e.what() << endl;
 		return -1;
 	}
 	return 0;

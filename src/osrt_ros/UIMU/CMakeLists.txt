@@ -11,7 +11,7 @@ add_executable(OnlineLowerLimb nodes/OnlineLowerLimbUIMUIK.cpp)
 add_dependencies(OnlineLowerLimb ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(OnlineLowerLimb
-  ${DEPENDENCY_LIBS}
+  ${DEPENDENCY_LIBS} osrtRosPipeline
 )
 add_executable(OnlineUpperLimb nodes/OnlineUpperLimbUIMUIK.cpp)
 
