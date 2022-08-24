@@ -1,6 +1,8 @@
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/UIMU/IMUCalibrator.h"
 //#include "INIReader.h"
 #include "InverseKinematics.h"
+#include "SignalProcessing.h"
 #include "osrt_ros/UIMU/UIMUInputDriver.h"
 #include "OpenSimUtils.h"
 #include "Settings.h"
@@ -32,6 +34,7 @@ class UIMUnode: Pipeline::CommonNode
 {
 	public:
 		UIMUnode(): Pipeline::CommonNode(false)
+		//UIMUnode(): Pipeline::CommonNode()
 	{}
 		std::string DATA_DIR = "/srv/data";
 		std::string imuDirectionAxis;
@@ -45,7 +48,7 @@ class UIMUnode: Pipeline::CommonNode
 		double sumDelayMS = 0, numFrames = 0; 
 		double previousTime = 0;
 		double previousDt = 0;
-		OpenSim::TimeSeriesTable imuLogger, qLogger;
+		OpenSim::TimeSeriesTable imuLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
 
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
@@ -53,6 +56,11 @@ class UIMUnode: Pipeline::CommonNode
 		BasicModelVisualizer *visualizer;
 		bool showMarkers;
 		//ros::Publisher re_pub; 
+		//filter parameters
+		double cutoffFreq;
+		int splineOrder, memory, delay;
+		OpenSimRT::LowPassSmoothFilter * ikfilter;
+
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -104,6 +112,12 @@ class UIMUnode: Pipeline::CommonNode
 
 			nh.param<bool>("show_markers", showMarkers, false);
 
+			nh.param<bool>("filter_output",publish_filtered, true);
+			nh.param<double>("cutoff_freq", cutoffFreq, 0.0);
+			nh.param<int>("memory", memory, 0);
+			nh.param<int>("spline_order", splineOrder, 0);
+			nh.param<int>("delay", delay, 0);
+
 			ROS_DEBUG_STREAM("Finished getting params.");	
 
 		}
@@ -139,8 +153,6 @@ class UIMUnode: Pipeline::CommonNode
 			InverseKinematics::createIMUTasksFromObservationOrder(
 					model, imuObservationOrder, imuTasks);
 
-			// ngimu input data driver from file
-			//UIMUInputDriver driver(ngimuDataFile, rate);
 			ROS_DEBUG_STREAM("Starting driver");
 			{
 				string imuObservationOrderStr;
@@ -150,13 +162,7 @@ class UIMUnode: Pipeline::CommonNode
 				}
 				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
-			driver = new UIMUInputDriver(imuObservationOrder,rate); //tf server
-										//ros::NodeHandle n;
-										//pub = nh.advertise<opensimrt_msgs::CommonTimed>("r_data", 1000);
-										//ros::Publisher labels_pub = n.advertise<opensimrt_msgs::Labels>("r_labels", 1000, true); //latching topic
-										//UIMUInputDriver driver(imuObservationOrder,rate); //tf server
-										//TfServer* srv = dynamic_cast<TfServer*>(driver.server);
-										//	srv->set_tfs({"ximu3","ximu3", "ximu3"});
+			driver = new UIMUInputDriver(imuObservationOrder,rate); //uses tf server
 			driver->startListening();
 			imuLogger = driver->initializeLogger();
 			initializeLoggers(loggerFileNameIMUs,&imuLogger);
@@ -178,12 +184,11 @@ class UIMUnode: Pipeline::CommonNode
 			// initialize ik (lower constraint weight and accuracy -> faster tracking)
 			ROS_DEBUG_STREAM("Setting up IK");
 			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
-			qLogger = ik->initializeLogger();
-			initializeLoggers(loggerFileNameIK,&qLogger);
+			qRawLogger = ik->initializeLogger();
+			initializeLoggers(loggerFileNameIK,&qRawLogger);
 
 			//TODO: publish correct ROS topics
-			//ROS_WARN_STREAM("not publishing labels!");
-			output_labels = qLogger.getColumnLabels();
+			output_labels = qRawLogger.getColumnLabels();
 			string all_labels;
 			for (auto l:output_labels)
 				all_labels+=l+",";
@@ -193,7 +198,37 @@ class UIMUnode: Pipeline::CommonNode
 			ROS_DEBUG_STREAM("Setting up visualizer");
 			ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
 			visualizer = new BasicModelVisualizer(model);
+			if(publish_filtered)
+			{
+				//filter
+				ROS_DEBUG_STREAM("Setting up filter");
+				LowPassSmoothFilter::Parameters ikFilterParam;
+				ikFilterParam.numSignals = model.getNumCoordinates();
+				ikFilterParam.memory = memory;
+				ikFilterParam.delay = delay;
+				ikFilterParam.cutoffFrequency = cutoffFreq;
+				ikFilterParam.splineOrder = splineOrder;
+				ikFilterParam.calculateDerivatives = true;
+				ROS_DEBUG_STREAM("filter parameters set.");
+				ikfilter = new LowPassSmoothFilter(ikFilterParam);
+				// initialize filtered loggers
+				ROS_DEBUG_STREAM("getting columnNames from model");
+				auto columnNames = OpenSimRT::OpenSimUtils::getCoordinateNamesInMultibodyTreeOrder(model);
+				string columnNamesStr = "";
+				for(auto cn:columnNames)
+				{
+					columnNamesStr+=cn+",";
+				}
+				ROS_DEBUG_STREAM("got columnNamesStr: " << columnNamesStr);
+				qLogger.setColumnLabels(columnNames);
+				qDotLogger.setColumnLabels(columnNames);
+				qDDotLogger.setColumnLabels(columnNames);
+				ROS_DEBUG_STREAM("columnNames for loggers set.");
+				initializeLoggers("qLogger",&qLogger);
+				initializeLoggers("qDotLogger",&qDotLogger);
+				initializeLoggers("qDDotLogger",&qDDotLogger);
 
+			}
 			// mean delay
 			ROS_DEBUG_STREAM("onInit finished just fine.");
 		}
@@ -244,13 +279,44 @@ class UIMUnode: Pipeline::CommonNode
 					}
 
 					pub.publish(msg);
+					if(publish_filtered)
+					{
+						auto ikFiltered = ikfilter->filter({pose.t, pose.q});
+						auto q = ikFiltered.x;
+						auto qDot = ikFiltered.xDot;
+						auto qDDot = ikFiltered.xDDot;
+						ROS_DEBUG_STREAM("Filter ran ok");
+						if (!ikFiltered.isValid) {
+							ROS_DEBUG_STREAM("filter results are NOT valid");
+							continue; }
+						ROS_DEBUG_STREAM("Filter results are valid");
+						opensimrt_msgs::PosVelAccTimed msg_filtered;
+						msg_filtered.header = h;
+						//for loop to fill the data appropriately:
+						for (int i=0;i<q.size();i++)
+						{
+							msg_filtered.d0_data.push_back(q[i]);
+							msg_filtered.d1_data.push_back(qDot[i]);
+							msg_filtered.d2_data.push_back(qDDot[i]);
+						}
 
-					// visualize
-					visualizer->update(pose.q);
+						pub_filtered.publish(msg_filtered);
+						// visualize filtered!
+						visualizer->update(q);
+						//adding the data to the loggers
+						qLogger.appendRow(pose.t,~q);
+						qDotLogger.appendRow(pose.t,~qDot);
+						qDDotLogger.appendRow(pose.t,~qDDot);
 
+					}
+					else
+					{
+						// visualize
+						visualizer->update(pose.q);
+					}
 					// record
 					imuLogger.appendRow(pose.t, driver->frame);//
-					qLogger.appendRow(pose.t, ~pose.q);
+					qRawLogger.appendRow(pose.t, ~pose.q);
 					previousTime = pose.t;
 					previousDt = Dt;
 					if(!ros::ok())
@@ -266,12 +332,12 @@ class UIMUnode: Pipeline::CommonNode
 
 			cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
 
-			//CSVFileAdapter::write( qLogger, loggerFileNameIK);
+			//CSVFileAdapter::write( qRawLogger, loggerFileNameIK);
 			//CSVFileAdapter::write( imuLogger, loggerFileNameIMUs);
 
 			// // store results
 			// STOFileAdapter::write(
-			//         qLogger, subjectDir + "real_time/inverse_kinematics/q_imu.sto");
+			//         qRawLogger, subjectDir + "real_time/inverse_kinematics/qRaw_imu.sto");
 		}
 
 

@@ -5,6 +5,7 @@
 #include "ros/rate.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "opensimrt_msgs/LabelsSrv.h"
 #include "std_srvs/Empty.h"
 #include "ros/service_client.h"
@@ -20,11 +21,12 @@ Pipeline::CommonNode::CommonNode(bool Debug)
 	if( Debug && ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
 		ros::console::notifyLoggerLevelsChanged();
 	}
-
 } 
 void Pipeline::CommonNode::onInit(int num_sinks)
 {
 	pub = nh.advertise<opensimrt_msgs::CommonTimed>("output", 1000);
+	if (publish_filtered)
+		pub_filtered = nh.advertise<opensimrt_msgs::PosVelAccTimed>("output_filtered", 1000);
 	outLabelsSrv = nh.advertiseService("out_labels", &CommonNode::outLabels, this);
 
 	if (num_sinks == 1)

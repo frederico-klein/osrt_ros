@@ -34,6 +34,8 @@ namespace Pipeline
 			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub;
 
 			ros::Publisher pub; //output
+			ros::Publisher pub_filtered; //output, but filtered
+			bool publish_filtered = false;
 			NamedTables loggers;
 			std::string data_save_dir()
 			{

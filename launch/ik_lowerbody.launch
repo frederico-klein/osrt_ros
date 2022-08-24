@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-	<arg name="freq" default="25" />
+	<arg name="freq" default="100" />
 
         <node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
 		<!-- param name="resample_period" 		value="0.01" / -->
@@ -19,6 +19,14 @@
 		
 		<remap from="/ik_lowerbody_node/output" to="/ik/output"/>
 		<remap from="/ik_lowerbody_node/out_labels" to="/ik/outlabels"/>
+
+		<!-- Filter values for filtered output -->
+		<param name="filter_output" 		value="true" />
+		<param name="memory" 			value="35" />
+		<param name="cutoff_freq" 		value="6" />
+		<param name="delay" 			value="14" />
+		<param name="spline_order" 		value="3" />
+
         </node>
 
 </launch>
