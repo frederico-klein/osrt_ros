@@ -11,11 +11,12 @@ find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"
 	)
 
 find_package(catkin REQUIRED COMPONENTS
-  opensimrt
-  opensimrt_msgs
-  roscpp
-  tf
-)
+	message_runtime
+	opensimrt
+	opensimrt_msgs
+	roscpp
+	tf
+	)
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
 
 find_package(opensimrt REQUIRED COMPONENTS
@@ -23,32 +24,34 @@ find_package(opensimrt REQUIRED COMPONENTS
 	Realtime)
 
 
-catkin_package(
-  CATKIN_DEPENDS opensimrt_msgs roscpp message_runtime
-)
+catkin_package(CATKIN_DEPENDS 
+	message_runtime
+	opensimrt_msgs 
+	roscpp 
+	)
 
 message(NOTICE "OpenSim")
 message(STATUS
-  ${OpenSim_INCLUDE_DIRS}
+	${OpenSim_INCLUDE_DIRS}
 
 	)
 message(NOTICE "Simbody")
 message(STATUS
-  ${Simbody_INCLUDE_DIRS}
+	${Simbody_INCLUDE_DIRS}
 
 	)
 
 message(NOTICE "catkin")
 foreach(dir ${catkin_INCLUDE_DIRS})
-message(STATUS
-  "catkin_dir=${dir}"
-	)
+	message(STATUS
+		"catkin_dir=${dir}"
+		)
 endforeach()
 
 include_directories(
 	include
-  ${catkin_INCLUDE_DIRS}
-  )
+	${catkin_INCLUDE_DIRS}
+	)
 
 file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
@@ -63,6 +66,7 @@ add_library(osrtRosPipeline ${Pipeline_HEADERS} ${Pipeline_SOURCES} )
 
 target_link_libraries(osrtRosPipeline ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
 
+add_dependencies(osrtRosPipeline ${catkin_EXPORTED_TARGETS})
 
 add_subdirectory(src/osrt_ros/Pipeline)
 
@@ -74,6 +78,8 @@ file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 set(target osrtRosUIMU)
 
 add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
+
+add_dependencies(osrtRosUIMU ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES})
 
