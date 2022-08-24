@@ -26,10 +26,11 @@
 		<param name="ip_address"	value="$(arg ip_address)" />
 		<param name="ahrs_divisor"	value="$(arg ahrs_divisor)" />
         </node>
+	<arg name="freq" default="25" />
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 ximu3 thorax 100" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 ximu3 humerus 100" />
-<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 ximu3 radius 100" />
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 ximu3 thorax $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 ximu3 humerus $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 ximu3 radius $(arg freq)" />
 
 <!-- thorax humerus radius  -->
 

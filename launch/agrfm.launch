@@ -4,9 +4,9 @@
         <node pkg="osrt_ros" type="agrf" 	name="agrf_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<!-- I can simplify this if I put the reader in the global namespace. it won't be because it's remmapped, but it will make it easier to write. Unsure, consider-->
-		<remap from="/agrf_node/input" to="/inverse_kinematics_from_file/r_data"/>
+		<remap from="/agrf_node/input" to="/ik/output"/>
 		<!-- so this is weird, since it is a standalone service call, it is in the global namespace (or so thinks the node)  -->
-		<remap from="/in_labels" to="/inverse_kinematics_from_file/out_labels"/>
+		<remap from="/in_labels" to="/ik/outlabels"/>
         </node>
 
 </launch>

@@ -3,8 +3,8 @@
 
         <node pkg="osrt_ros" type="id_combined" 	name="id_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
-		<remap from="/id_node/input" 	to="/inverse_kinematics_from_file/r_data"/>
-		<remap from="/in_labels" 	to="/inverse_kinematics_from_file/out_labels"/>
+		<remap from="/id_node/input" to="/ik/output"/>
+		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>
 		<remap from="/in_labels2" 	to="/inverse_kinematics_from_file/out_labels"/ -->
 		<remap from="/id_node/input2" 	to="/cgrf_node/output"/>

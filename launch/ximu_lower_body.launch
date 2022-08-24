@@ -16,7 +16,7 @@
 		8 .. 50 hz
 	-->
 
-	<arg name="ahrs_divisor" 	default="1" />
+	<arg name="ahrs_divisor" 	default="16" />
 
         <node pkg="ximu3_ros" type="imu_node" 	name="my_imu" output="screen">
 		<param name="name" 		value="$(arg name)" />
@@ -27,14 +27,15 @@
 		<param name="ahrs_divisor"	value="$(arg ahrs_divisor)" />
         </node>
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 ximu3 torso 100" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 ximu3 pelvis 100" />
-<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 ximu3 femur_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 ximu3 femur_l 100" />
-<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 ximu3 tibia_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 ximu3 tibia_l 100" />
-<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 ximu3 talus_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 ximu3 talus_l 100" />
+	<arg name="freq" default="25" />
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 ximu3 torso $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 ximu3 pelvis $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 ximu3 femur_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 ximu3 femur_l $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 ximu3 tibia_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 ximu3 tibia_l $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 ximu3 talus_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 ximu3 talus_l $(arg freq)" />
 
 <!-- torso pelvis femur_r femur_l tibia_r tibia_l talus_r talus_l -->
 

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
+	<arg name="freq" default="25" />
 	<arg name="name" 		default="ximu3" />
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) thorax 100" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) humerus 100" />
-<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) radius 100" />
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) thorax $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) humerus $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) radius $(arg freq)" />
 
 <!-- thorax humerus radius  -->
 

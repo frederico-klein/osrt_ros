@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
+	<arg name="freq" default="25" />
 	<arg name="name" 		default="ximu3" />
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) torso 100" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) pelvis 100" />
-<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) femur_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 $(arg name) femur_l 100" />
-<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 $(arg name) tibia_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 $(arg name) tibia_l 100" />
-<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 $(arg name) talus_r 100" />
-<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 $(arg name) talus_l 100" />
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) torso $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) pelvis $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) femur_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 $(arg name) femur_l $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 $(arg name) tibia_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 $(arg name) tibia_l $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 $(arg name) talus_r $(arg freq)" />
+<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 $(arg name) talus_l $(arg freq)" />
 
 <!-- torso pelvis femur_r femur_l tibia_r tibia_l talus_r talus_l -->
 
