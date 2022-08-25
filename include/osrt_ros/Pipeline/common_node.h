@@ -3,6 +3,7 @@
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "opensimrt_msgs/LabelsSrv.h"
 #include "std_srvs/Empty.h"
 #include "ros/service_client.h"
@@ -32,6 +33,7 @@ namespace Pipeline
 			ros::NodeHandle nh{"~"};
 			//ros::Subscriber sub; //input
 			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub;
+			message_filters::Subscriber<opensimrt_msgs::PosVelAccTimed> sub_filtered;
 
 			ros::Publisher pub; //output
 			ros::Publisher pub_filtered; //output, but filtered
@@ -49,6 +51,10 @@ namespace Pipeline
 			virtual void callback(const opensimrt_msgs::CommonTimedConstPtr& message) 
 			{
 				ROS_ERROR_STREAM("callback1 not implemented!");
+			}
+			virtual void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message) 
+			{
+				ROS_ERROR_STREAM("callback_filtered not implemented!");
 			}
 			void saveStos();
 			void saveCsvs();

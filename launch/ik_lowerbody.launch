@@ -17,8 +17,9 @@
 		<param name="logger_filename_imus" 		value="_imus_lower" />
 		<param name="data_save_dir" 		value="/tmp/test" />
 		
-		<remap from="/ik_lowerbody_node/output" to="/ik/output"/>
-		<remap from="/ik_lowerbody_node/out_labels" to="/ik/outlabels"/>
+		<remap from="/ik_lowerbody_node/output" 		to="/ik/output"/>
+		<remap from="/ik_lowerbody_node/output_filtered" 	to="/ik/output_filtered"/>
+		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
 
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />

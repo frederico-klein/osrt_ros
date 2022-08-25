@@ -2,6 +2,7 @@
 #include "ros/message_traits.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "opensimrt_msgs/Labels.h"
 #include "experimental/AccelerationBasedPhaseDetector.h"
 #include "experimental/GRFMPrediction.h"
@@ -15,6 +16,7 @@
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
+#include <SimTKcommon/internal/BigMatrix.h>
 #include <exception>
 #include <numeric>
 #include <utility>
@@ -52,44 +54,8 @@ void Pipeline::Grf::onInit() {
 	initializeLoggers("tau",tauLogger);
 
 }
-
-void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message) {
-//void Pipeline::Grf::operator() (const opensimrt_msgs::CommonTimedConstPtr& message) {
-// repeat the simulation `simulationLoops` times
-	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
-	counter++;
-	//for (int k = 0; k < qTable.getNumRows() * simulationLoops; k++) {
-	
-	// well yes, but actually no.
-	// get raw pose from table
-	//auto qRaw_old = qTable.getRowAtIndex(i).getAsVector();
-	//qRaw_old( qRaw_old +"dddd" +1);
-	//std::vector<double> sqRaw = std::vector<double>(message->data.begin() + 1, message->data.end());
-	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
-	for (int j = 0;j < qRaw.size();j++)
-	{
-		//qRaw[j] = sqRaw[j];
-		qRaw[j] = message->data[j];
-	}
-	
-
-
-	//is it the same
-	//if (qRaw.size() != qRaw_old.size())
-	//	ROS_FATAL("size is different!");
-	//OpenSim::TimeSeriesTable i
-	//get_from_subscriber(qRaw,t); //this will set qRaw and t from the subscribert
-
-	//double t_old = qTable.getIndependentColumn()[i];
-	
-	/*
-	 * This is kinda important. The time that matters is the time of the acquisition, I think
-	 * The variable time it takes to calculate it doesn't matter too much, UNLESS, it is too big,
-	 * then we should probably forget about it and not try to calculate anything!
-	 * */
-	//NO! I AM NOT SENDING TIME LIKE THIS ANYMORE.
-	//double t = message->header.stamp.toSec();
-	double t = message->time;
+void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h) 
+{
 	double timediff = t- previousTime;
 	double ddt = timediff-previousTimeDifference;
 	if (std::abs(ddt) > 1e-5 )
@@ -117,29 +83,14 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 	// period, to keep increasing after each simulation loop
 //			t += loopCounter * (qTable.getIndependentColumn().back() + 0.01);
 
-	// filter
-	auto ikFiltered = filter->filter({t, qRaw});
-	auto q = ikFiltered.x;
-	auto qDot = ikFiltered.xDot;
-	auto qDDot = ikFiltered.xDDot;
-	ROS_DEBUG_STREAM("Filter ran ok");
-	// increment loop
-/*			if (++i == qTable.getNumRows()) {
-	    i = 0;
-	    loopCounter++;
-	}*/
-	if (!ikFiltered.isValid) {
-		ROS_DEBUG_STREAM("filter results are NOT valid");
-		return; }
-	ROS_DEBUG_STREAM("Filter results are valid");
 
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
 
 		// perform grfm prediction
-	detector->updDetector({ikFiltered.t, q, qDot, qDDot});
+	detector->updDetector({t, q, qDot, qDDot});
 	ROS_DEBUG_STREAM("Update detector ok");
-	auto grfmOutput = grfm->solve({ikFiltered.t, q, qDot, qDDot});
+	auto grfmOutput = grfm->solve({t, q, qDot, qDDot});
 	ROS_DEBUG_STREAM("GRFM estimation ran ok");
 
 	chrono::high_resolution_clock::time_point t2;
@@ -163,10 +114,11 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 					       grfmOutput.left.torque};
 
 	ROS_DEBUG_STREAM("updated visuals ok");
-
+	
+	//TODO: remove ID from here
 	// solve ID
 	auto idOutput = id->solve(
-		{ikFiltered.t, q, qDot, qDDot,
+		{t, q, qDot, qDDot,
 		 vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 	
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
@@ -202,9 +154,9 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 		msg.header = h;
 	} else
 	{
-		msg.header = message->header; //will this break? it will be publishing messages in the past
+		msg.header = h; //will this break? it will be publishing messages in the past
 	}
-	msg.time = message->time;
+	msg.time = t;
 	msg.data.insert(msg.data.end(), p.begin(),p.end());
 	pub.publish(msg);
 
@@ -215,7 +167,7 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 			ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			grfRightLogger->appendRow(grfmOutput.t, ~grfmOutput.right.toVector());
 			grfLeftLogger->appendRow(grfmOutput.t, ~grfmOutput.left.toVector());
-			tauLogger->appendRow(ikFiltered.t, ~idOutput.tau);
+			tauLogger->appendRow(t, ~idOutput.tau);
 			ROS_INFO_STREAM("Added data to loggers. "<< counter);
 		}
 	}
@@ -226,6 +178,50 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 	//if (counter > 720)
 	//	write_();
 	//}
+
+
+
+
+}
+
+
+
+void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message) {
+	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
+	counter++;
+	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
+	for (int j = 0;j < qRaw.size();j++)
+	{
+		qRaw[j] = message->data[j];
+	}
+	
+	double t = message->time;
+	// filter
+	auto ikFiltered = filter->filter({t, qRaw});
+	auto q = ikFiltered.x;
+	auto qDot = ikFiltered.xDot;
+	auto qDDot = ikFiltered.xDDot;
+	ROS_DEBUG_STREAM("Filter ran ok");
+	if (!ikFiltered.isValid) {
+		ROS_DEBUG_STREAM("filter results are NOT valid");
+		return; }
+	ROS_DEBUG_STREAM("Filter results are valid");
+
+	run(ikFiltered.t, q, qDot, qDDot,message->header);	
+}	
+void Pipeline::Grf::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message) {
+	ROS_DEBUG_STREAM("Received message. Running Grf filtered loop"); 
+	counter++;
+	//cant find the right copy constructor syntax. will for loop it
+	SimTK::Vector q(19),qDot(19),qDDot(19); 
+	for (int j = 0;j < q.size();j++)
+	{
+		q[j] = message->d0_data[j];
+		qDot[j] = message->d1_data[j];
+		qDDot[j] = message->d2_data[j];
+	}
+	run(message->time, q, qDot, qDDot,message->header);
+
 }	
 void Pipeline::Grf::finish() {
     cout << "Mean delay: " << double(sumDelayMS) / sumDelayMSCounter << " ms"

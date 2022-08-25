@@ -1,3 +1,4 @@
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
 #include "ros/ros.h"
@@ -244,7 +245,10 @@ void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 
 
 }
-
+void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+{
+	ROS_ERROR_STREAM("not implemented!");
+}
 
 void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) {
 //void Pipeline::Id::operator() (const opensimrt_msgs::CommonTimedConstPtr& message) {

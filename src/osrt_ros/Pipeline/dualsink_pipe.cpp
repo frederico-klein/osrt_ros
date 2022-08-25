@@ -11,10 +11,10 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-Pipeline::DualSink::DualSink(): sync(sub,sub2,10)
+Pipeline::DualSink::DualSink(): sync(sub,sub2,10), sync_filtered(sub_filtered,sub2,10)
 {
 	if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
-	   ros::console::notifyLoggerLevelsChanged();
+		ros::console::notifyLoggerLevelsChanged();
 	}
 
 } //constructor
@@ -29,7 +29,8 @@ void Pipeline::DualSink::onInit()
 	Pipeline::CommonNode::onInit(2);
 
 	sub2.subscribe(nh, "input2",100);
-    	sub.subscribe(nh, "input",100);
+	sub.subscribe(nh, "input",100);
+	sub_filtered.subscribe(nh, "input_filtered",100);
 
 	ros::Rate r(1);
 	opensimrt_msgs::LabelsSrv l;
@@ -38,9 +39,9 @@ void Pipeline::DualSink::onInit()
 	{
 		if(ros::service::call("in_labels2", l))
 		{
-		    input2_labels = l.response.data;
-		    ROS_INFO_STREAM("got input 2 labels!");
-		    break;
+			input2_labels = l.response.data;
+			ROS_INFO_STREAM("got input 2 labels!");
+			break;
 		}
 		ros::spinOnce();
 		ROS_INFO_STREAM("Waiting to read input2 labels."); 
@@ -58,6 +59,12 @@ void Pipeline::DualSink::onInit()
 	//sync.registerCallback(&DualSink::callback, this);
 	sync.registerCallback(boost::bind(&DualSink::callback, this, _1, _2));
 	//sub2.registerCallback(&DualSink::callback2,this);
+	
+
+	//Now the callback for the filtered ik version:
+	sync_filtered.connectInput(sub_filtered, sub2);
+	//sync_filtered.registerCallback(&DualSink::callback_filtered, this);
+	sync_filtered.registerCallback(boost::bind(&DualSink::callback_filtered, this, _1, _2));
 	//sub2.registerCallback(&DualSink::callback2,this);
 	ROS_INFO_STREAM("registered the dual callback just fine");
 	ROS_INFO_STREAM("Finished onInit from DualSink");

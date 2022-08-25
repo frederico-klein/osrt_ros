@@ -31,10 +31,12 @@ void Pipeline::CommonNode::onInit(int num_sinks)
 
 	if (num_sinks == 1)
 	{
-		ROS_INFO_STREAM("registering callback");
+		ROS_INFO_STREAM("registering ik callback");
 		//register the callback
 		sub.subscribe(nh, "input",10);
 		sub.registerCallback(&CommonNode::callback,this);
+		sub_filtered.subscribe(nh, "input_filtered",10);
+		sub_filtered.registerCallback(&CommonNode::callback_filtered,this);
 		//sub = nh.subscribe("input",5, &CommonNode::callback, this);
 	}
 	else

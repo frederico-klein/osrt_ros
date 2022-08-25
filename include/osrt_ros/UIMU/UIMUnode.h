@@ -292,6 +292,7 @@ class UIMUnode: Pipeline::CommonNode
 						ROS_DEBUG_STREAM("Filter results are valid");
 						opensimrt_msgs::PosVelAccTimed msg_filtered;
 						msg_filtered.header = h;
+						msg_filtered.time = ikFiltered.t;
 						//for loop to fill the data appropriately:
 						for (int i=0;i<q.size();i++)
 						{
