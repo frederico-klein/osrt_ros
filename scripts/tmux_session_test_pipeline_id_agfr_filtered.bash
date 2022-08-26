@@ -34,8 +34,8 @@ tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
 tmux send -t mysession:1.6 "roslaunch osrt_ros ximu_lower_body.launch" C-m
 #tmux send -t mysession:1.7 "ls -la" C-m
 
-tmux send -t mysession:2.0 "cd /catkin_opensim/src/opensimrt_core/OpenSimRT/Pipeline; nv" C-m
-tmux send -t mysession:3.0 "cd /catkin_opensim/src/opensimrt_core/launch; nv" C-m
+tmux send -t mysession:2.0 "cd /catkin_ws/src/osrt_ros/src/osrt_ros/Pipeline; nv" C-m
+tmux send -t mysession:3.0 "cd /catkin_ws/src/osrt_ros/launch; nv" C-m
 
 #tmux send -t mysession:1.6 "ls -la" C-m
 #tmux setw synchronize-panes on
