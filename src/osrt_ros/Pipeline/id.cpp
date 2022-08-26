@@ -245,48 +245,52 @@ void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 
 
 }
-void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
-	ROS_ERROR_STREAM("not implemented!");
-}
-
-void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) {
-//void Pipeline::Id::operator() (const opensimrt_msgs::CommonTimedConstPtr& message) {
-// repeat the simulation `simulationLoops` times
-	ROS_ERROR_STREAM("Received message. Running Id loop"); 
+	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
 	counter++;
-	//for (int k = 0; k < qTable.getNumRows() * simulationLoops; k++) {
-	
-	// well yes, but actually no.
-	// get raw pose from table
-	//auto qRaw_old = qTable.getRowAtIndex(i).getAsVector();
-	//qRaw_old( qRaw_old +"dddd" +1);
-	//std::vector<double> sqRaw = std::vector<double>(message->data.begin() + 1, message->data.end());
 	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
 	{
-		//qRaw[j] = sqRaw[j];
 		qRaw[j] = message_ik->data[j];
 	}
 	
-
-
-	//is it the same
-	//if (qRaw.size() != qRaw_old.size())
-	//	ROS_FATAL("size is different!");
-	//OpenSim::TimeSeriesTable i
-	//get_from_subscriber(qRaw,t); //this will set qRaw and t from the subscribert
-
-	//double t_old = qTable.getIndependentColumn()[i];
-	
-	/*
-	 * This is kinda important. The time that matters is the time of the acquisition, I think
-	 * The variable time it takes to calculate it doesn't matter too much, UNLESS, it is too big,
-	 * then we should probably forget about it and not try to calculate anything!
-	 * */
-	//NO! I AM NOT SENDING TIME LIKE THIS ANYMORE.
-	//double t = message_ik->header.stamp.toSec();
 	double t = message_ik->time;
+	// filter
+	auto ikFiltered = ikfilter->filter({t, qRaw});
+	auto q = ikFiltered.x;
+	auto qDot = ikFiltered.xDot;
+	auto qDDot = ikFiltered.xDDot;
+	ROS_DEBUG_STREAM("Filter ran ok");
+	if (!ikFiltered.isValid) {
+		ROS_DEBUG_STREAM("filter results are NOT valid");
+		return; }
+	ROS_DEBUG_STREAM("Filter results are valid");
+
+	run(ikFiltered.t, q, qDot, qDDot, message_grf);	
+}	
+void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+{
+	ROS_DEBUG_STREAM("Received message. Running Grf filtered loop"); 
+	counter++;
+	//cant find the right copy constructor syntax. will for loop it
+	SimTK::Vector q(19),qDot(19),qDDot(19); 
+	for (int j = 0;j < q.size();j++)
+	{
+		q[j] = message_ik->d0_data[j];
+		qDot[j] = message_ik->d1_data[j];
+		qDDot[j] = message_ik->d2_data[j];
+	}
+	run(message_ik->time, q, qDot, qDDot,message_grf);
+
+}	
+
+void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+
+{
+	ROS_ERROR_STREAM("Received message. Running Id loop"); 
+	counter++;
+
 	double timediff = t- previousTime;
 	double ddt = timediff-previousTimeDifference;
 	if (std::abs(ddt) > 1e-5 )
@@ -296,43 +300,8 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_DEBUG_STREAM("T (msg):"<< std::setprecision (15) << t);
 	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
 
-	/*if (t_old - t > 0.1)
-		ROS_ERROR("Reading from different timestamp! Did I lose a frame");
-	else // same timestamp, so we check the indexes are okay.
-	{
-		for (int it=0; it < qRaw.size(); it++)
-		{
-			if (qRaw[it] - qRaw_old[it] > 0.1)
-				ROS_ERROR("Difference too big");
-		}
-			
-	}
-*/
-	//	ROS_DEBUG_STREAM("TAN" << qRaw);
-
-	// increment the time by the total simulation time plus the sampling
-	// period, to keep increasing after each simulation loop
-//			t += loopCounter * (qTable.getIndependentColumn().back() + 0.01);
-
-	
-
-	// here I need to get the WRENCH, which is the GRF
-	//
 	// TODO: get wrench message!!!!!!!!!!
 
-	//auto grfRightWrench = magic(message_grf);
-	//auto grfLeftWrench = magic(message_grf);
-
-	// setup ID inputn
-
-	/*ExternalWrench::Input grfRightWrench = {grfmOutput.right.point,
-						grfmOutput.right.force,
-						grfmOutput.right.torque};
-	ExternalWrench::Input grfLeftWrench = {grfmOutput.left.point,
-					       grfmOutput.left.force,
-					       grfmOutput.left.torque};
-	*/
-	//cout << "right wrench.";
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
 	//cout << "left wrench.";
 	ROS_INFO_STREAM("rw");
@@ -341,24 +310,6 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_INFO_STREAM("lw");
 	print_wrench(grfLeftWrench);
 //	return;
-
-
-
-	// filter
-	auto ikFiltered = ikfilter->filter({t, qRaw});
-	auto q = ikFiltered.x;
-	auto qDot = ikFiltered.xDot;
-	auto qDDot = ikFiltered.xDDot;
-	ROS_DEBUG_STREAM("Filter ran ok");
-	// increment loop
-/*			if (++i == qTable.getNumRows()) {
-	    i = 0;
-	    loopCounter++;
-	}*/
-	if (!ikFiltered.isValid) {
-		ROS_DEBUG_STREAM("filter results are NOT valid");
-		return; }
-	ROS_DEBUG_STREAM("Filter results are valid");
 
 	//filter wrench!
 	//
@@ -370,7 +321,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
                 grfLeftFilter->filter({t, grfLeftWrench.toVector()});
         grfLeftWrench.fromVector(grfLeftFiltered.x);
 
-        if (!ikFiltered.isValid || !grfRightFiltered.isValid ||
+        if (!grfRightFiltered.isValid ||
             !grfLeftFiltered.isValid) {
             return;
         }
@@ -411,12 +362,12 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	{
 		ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 
-		tauLogger->appendRow(ikFiltered.t, ~idOutput.tau);
+		tauLogger->appendRow(t, ~idOutput.tau);
 		grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
 		grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-		qLogger->appendRow(ikFiltered.t, ~q);
-		qDotLogger->appendRow(ikFiltered.t, ~qDot);
-		qDDotLogger->appendRow(ikFiltered.t, ~qDDot);
+		qLogger->appendRow(t, ~q);
+		qDotLogger->appendRow(t, ~qDot);
+		qDDotLogger->appendRow(t, ~qDDot);
 
 		ROS_INFO_STREAM("Added data to loggers. "<< counter);
 	}}
