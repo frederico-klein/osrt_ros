@@ -69,3 +69,4 @@ We implement a dual callback, like the one used for GRFs, which calls then calls
 	- Make UIMU derived from IMU
 	- Standardize OnlineUpperLimb and OnlineLowerLimb to use TFs only
 - add parameters to nodes to remove dependency on INI file
+- The SO implementation is slow. One idea is to multithread it with a round-robin scheduler and then put the messages in order by timestamp with a [TimeSequencer from message\_filters] (http://wiki.ros.org/message_filters). The round-robin was not too hard to build, I wrote [an example here](https://github.com/frederico-klein/ros_tutorials/blob/noetic-devel/roscpp_tutorials/listener_long_processing_time/listener_long_processing_time.cpp)
