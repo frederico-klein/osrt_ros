@@ -157,31 +157,13 @@ void Pipeline::IdSoJr::onInitJr()
 	ROS_DEBUG_STREAM("onInitJr");
 }
 
-
-void Pipeline::IdSoJr::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) {
+void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+{
+	ROS_ERROR_STREAM("Received run call. Running IdSoJr loop"); 
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
-	//ROS_WARN_STREAM("Received message. Running Id_combined loop"); 
-	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
-	for (int j = 0;j < qRaw.size();j++)
-	{
-		//qRaw[j] = sqRaw[j];
-		qRaw[j] = message_ik->data[j];
-	}
-	double t = message_ik->time;
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
 	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
-	// filter
-	auto ikFiltered = ikfilter->filter({t, qRaw});
-	auto q = ikFiltered.x;
-	auto qDot = ikFiltered.xDot;
-	auto qDDot = ikFiltered.xDDot;
-	// increment loop
-/*			if (++i == qTable.getNumRows()) {
-	    i = 0;
-	    loopCounter++;
-	}*/
-
         auto grfRightFiltered =
                 grfRightFilter->filter({t, grfRightWrench.toVector()});
         grfRightWrench.fromVector(grfRightFiltered.x);
@@ -189,7 +171,7 @@ void Pipeline::IdSoJr::callback(const opensimrt_msgs::CommonTimedConstPtr& messa
                 grfLeftFilter->filter({t, grfLeftWrench.toVector()});
         grfLeftWrench.fromVector(grfLeftFiltered.x);
 
-        if (!ikFiltered.isValid || !grfRightFiltered.isValid ||
+        if (!grfRightFiltered.isValid ||
             !grfLeftFiltered.isValid) {
 		ROS_DEBUG_STREAM("filter results are NOT valid");
             return;
@@ -224,12 +206,12 @@ void Pipeline::IdSoJr::callback(const opensimrt_msgs::CommonTimedConstPtr& messa
 	if(false)
 	{
 		ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
-		tauLogger->appendRow(ikFiltered.t, ~idOutput.tau);
+		tauLogger->appendRow(t, ~idOutput.tau);
 		grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
 		grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-		qLogger->appendRow(ikFiltered.t, ~q);
-		qDotLogger->appendRow(ikFiltered.t, ~qDot);
-		qDDotLogger->appendRow(ikFiltered.t, ~qDDot);
+		qLogger->appendRow(t, ~q);
+		qDotLogger->appendRow(t, ~qDot);
+		qDDotLogger->appendRow(t, ~qDDot);
 	// loggers from SO
 		// log data (use filter time to align with delay)
         	fmLogger.appendRow(t, ~soOutput.fm);

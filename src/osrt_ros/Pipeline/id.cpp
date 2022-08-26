@@ -247,7 +247,7 @@ void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 }
 void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
-	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
+	ROS_DEBUG_STREAM("Received message. Running Id loop"); 
 	counter++;
 	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
@@ -271,7 +271,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 }	
 void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
-	ROS_DEBUG_STREAM("Received message. Running Grf filtered loop"); 
+	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
 	SimTK::Vector q(19),qDot(19),qDDot(19); 
@@ -288,7 +288,7 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 
 {
-	ROS_ERROR_STREAM("Received message. Running Id loop"); 
+	ROS_ERROR_STREAM("Received run call. Running Id loop"); 
 	counter++;
 
 	double timediff = t- previousTime;
