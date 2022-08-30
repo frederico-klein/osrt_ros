@@ -288,7 +288,7 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 
 {
-	ROS_ERROR_STREAM("Received run call. Running Id loop"); 
+	ROS_DEBUG_STREAM("Received run call. Running Id loop"); 
 	counter++;
 
 	double timediff = t- previousTime;
@@ -304,11 +304,11 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
 	//cout << "left wrench.";
-	ROS_INFO_STREAM("rw");
-	print_wrench(grfRightWrench);
+	//ROS_INFO_STREAM("rw");
+	//print_wrench(grfRightWrench);
 	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
-	ROS_INFO_STREAM("lw");
-	print_wrench(grfLeftWrench);
+	//ROS_INFO_STREAM("lw");
+	//print_wrench(grfLeftWrench);
 //	return;
 
 	//filter wrench!

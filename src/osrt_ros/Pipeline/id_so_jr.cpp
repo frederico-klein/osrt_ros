@@ -159,7 +159,7 @@ void Pipeline::IdSoJr::onInitJr()
 
 void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
-	ROS_ERROR_STREAM("Received run call. Running IdSoJr loop"); 
+	ROS_DEBUG_STREAM("Received run call. Running IdSoJr loop"); 
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
