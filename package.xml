@@ -22,4 +22,5 @@ See https://github.com/mysablehats/osrt_ros.git
   <exec_depend>roscpp</exec_depend>
   <exec_depend>tf</exec_depend>
   <depend>message_runtime</depend>
+  <depend>sensor_msgs</depend>
 </package>
