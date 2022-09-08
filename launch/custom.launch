@@ -1,0 +1,7 @@
+<launch>
+
+	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node">
+		<remap from="/joint_states" to="/model_generic/joint_states" />
+	</node>
+
+</launch>
