@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	sensor_msgs
 	tf
+	tf2
 	)
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
 
@@ -28,7 +29,9 @@ find_package(opensimrt REQUIRED COMPONENTS
 catkin_package(CATKIN_DEPENDS 
 	message_runtime
 	opensimrt_msgs 
-	roscpp 
+	roscpp
+	sensor_msgs
+	tf2
 	)
 
 message(NOTICE "OpenSim")

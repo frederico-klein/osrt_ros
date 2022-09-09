@@ -8,6 +8,11 @@
 #include <sstream>
 #include "osrt_ros/Pipeline/common_node.h"
 #include <map>
+
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <tf2/LinearMath/Quaternion.h>
+
 using namespace std;
 
 //this is a hack. I would ideally get this from opensim somehow, since it must be calculated before it can be printed on the screen
@@ -58,10 +63,12 @@ class qJointPublisher: public Pipeline::CommonNode
 {
 	public:
 		ros::NodeHandle n;
+		qJointPublisher() : Pipeline::CommonNode(false)
+		{}
 		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1000);
 		int count = 0;
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
-
+		tf2_ros::StaticTransformBroadcaster static_broadcaster;
 		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik");
@@ -76,15 +83,31 @@ class qJointPublisher: public Pipeline::CommonNode
 				double joint_value = 0;
 				int index = rjoint_to_ojoint[a];
 				if (index>=0)
-					{
-						joint_value = msg_ik->data[index];
-						//joint_value = msg_ik->data[index]/180*3.14159265;
-					}
+				{
+					joint_value = msg_ik->data[index];
+					//joint_value = msg_ik->data[index]/180*3.14159265;
+				}
 				values.push_back(joint_value);
 			}
 			msg.position = values;
 			chatter_pub.publish(msg);
 			++count;
+			/// let's publish a tf for the pelvis now!
+			geometry_msgs::TransformStamped pelvisTF;
+			pelvisTF.header.stamp = ros::Time::now();
+			pelvisTF.header.frame_id = "ground";
+			pelvisTF.child_frame_id = "pelvis";
+			// ATTENTION: x,y,z are different between OSIM and ROS, so this is likely incorrect. Needs visual inspection
+			pelvisTF.transform.translation.x = msg_ik->data[3];
+			pelvisTF.transform.translation.y = msg_ik->data[5];
+			pelvisTF.transform.translation.z = msg_ik->data[4];
+			tf2::Quaternion quat;
+			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //idk, needs manual checking!
+			pelvisTF.transform.rotation.x = quat.x();
+			pelvisTF.transform.rotation.y = quat.y();
+			pelvisTF.transform.rotation.z = quat.z();
+			pelvisTF.transform.rotation.w = quat.w();
+			static_broadcaster.sendTransform(pelvisTF);
 		}
 };
 
