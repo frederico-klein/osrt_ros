@@ -102,7 +102,7 @@ class qJointPublisher: public Pipeline::CommonNode
 			pelvisTF.transform.translation.y = msg_ik->data[5];
 			pelvisTF.transform.translation.z = msg_ik->data[4];
 			tf2::Quaternion quat;
-			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //idk, needs manual checking!
+			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
 			pelvisTF.transform.rotation.x = quat.x();
 			pelvisTF.transform.rotation.y = quat.y();
 			pelvisTF.transform.rotation.z = quat.z();

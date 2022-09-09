@@ -25,13 +25,11 @@ tmux split-window -v -p 50
 #sends keys to first and second terminals
 tmux send -t mysession:1.0 "rosservice call /ik/outlabels" C-m
 tmux send -t mysession:1.1 "rostopic echo /model_generic/joint_states" C-m
-tmux send -t mysession:1.3 "roslaunch gait1992_description human_control_no_controller.launch" C-m
+tmux send -t mysession:1.3 "roslaunch gait1992_description human_control.launch" C-m
 tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m
 tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
 tmux send -t mysession:1.6 "roslaunch osrt_ros custom.launch" C-m
-
-
-#tmux send -t mysession:1.6 "ls -la" C-m
+tmux send -t mysession:1.7 "rosservice call /inverse_kinematics_from_file/start" C-m
 #tmux send -t mysession:1.7 "ls -la" C-m
 #tmux setw synchronize-panes on
 

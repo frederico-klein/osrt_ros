@@ -14,7 +14,6 @@
 		<param name="rate_divider" 		value="1" />
 
 		<remap from="/inverse_kinematics_from_file/r_data" to="/ik/output"/>
-		<!-- so this is weird, since it is a standalone service call, it is in the global namespace (or so thinks the node)  -->
 		<remap from="/inverse_kinematics_from_file/out_labels" to="/ik/outlabels"/>
 
         </node>
