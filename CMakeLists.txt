@@ -94,6 +94,7 @@ target_link_libraries(custom_joints_node
   ${catkin_LIBRARIES}
   ${OpenSim_LIBRARIES}
   ${opensimrt_LIBRARIES}
+  osrtRosPipeline
 )
 
 #add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp src/grfm_ros.cpp)

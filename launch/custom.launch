@@ -1,6 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
-	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node">
+	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
+		<remap from="/custom_joints/input" to="/ik/output"/>
+		<!-- remap from="/custom_joints/input_filtered" to="/ik/output_filtered"/ -->
+		<remap from="/in_labels" to="/ik/outlabels"/>
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
 

@@ -4,8 +4,10 @@
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Header.h"
 #include <sstream>
+#include "osrt_ros/Pipeline/common_node.h"
 
-class qJointPublisher
+
+class qJointPublisher: public Pipeline::CommonNode
 {
 	public:
 		ros::NodeHandle n;
@@ -44,6 +46,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "talker");
 	qJointPublisher qJ;
+	qJ.onInit();
 	qJ.run();
 	return 0;
 }
