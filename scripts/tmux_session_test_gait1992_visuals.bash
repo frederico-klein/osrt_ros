@@ -23,7 +23,7 @@ tmux split-window -v -p 50
 #tmux select-pane -t 0
 
 #sends keys to first and second terminals
-tmux send -t mysession:1.0 "rosservice call /ik/outlabels" C-m
+tmux send -t mysession:1.0 "sleep 2; rosservice call /ik/outlabels" C-m
 tmux send -t mysession:1.1 "rostopic echo /model_generic/joint_states" C-m
 tmux send -t mysession:1.3 "roslaunch gait1992_description human_control.launch" C-m
 tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m

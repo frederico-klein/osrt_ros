@@ -25,16 +25,16 @@ tmux split-window -v -p 50
 #tmux select-pane -t 0
 
 #sends keys to first and second terminals
-tmux send -t mysession:1.0 "rostopic echo /inverse_kinematics_from_file/r_data" C-m
-tmux send -t mysession:1.1 "rostopic echo /cgrf_node/output" C-m
+tmux send -t mysession:1.0 "rostopic echo /ik/output" C-m
+tmux send -t mysession:1.1 "rostopic echo /grf_node/output" C-m
 tmux send -t mysession:1.2 "roslaunch osrt_ros id.launch" C-m
-tmux send -t mysession:1.3 "roslaunch osrt_ros cgrfm.launch" C-m
-tmux send -t mysession:1.4 "roslaunch opensimrt_bridge ik_acceleration_prediction_gfrm.launch" C-m
+tmux send -t mysession:1.3 "roslaunch osrt_ros cgrfm_as_grf.launch" C-m
+tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m
 tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
-tmux send -t mysession:1.6 "rosservice call /inverse_kinematics_from_file/start" C-m
+tmux send -t mysession:1.6 "sleep 2; rosservice call /inverse_kinematics_from_file/start" C-m
 
-tmux send -t mysession:2.0 "cd /catkin_opensim/src/opensimrt_core/OpenSimRT/Pipeline; nv" C-m
-tmux send -t mysession:3.0 "cd /catkin_opensim/src/opensimrt_core/launch; nv" C-m
+#tmux send -t mysession:2.0 "cd /catkin_opensim/src/opensimrt_core/OpenSimRT/Pipeline; nv" C-m
+#tmux send -t mysession:3.0 "cd /catkin_opensim/src/opensimrt_core/launch; nv" C-m
 
 #tmux send -t mysession:1.6 "ls -la" C-m
 #tmux send -t mysession:1.7 "ls -la" C-m
