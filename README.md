@@ -20,7 +20,7 @@ You probably also want to be placed in your catkin\_ws/src directory:
 
 ### Tmux scripts
 
-To show an overview of what the current implemented system is capable, there are some tmux session scripts available. Note the AR scripts also require a calibrated camera to provide image, correct TFs for the camera and the ros\_track\_alvar package.
+To show an overview of what the current implemented system is capable, there are some tmux session scripts available. Note the AR scripts also require a calibrated camera to provide image, correct TFs for the camera and the ar\_track\_alvar and ar\_test packages.
 
 #### Existing examples:
 
