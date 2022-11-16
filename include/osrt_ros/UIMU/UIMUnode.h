@@ -33,7 +33,7 @@ using namespace SimTK;
 class UIMUnode: Pipeline::CommonNode
 {
 	public:
-		UIMUnode(): Pipeline::CommonNode(false)
+		UIMUnode(): Pipeline::CommonNode(false) //if true debugs
 		//UIMUnode(): Pipeline::CommonNode()
 	{}
 		std::string DATA_DIR = "/srv/data";
@@ -45,6 +45,7 @@ class UIMUnode: Pipeline::CommonNode
 		ros::Rate* r;
 		std::string subjectDir, modelFile;
 		std::string loggerFileNameIK,loggerFileNameIMUs;
+		std::string tf_frame_prefix;
 		double sumDelayMS = 0, numFrames = 0; 
 		double previousTime = 0;
 		double previousDt = 0;
@@ -64,7 +65,7 @@ class UIMUnode: Pipeline::CommonNode
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
-
+			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
 			//auto section = "UPPER_LIMB_NGIMU";
 			// imu calibration settings
 
@@ -85,6 +86,10 @@ class UIMUnode: Pipeline::CommonNode
 			{
 				ROS_FATAL("IMU observation order not defined!");
 				throw(std::invalid_argument("imuObservationOrder not defined."));
+			}
+			else
+			{
+				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
 			}
 			//    imuObservationOrder =
 			//	    ini.getVector(section, "IMU_BODIES", vector<string>());
@@ -162,7 +167,8 @@ class UIMUnode: Pipeline::CommonNode
 				}
 				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
-			driver = new UIMUInputDriver(imuObservationOrder,rate); //uses tf server
+			ROS_DEBUG_STREAM("Staring UIMUInputDriver with tf_frame_prefix" << tf_frame_prefix << " and rate: " << rate );
+			driver = new UIMUInputDriver(imuObservationOrder,tf_frame_prefix,rate); //uses tf server
 			driver->startListening();
 			imuLogger = driver->initializeLogger();
 			initializeLoggers(loggerFileNameIMUs,&imuLogger);

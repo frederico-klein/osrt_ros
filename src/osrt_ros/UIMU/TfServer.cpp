@@ -20,12 +20,12 @@
 
 
 // Driver code
-TfServer::TfServer (std::vector<std::string> tf_names ) {
+TfServer::TfServer (std::vector<std::string> tf_names, std::string tf_frame_prefix) {
 
 	ROS_INFO("Using tf server");
 	///read one tf and make it for everyone
 	tf::TransformListener listener;
-	set_tfs(tf_names);
+	set_tfs(tf_names, tf_frame_prefix);
 
 }
 
@@ -33,14 +33,18 @@ TfServer::~TfServer(void)
 {
 }
 
-void TfServer::set_tfs(std::vector<std::string> tf_names)
+void TfServer::set_tfs(std::vector<std::string> tf_names, std::string tf_frame_prefix)
 {
 
-	tf_strs = tf_names;
+	//tf_strs = tf_names;
 	if (tf_names.size() == 0)
 		ROS_FATAL("NO TF NAMES");
-	for (auto i:tf_strs)
-		ROS_DEBUG_STREAM("TfServer: Using reference frame: " << i);
+	for (auto i:tf_names)
+	{
+		std::string used_frame = tf_frame_prefix+"/" + i;
+		ROS_DEBUG_STREAM("TfServer: Using reference frame: " << used_frame);
+		tf_strs.push_back(used_frame);
+	}
 }
 
 void TfServer::set_world_reference(std::string world_name)
@@ -83,7 +87,7 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 				ros::Time(0), transform);
 	}
 	catch (tf::TransformException ex){
-		ROS_ERROR("%s",ex.what());
+		ROS_ERROR("Transform exception! %s",ex.what());
 	}
 	std::vector<double> myvec;
 	// now i need to set this myvec with the values i read for the quaternions somehow

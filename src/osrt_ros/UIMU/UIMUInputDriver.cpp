@@ -20,6 +20,7 @@
 #include "osrt_ros/UIMU/UIMUInputDriver.h"
 #include "Exception.h"
 #include <iostream>
+#include <string>
 #include <vector>
 #include "ros/ros.h"
 #include "osrt_ros/UIMU/TfServer.h"
@@ -28,7 +29,7 @@
 using namespace OpenSimRT;
 using namespace SimTK;
 
-UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const double& sendRate)
+UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix, const double& sendRate)
 	: terminationFlag(false), rate(sendRate) {
 		ROS_INFO_STREAM("Starting UIMUInputDriver interface.");
 		imu_names = imuObservationOrder;
@@ -40,7 +41,8 @@ UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, c
 			wholeObservationOrderStr+=imu_name+",";
 		}
 		ROS_INFO_STREAM("Using observationOrder of:" << wholeObservationOrderStr);
-		server = new TfServer(imuObservationOrder);	
+		ROS_INFO_STREAM("Using tf_frame_prefix: " << tf_frame_prefix);
+		server = new TfServer(imuObservationOrder, tf_frame_prefix);	
 	}
 
 // i maybe want to start the server!

@@ -46,7 +46,7 @@ class  UIMUInputDriver : public InputDriver<UIMUData> {
     UIMUInputDriver(const double& sendRate = 50);
     UIMUInputDriver(const int port,
                              const double& sendRate);
-    UIMUInputDriver(const std::vector<std::string> imuObservationOrder,const double& sendRate = 50);
+    UIMUInputDriver(const std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix = "no_prefix" ,const double& sendRate = 50);
     ~UIMUInputDriver(); // dtor
 
     /**

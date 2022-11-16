@@ -1,6 +1,7 @@
 #ifndef TFSERVER_H_FBK20220627
 #define TFSERVER_H_FBK20220627
 
+#include <string>
 #include <vector>
 /*#include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 
 class TfServer: public OrientationProvider {
  public:
-	TfServer(std::vector<std::string> tf_names = {"a", "b", "c"});
+	TfServer(std::vector<std::string> tf_names = {"a", "b", "c"}, std::string tf_frame_prefix = "not_set");
 	~TfServer();
 	bool receive();
 
@@ -28,6 +29,6 @@ class TfServer: public OrientationProvider {
 	std::vector<std::string> tf_strs;
 	std::string world_tf_reference = "/map";
 	void set_world_reference(std::string);
-	void set_tfs(std::vector<std::string> tf_names);
+	void set_tfs(std::vector<std::string> tf_names, std::string tf_frame_prefix);
 };
 #endif
