@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+echo "THESE ARE NOT THE QUATERNIONS!"
+
+
 rqt_plot \
 	/ik/output/data[0] \
 	/ik/output/data[1] \
