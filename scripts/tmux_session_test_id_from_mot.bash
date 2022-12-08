@@ -7,9 +7,7 @@ sleep 2
 
 tmux new-window
 tmux new-window
-tmux split-window -h 
 tmux new-window
-tmux split-window -h 
 tmux select-window -t 1
 tmux split-window -h 
 tmux split-window -h 
@@ -31,16 +29,13 @@ tmux send -t mysession:1.0 "rostopic echo /ik/output" C-m
 tmux send -t mysession:1.1 "rostopic echo /grf_node/output" C-m
 tmux send -t mysession:1.2 "roslaunch osrt_ros id.launch" C-m
 tmux send -t mysession:1.3 "roslaunch opensimrt_bridge grf.launch" C-m
+#tmux send -t mysession:1.3 "roslaunch osrt_ros agrfm_as_grf.launch" C-m
 tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m
 tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
 tmux send -t mysession:1.6 "sleep 2; rosservice call /inverse_kinematics_from_file/start" C-m
-#tmux send -t mysession:1.7 "rosrun rviz rviz -d _insole.rviz" C-m
-tmux send -t mysession:2.0 "rosrun rviz rviz -d _insole.rviz" C-m
-tmux send -t mysession:2.1 "roslaunch osrt_ros custom.launch" C-m
 
 #tmux send -t mysession:2.0 "cd /catkin_opensim/src/opensimrt_core/OpenSimRT/Pipeline; nv" C-m
 #tmux send -t mysession:3.0 "cd /catkin_opensim/src/opensimrt_core/launch; nv" C-m
-tmux send -t mysession:3.0 "roslaunch gait1992_description human_control_no_rviz.launch" C-m
 
 #tmux send -t mysession:1.6 "ls -la" C-m
 #tmux send -t mysession:1.7 "ls -la" C-m

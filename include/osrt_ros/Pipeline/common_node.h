@@ -66,8 +66,39 @@ namespace Pipeline
 			bool writeSto(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 			bool published_labels_at_least_once=false;
 			void initializeLoggers(std::string logger_name, OpenSim::TimeSeriesTable *logger);
-
+			std::vector<int> deshuffle_input;
+			std::vector<std::string> desired_label_order;
 	};
+	template <typename T> std::vector<int> find_matches(std::vector<T> desired, std::vector<T> shuffled)
+	{
+		std::vector<int> el;
+		assert(desired.size() == shuffled.size());
+		for (auto d_item: desired)
+		{
+			for(int i= 0;i<shuffled.size();i++)
+			{
+				std::string s_item = shuffled[i];
+				if (d_item == s_item)
+				{
+					el.push_back(i);
+					break;
+				}
+			}
+
+		}
+		//first lets assert that el has the same length as desired, that is, all shuffled and desired elements are mapped to each other
+		assert(el.size() == desired.size());
+		// should have in el a vector which maches shuffled to desired.
+		// shuffled[el[i]] == desired[i];
+		// Let's test it;
+		for (int i=0;i<desired.size();i++)
+		{
+			assert(shuffled[el[i]]==desired[i]);
+		}
+		return el;
+	}	
+
+
 }
 
 #endif

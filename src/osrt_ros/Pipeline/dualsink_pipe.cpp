@@ -58,6 +58,8 @@ void Pipeline::DualSink::onInit()
 	sync.connectInput(sub, sub2);
 	//sync.registerCallback(&DualSink::callback, this);
 	sync.registerCallback(boost::bind(&DualSink::callback, this, _1, _2));
+	//uncomment to test individual callbacks
+	//sub.registerCallback(&DualSink::callback1,this);
 	//sub2.registerCallback(&DualSink::callback2,this);
 	
 

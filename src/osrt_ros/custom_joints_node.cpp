@@ -1,3 +1,5 @@
+#include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/Vector3.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "ros/init.h"
 #include "ros/message_traits.h"
@@ -19,7 +21,7 @@ using namespace std;
 
 map<string, int> rjoint_to_ojoint 
 {
-		{"hip_r_RX", 6},
+	{"hip_r_RX", 6},
 		{"hip_r_RY", 7},
 		{"hip_r_RZ", 8},
 		{"knee_r_RX",15},
@@ -59,12 +61,41 @@ std::vector<std::string> labels = {
 	"ankle_angle_r",	//17
 	"ankle_angle_l"};	//18
 
+std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs::Quaternion q, geometry_msgs::Vector3 t)
+{
+	std::vector<geometry_msgs::TransformStamped>	v;		
+	auto time = ros::Time::now();
+	geometry_msgs::TransformStamped pelvisTF_r;
+	pelvisTF_r.header.stamp = time;
+	pelvisTF_r.header.frame_id = "pelvis_t";
+	pelvisTF_r.child_frame_id = "pelvis";
+	pelvisTF_r.transform.rotation = q;
+	v.push_back(pelvisTF_r);
+	//pelvisTF_r.transform.translation = ; default is already zero no need to think about this.
+	geometry_msgs::TransformStamped pelvisTF_t;
+	pelvisTF_t.header.stamp = time;
+	pelvisTF_t.header.frame_id = "subject_opensim";
+	pelvisTF_t.child_frame_id = "pelvis_t";
+	geometry_msgs::Quaternion eye_q;
+	eye_q.w = 1;
+	/*geometry_msgs::Quaternion ros_q;
+			ros_q.x = 0;
+			ros_q.y = 0.7071;
+			ros_q.z = 0.7071;
+			ros_q.w = 0;
+	pelvisTF_t.transform.rotation = ros_q;*/
+	pelvisTF_t.transform.rotation = eye_q;
+	pelvisTF_t.transform.translation = t;
+	v.push_back(pelvisTF_t);
+	return v;
+}
+
 class qJointPublisher: public Pipeline::CommonNode
 {
 	public:
 		ros::NodeHandle n;
 		qJointPublisher() : Pipeline::CommonNode(false)
-		{}
+	{}
 		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1000);
 		int count = 0;
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
@@ -98,15 +129,21 @@ class qJointPublisher: public Pipeline::CommonNode
 			pelvisTF.header.frame_id = "ground";
 			pelvisTF.child_frame_id = "pelvis";
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is likely incorrect. Needs visual inspection
-			pelvisTF.transform.translation.x = msg_ik->data[3];
-			pelvisTF.transform.translation.y = msg_ik->data[5];
-			pelvisTF.transform.translation.z = msg_ik->data[4];
+			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
+			geometry_msgs::Vector3 t;// = pelvisTF.transform.translation;
+			t.x = msg_ik->data[5];
+			t.y = msg_ik->data[3];
+			t.z = msg_ik->data[4];
 			tf2::Quaternion quat;
 			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
-			pelvisTF.transform.rotation.x = quat.x();
-			pelvisTF.transform.rotation.y = quat.y();
-			pelvisTF.transform.rotation.z = quat.z();
-			pelvisTF.transform.rotation.w = quat.w();
+			r.x = quat.x();
+			r.y = quat.y();
+			r.z = quat.z();
+			r.w = quat.w();
+			pelvisTF.transform.translation = t;
+			pelvisTF.transform.rotation = r;
+			/*for (auto tf_:rotate_then_translate(r,t))
+				static_broadcaster.sendTransform(tf_);*/
 			static_broadcaster.sendTransform(pelvisTF);
 		}
 };

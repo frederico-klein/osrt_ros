@@ -28,6 +28,14 @@ namespace Pipeline
 			{
 				ROS_ERROR_STREAM("dual message callback not implemented!");
 			}
+			virtual void callback1(const opensimrt_msgs::CommonTimedConstPtr& message)
+			{
+				ROS_ERROR_STREAM("callback should not have been registered by itself. testing individual message callback1");
+			}
+			virtual void callback2(const opensimrt_msgs::CommonTimedConstPtr& message)
+			{
+				ROS_ERROR_STREAM("callback should not have been registered by itself. testing individual message callback2");
+			}
 			virtual void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message, const opensimrt_msgs::CommonTimedConstPtr& message2) 
 			{
 				ROS_ERROR_STREAM("dual message callback_filtered not implemented!");

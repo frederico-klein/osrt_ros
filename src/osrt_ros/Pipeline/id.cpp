@@ -239,9 +239,9 @@ void Pipeline::Id::callback1(const opensimrt_msgs::CommonTimedConstPtr& message_
 
 void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 {
-	ROS_INFO_STREAM("POINT" << w.point[0] << ","<< w.point[1] << "," << w.point[2] );
-	ROS_INFO_STREAM("FORCE" << w.force[0] << ","<< w.force[1] << "," << w.force[2] );
-	ROS_INFO_STREAM("TORQUE" << w.torque[0] << ","<< w.torque[1] << "," << w.torque[2] );
+	ROS_DEBUG_STREAM("POINT" << w.point[0] << ","<< w.point[1] << "," << w.point[2] );
+	ROS_DEBUG_STREAM("FORCE" << w.force[0] << ","<< w.force[1] << "," << w.force[2] );
+	ROS_DEBUG_STREAM("TORQUE" << w.torque[0] << ","<< w.torque[1] << "," << w.torque[2] );
 
 
 }
@@ -304,11 +304,11 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
 	//cout << "left wrench.";
-	//ROS_INFO_STREAM("rw");
-	//print_wrench(grfRightWrench);
+	ROS_DEBUG_STREAM("rw");
+	print_wrench(grfRightWrench);
 	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
-	//ROS_INFO_STREAM("lw");
-	//print_wrench(grfLeftWrench);
+	ROS_DEBUG_STREAM("lw");
+	print_wrench(grfLeftWrench);
 //	return;
 
 	//filter wrench!

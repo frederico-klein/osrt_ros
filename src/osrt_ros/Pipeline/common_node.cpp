@@ -54,6 +54,15 @@ void Pipeline::CommonNode::onInit(int num_sinks)
 			if(ros::service::call("in_labels", l))
 			{
 				input_labels = l.response.data;
+				if (desired_label_order.size() == 0)
+				{
+					ROS_ERROR_STREAM("Label order not set! Data may not make sense!!!!");	
+				}
+				else
+				{
+					deshuffle_input = find_matches(desired_label_order,input_labels);
+					ROS_INFO_STREAM("Label order set. Make sure you are not directly accessing elements, but using something like 'raw_inpu[deshuffle_input[i]]'");
+				}
 				break;
 			}
 			ros::spinOnce();
