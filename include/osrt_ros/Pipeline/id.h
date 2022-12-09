@@ -12,6 +12,7 @@
 #include <Common/TimeSeriesTable.h>
 #include <SimTKcommon/internal/VectorBase.h>
 #include "geometry_msgs/WrenchStamped.h"
+#include "tf2_ros/transform_listener.h"
 
 namespace Pipeline
 {
@@ -28,6 +29,8 @@ namespace Pipeline
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			
 			//NOW get real ros wrenches:
+			tf2_ros::Buffer tfBuffer;
+			tf2_ros::TransformListener tfListener;
 			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wl; //input3
 			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wr; //input4
 			
@@ -42,6 +45,8 @@ namespace Pipeline
 			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
 			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, 	const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
+			
+			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
@@ -85,7 +90,7 @@ namespace Pipeline
 
 			void write_();
 			OpenSimRT::ExternalWrench::Input parse_message(const opensimrt_msgs::CommonTimedConstPtr& msg_grf, boost::array<int,9> grfIndexes);
-			OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w);
+			OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme);
 			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t);
 			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik);
 			virtual bool usesVisualizarFromId() { return true;}

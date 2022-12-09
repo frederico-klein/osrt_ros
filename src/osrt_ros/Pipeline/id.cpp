@@ -1,3 +1,4 @@
+#include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
 #include "geometry_msgs/WrenchStamped.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
@@ -34,7 +35,8 @@ using namespace OpenSimRT;
 
 Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 	sync_real_wrenches(sub,sub_wl,sub_wr,10), 
-	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10)
+	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
+	tfListener(tfBuffer)
 {
 
 	// subject data
@@ -160,7 +162,7 @@ Pipeline::Id::~Id()
 
 void Pipeline::Id::onInit() {
 	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case
-	//get_second_label = false;
+	get_second_label = false;
 	Pipeline::DualSink::onInit();
 
 	previousTime = ros::Time::now().toSec();
@@ -171,14 +173,13 @@ void Pipeline::Id::onInit() {
 	sub1.registerCallback(&Pipeline::Id::callback1,this);
 
 
-	//TODO: add the message filters for wrenches!
+	//the message filters for wrenches	
 	sub_wl.subscribe(nh,"left_wrench",100);
 	sub_wr.subscribe(nh,"right_wrench",100);
 	sync_real_wrenches.connectInput(sub,sub_wl,sub_wr);
 	sync_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches,this, _1,_2,_3));
 	sync_filtered_real_wrenches.connectInput(sub_filtered,sub_wl,sub_wr);
 	sync_filtered_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
-
 
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	initializeLoggers("grfRight",grfRightLogger);
@@ -250,10 +251,45 @@ ExternalWrench::Input Pipeline::Id::parse_message(const opensimrt_msgs::CommonTi
 	return a;
 }
 
-ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w)
+ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame)
 {
 	ExternalWrench::Input wO;
-	ROS_ERROR_STREAM("parsing geometry_wrench messages Not implemented!!!");
+	wO.force[0] = w->wrench.force.x;
+	wO.force[1] = w->wrench.force.y;
+	wO.force[2] = w->wrench.force.z;
+	wO.torque[0] = w->wrench.torque.x;
+	wO.torque[1] = w->wrench.torque.y;
+	wO.torque[2] = w->wrench.torque.z;
+	// now get the translations from the transform
+	// for the untranslated version I just want to get the reference in their own coordinate reference frame
+	wO.point[0] = 0;
+	wO.point[1] = 0;
+	wO.point[2] = 0;
+	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
+	try
+	{
+		//TODO: add function to actually understand the rotations as such:
+		//T-1_fixed is such that:
+		//T-1_fixed(T(w_raw)) = w_raw
+		//TODO: make these frames as params!!
+		nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
+		wO.point[0] = nulltransform.transform.translation.x;
+		wO.point[1] = nulltransform.transform.translation.y;
+		wO.point[2] = nulltransform.transform.translation.z;
+		actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
+		inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
+		ROS_DEBUG_STREAM("null transform" << nulltransform);
+		ROS_DEBUG_STREAM("actual transform" << actualtransform);
+		ROS_DEBUG_STREAM("inverse transform" << inv_t);
+		//inv_t converts back to opensim
+	}
+	catch (tf2::TransformException &ex) {
+		ROS_WARN("%s",ex.what());
+		ros::Duration(1.0).sleep();
+		return wO;
+	}
+
+	ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
 	return wO;
 
 }
@@ -276,13 +312,13 @@ void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 }
 void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
-	ROS_DEBUG_STREAM("Received message. Running Id loop"); 
+	ROS_DEBUG_STREAM("Received message. Running Id loop callback."); 
 	counter++;
 	double filtered_t;
 	auto iks = parse_ik_message(message_ik, &filtered_t);
 	auto grfs = get_wrench(message_grf);
 	ROS_WARN_STREAM("filtered_t" << filtered_t);
-//	run(ikFiltered.t, iks, grfs);	
+	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
 	run(filtered_t, iks, grfs);	
 }
@@ -348,9 +384,26 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 
 }	
 
-std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf)
+std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
 	// TODO: get wrench message!!!!!!!!!!
+	std::vector<ExternalWrench::Input> wrenches;
+	ExternalWrench::Input grfRightWrench = parse_message(wr, "right_foot_forceplate");
+	//cout << "left wrench.";
+	ROS_DEBUG_STREAM("rw");
+	print_wrench(grfRightWrench);
+	ExternalWrench::Input grfLeftWrench = parse_message(wl, "left_foot_forceplate");
+	ROS_DEBUG_STREAM("lw");
+	print_wrench(grfLeftWrench);
+	//	return;
+
+	wrenches.push_back(grfLeftWrench);
+	wrenches.push_back(grfRightWrench);
+	return wrenches;
+}
+
+std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf)
+{
 	std::vector<ExternalWrench::Input> wrenches;
 	double t = message_grf->time; //TODO: if it isn't the same as in message ik, this will break!
 	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
@@ -370,7 +423,7 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs
 void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs ) 
 
 {
-	ROS_DEBUG_STREAM("Received run call. Running Id loop"); 
+	ROS_DEBUG_STREAM("Received run call. Running Id run loop."); 
 	counter++;
 
 	double timediff = t- previousTime;
@@ -542,12 +595,26 @@ void Pipeline::Id::write_() {
 
 void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
-	ROS_ERROR_STREAM("not implemented");
+	ROS_DEBUG_STREAM("Received message. Running Id loop callback_real_wrenches"); 
+	counter++;
+	double filtered_t;
+	auto iks = parse_ik_message(message_ik, &filtered_t);
+	auto grfs = get_wrench(wl,wr);
+	ROS_WARN_STREAM("filtered_t" << filtered_t);
+	//	run(ikFiltered.t, iks, grfs);	
+	//TODO: maybe this will break?
+	run(filtered_t, iks, grfs);	
 }
 
 void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
-	ROS_ERROR_STREAM("not implemented");
+	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
+	counter++;
+	//cant find the right copy constructor syntax. will for loop it
+	auto iks = parse_ik_message(message_ik);
+	auto grfs = get_wrench(wl,wr);
+	run(message_ik->time, iks,grfs);
+	ROS_ERROR_STREAM("callback_real_wrenches_filtered not implemented");
 }
 
 
