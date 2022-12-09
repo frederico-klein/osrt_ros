@@ -44,7 +44,7 @@ namespace Pipeline
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
-			virtual void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf);
+			virtual void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std::vector<OpenSimRT::ExternalWrench::Input>  );
 
 			void onInit();
 
@@ -64,8 +64,7 @@ namespace Pipeline
 			
 			//other stuff
 			OpenSimRT::InverseDynamics* id;
-			OpenSimRT::ForceDecorator* rightGRFDecorator;
-			OpenSimRT::ForceDecorator* leftGRFDecorator;
+			OpenSimRT::ForceDecorator *rightGRFDecorator,*leftGRFDecorator;
 			OpenSim::Model* model;
 			OpenSimRT::BasicModelVisualizer* visualizer;
 			OpenSimRT::LowPassSmoothFilter* ikfilter, *grfRightFilter, *grfLeftFilter;

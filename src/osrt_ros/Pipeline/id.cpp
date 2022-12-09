@@ -33,121 +33,121 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 	sync_real_wrenches(sub,sub_wl,sub_wr,10), 
 	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10)
 {
-    
+
 	// subject data
-    INIReader ini(INI_FILE);
-    auto section = "TEST_ID_FROM_FILE";
-    subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-    auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-    auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
-    auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
+	INIReader ini(INI_FILE);
+	auto section = "TEST_ID_FROM_FILE";
+	subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+	auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+	auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
+	auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
-    auto grfRightApplyBody =
-            ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
-    auto grfRightForceExpressed =
-            ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
-    auto grfRightPointExpressed =
-            ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
-    auto grfRightPointIdentifier =
-            ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
-    auto grfRightForceIdentifier =
-            ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
-    auto grfRightTorqueIdentifier =
-            ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
+	auto grfRightApplyBody =
+		ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
+	auto grfRightForceExpressed =
+		ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
+	auto grfRightPointExpressed =
+		ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
+	auto grfRightPointIdentifier =
+		ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
+	auto grfRightForceIdentifier =
+		ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
+	auto grfRightTorqueIdentifier =
+		ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
 
-    auto grfLeftApplyBody =
-            ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
-    auto grfLeftForceExpressed =
-            ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
-    auto grfLeftPointExpressed =
-            ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
-    auto grfLeftPointIdentifier =
-            ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
-    auto grfLeftForceIdentifier =
-            ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
-    auto grfLeftTorqueIdentifier =
-            ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
+	auto grfLeftApplyBody =
+		ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
+	auto grfLeftForceExpressed =
+		ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
+	auto grfLeftPointExpressed =
+		ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
+	auto grfLeftPointIdentifier =
+		ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
+	auto grfLeftForceIdentifier =
+		ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
+	auto grfLeftTorqueIdentifier =
+		ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
 
-    memory = ini.getInteger(section, "MEMORY", 0);
-    cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
-    delay = ini.getInteger(section, "DELAY", 0);
-    splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
+	memory = ini.getInteger(section, "MEMORY", 0);
+	cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
+	delay = ini.getInteger(section, "DELAY", 0);
+	splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
-    // setup model
-    Object::RegisterType(Thelen2003Muscle());
-    model = new Model(modelFile);
-    OpenSimUtils::removeActuators(*model);
-    model->initSystem();
+	// setup model
+	Object::RegisterType(Thelen2003Muscle());
+	model = new Model(modelFile);
+	OpenSimUtils::removeActuators(*model);
+	model->initSystem();
 
-    // setup external forces
-    //Storage grfMotion(grfMotFile);
+	// setup external forces
+	//Storage grfMotion(grfMotFile);
 
-    ExternalWrench::Parameters grfRightFootPar{
-            grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
-    grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-            grfRightPointIdentifier, grfRightForceIdentifier,
-            grfRightTorqueIdentifier);
-    auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
-    grfRightLogger = &grfRightLoggerTemp; 
+	ExternalWrench::Parameters grfRightFootPar{
+		grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
+	grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
+			grfRightPointIdentifier, grfRightForceIdentifier,
+			grfRightTorqueIdentifier);
+	auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
+	grfRightLogger = &grfRightLoggerTemp; 
 
-    ExternalWrench::Parameters grfLeftFootPar{
-            grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
-    grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-            grfLeftPointIdentifier, grfLeftForceIdentifier,
-            grfLeftTorqueIdentifier);
-    auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
-    grfLeftLogger = &grfLeftLoggerTemp;
+	ExternalWrench::Parameters grfLeftFootPar{
+		grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
+	grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
+			grfLeftPointIdentifier, grfLeftForceIdentifier,
+			grfLeftTorqueIdentifier);
+	auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
+	grfLeftLogger = &grfLeftLoggerTemp;
 
-    vector<ExternalWrench::Parameters> wrenchParameters;
-    wrenchParameters.push_back(grfRightFootPar);
-    wrenchParameters.push_back(grfLeftFootPar);
+	vector<ExternalWrench::Parameters> wrenchParameters;
+	wrenchParameters.push_back(grfRightFootPar);
+	wrenchParameters.push_back(grfLeftFootPar);
 
-    // get kinematics as a table with ordered coordinates
-    /*auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
-            model, ikFile, 0.01);
-	    */
+	// get kinematics as a table with ordered coordinates
+	/*auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
+	  model, ikFile, 0.01);
+	  */
 
-    // setup filters
-    LowPassSmoothFilter::Parameters ikFilterParam;
-    ikFilterParam.numSignals = model->getNumCoordinates();
-    ikFilterParam.memory = memory;
-    ikFilterParam.delay = delay;
-    ikFilterParam.cutoffFrequency = cutoffFreq;
-    ikFilterParam.splineOrder = splineOrder;
-    ikFilterParam.calculateDerivatives = true;
-    ikfilter = new LowPassSmoothFilter(ikFilterParam);
+	// setup filters
+	LowPassSmoothFilter::Parameters ikFilterParam;
+	ikFilterParam.numSignals = model->getNumCoordinates();
+	ikFilterParam.memory = memory;
+	ikFilterParam.delay = delay;
+	ikFilterParam.cutoffFrequency = cutoffFreq;
+	ikFilterParam.splineOrder = splineOrder;
+	ikFilterParam.calculateDerivatives = true;
+	ikfilter = new LowPassSmoothFilter(ikFilterParam);
 
-    LowPassSmoothFilter::Parameters grfFilterParam;
-    grfFilterParam.numSignals = 9;
-    grfFilterParam.memory = memory;
-    grfFilterParam.delay = delay;
-    grfFilterParam.cutoffFrequency = cutoffFreq;
-    grfFilterParam.splineOrder = splineOrder;
-    grfFilterParam.calculateDerivatives = false;
-    grfRightFilter = new LowPassSmoothFilter(grfFilterParam);
-    grfLeftFilter = new LowPassSmoothFilter(grfFilterParam);
+	LowPassSmoothFilter::Parameters grfFilterParam;
+	grfFilterParam.numSignals = 9;
+	grfFilterParam.memory = memory;
+	grfFilterParam.delay = delay;
+	grfFilterParam.cutoffFrequency = cutoffFreq;
+	grfFilterParam.splineOrder = splineOrder;
+	grfFilterParam.calculateDerivatives = false;
+	grfRightFilter = new LowPassSmoothFilter(grfFilterParam);
+	grfLeftFilter = new LowPassSmoothFilter(grfFilterParam);
 
-    // test with state space filter
-    // StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
-    // StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,
-    // cutoffFreq});
+	// test with state space filter
+	// StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
+	// StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,
+	// cutoffFreq});
 
-    // initialize id and logger
-    id = new InverseDynamics(*model, wrenchParameters);
-    auto tauLoggerTemp = id->initializeLogger();
-    tauLogger = &tauLoggerTemp;
-    auto qLoggerTemp = id->initializeLogger();
-    qLogger = &qLoggerTemp;
-    auto qDotLoggerTemp = id->initializeLogger();
-    qDotLogger = &qDotLoggerTemp;
-    auto qDDotLoggerTemp = id->initializeLogger();
-    qDDotLogger = &qDDotLoggerTemp;
+	// initialize id and logger
+	id = new InverseDynamics(*model, wrenchParameters);
+	auto tauLoggerTemp = id->initializeLogger();
+	tauLogger = &tauLoggerTemp;
+	auto qLoggerTemp = id->initializeLogger();
+	qLogger = &qLoggerTemp;
+	auto qDotLoggerTemp = id->initializeLogger();
+	qDotLogger = &qDotLoggerTemp;
+	auto qDDotLoggerTemp = id->initializeLogger();
+	qDDotLogger = &qDDotLoggerTemp;
 
-    // mean delay
-    sumDelayMS = 0;
-    sumDelayMSCounter = 0;
+	// mean delay
+	sumDelayMS = 0;
+	sumDelayMSCounter = 0;
 
-    counter = 0;
+	counter = 0;
 }
 
 Pipeline::Id::~Id()
@@ -159,14 +159,14 @@ void Pipeline::Id::onInit() {
 	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case
 	//get_second_label = false;
 	Pipeline::DualSink::onInit();
-	
+
 	previousTime = ros::Time::now().toSec();
 	previousTimeDifference = 0;
-			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
-			sub0.registerCallback(&Pipeline::Id::callback0,this);
-			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
-			sub1.registerCallback(&Pipeline::Id::callback1,this);
-	
+	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
+	sub0.registerCallback(&Pipeline::Id::callback0,this);
+	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
+	sub1.registerCallback(&Pipeline::Id::callback1,this);
+
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
@@ -176,21 +176,23 @@ void Pipeline::Id::onInit() {
 	//sync.registerCallback(&Pipeline::Id::callback, this);
 
 	//i should have the input labels from grf already
-	
-	ROS_INFO_STREAM("left");
-	grfLeftIndexes = generateIndexes(grfLeftLabels,input2_labels);
-	ROS_INFO_STREAM("right");
-	grfRightIndexes = generateIndexes(grfRightLabels, input2_labels);
-    // visualizer
-    if (usesVisualizarFromId())
-    {
-	    ROS_WARN_STREAM("CREATING VISUALIZER FROM ID!");
-	    visualizer = new BasicModelVisualizer(*model);
-	    rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-	    visualizer->addDecorationGenerator(rightGRFDecorator);
-	    leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
-	    visualizer->addDecorationGenerator(leftGRFDecorator);
-    }
+	if(get_second_label)
+	{
+		ROS_INFO_STREAM("left");
+		grfLeftIndexes = generateIndexes(grfLeftLabels,input2_labels);
+		ROS_INFO_STREAM("right");
+		grfRightIndexes = generateIndexes(grfRightLabels, input2_labels);
+	}
+	// visualizer
+	if (usesVisualizarFromId())
+	{
+		ROS_WARN_STREAM("CREATING VISUALIZER FROM ID!");
+		visualizer = new BasicModelVisualizer(*model);
+		rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+		visualizer->addDecorationGenerator(rightGRFDecorator);
+		leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+		visualizer->addDecorationGenerator(leftGRFDecorator);
+	}
 
 }
 
@@ -258,7 +260,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	{
 		qRaw[j] = message_ik->data[j];
 	}
-	
+
 	double t = message_ik->time;
 	// filter
 	auto ikFiltered = ikfilter->filter({t, qRaw});
@@ -271,7 +273,9 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 		return; }
 	ROS_DEBUG_STREAM("Filter results are valid");
 
-	run(ikFiltered.t, q, qDot, qDDot, message_grf);	
+	auto grfs = get_wrench(message_grf);
+
+	run(ikFiltered.t, q, qDot, qDDot, grfs);	
 }	
 void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
@@ -285,7 +289,8 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 		qDot[j] = message_ik->d1_data[j];
 		qDDot[j] = message_ik->d2_data[j];
 	}
-	run(message_ik->time, q, qDot, qDDot,message_grf);
+	auto grfs = get_wrench(message_grf);
+	run(message_ik->time, q, qDot, qDDot,grfs);
 
 }	
 
@@ -301,14 +306,14 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs
 	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
 	ROS_DEBUG_STREAM("lw");
 	print_wrench(grfLeftWrench);
-//	return;
+	//	return;
 
 	wrenches.push_back(grfLeftWrench);
 	wrenches.push_back(grfRightWrench);
 	return wrenches;
 }
 
-void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std::vector<ExternalWrench::Input> grfs ) 
 
 {
 	ROS_DEBUG_STREAM("Received run call. Running Id loop"); 
@@ -324,37 +329,35 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
 
 	//gets wrenches and unpacks them:
-	
-	auto grfs = get_wrench(message_grf);
-	
+
+
 	auto grfLeftWrench = grfs[0]; 
 	auto grfRightWrench = grfs[1]; 
-	
+
 	//filter wrench!
 	//
-	
-        auto grfRightFiltered =
-                grfRightFilter->filter({t, grfRightWrench.toVector()});
-        grfRightWrench.fromVector(grfRightFiltered.x);
-        auto grfLeftFiltered =
-                grfLeftFilter->filter({t, grfLeftWrench.toVector()});
-        grfLeftWrench.fromVector(grfLeftFiltered.x);
+	auto grfRightFiltered =
+		grfRightFilter->filter({t, grfRightWrench.toVector()});
+	grfRightWrench.fromVector(grfRightFiltered.x);
+	auto grfLeftFiltered =
+		grfLeftFilter->filter({t, grfLeftWrench.toVector()});
+	grfLeftWrench.fromVector(grfLeftFiltered.x);
 
-        if (!grfRightFiltered.isValid ||
-            !grfLeftFiltered.isValid) {
-        }
-					       //
-        // perform id
-        chrono::high_resolution_clock::time_point t1;
-        t1 = chrono::high_resolution_clock::now();
-        auto idOutput = id->solve(
-                {t, q, qDot, qDDot,
-                 vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+	if (!grfRightFiltered.isValid ||
+			!grfLeftFiltered.isValid) {
+	}
+	//
+	// perform id
+	chrono::high_resolution_clock::time_point t1;
+	t1 = chrono::high_resolution_clock::now();
+	auto idOutput = id->solve(
+			{t, q, qDot, qDDot,
+			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
-        chrono::high_resolution_clock::time_point t2;
-        t2 = chrono::high_resolution_clock::now();
-        sumDelayMS +=
-                chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+	chrono::high_resolution_clock::time_point t2;
+	t2 = chrono::high_resolution_clock::now();
+	sumDelayMS +=
+		chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
 	sumDelayMSCounter++;
 
@@ -362,10 +365,10 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 
 	// visualization
 	try {
-	visualizer->update(q);
-	rightGRFDecorator->update(grfRightWrench.point,
-				  grfRightWrench.force);
-	leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
+		visualizer->update(q);
+		rightGRFDecorator->update(grfRightWrench.point,
+				grfRightWrench.force);
+		leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
 		ROS_DEBUG_STREAM("visualizer ran ok.");
 	}
 	catch (std::exception& e)
@@ -375,20 +378,20 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 
 	try{
 
-	// log data (use filter time to align with delay)
-	if(false)
-	{
-		ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
+		// log data (use filter time to align with delay)
+		if(false)
+		{
+			ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 
-		tauLogger->appendRow(t, ~idOutput.tau);
-		grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
-		grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-		qLogger->appendRow(t, ~q);
-		qDotLogger->appendRow(t, ~qDot);
-		qDDotLogger->appendRow(t, ~qDDot);
+			tauLogger->appendRow(t, ~idOutput.tau);
+			grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
+			grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+			qLogger->appendRow(t, ~q);
+			qDotLogger->appendRow(t, ~qDot);
+			qDDotLogger->appendRow(t, ~qDDot);
 
-		ROS_INFO_STREAM("Added data to loggers. "<< counter);
-	}}
+			ROS_INFO_STREAM("Added data to loggers. "<< counter);
+		}}
 	catch (std::exception& e)
 	{
 		ROS_WARN_STREAM("Error while updating loggers, data will not be saved" <<std::endl << e.what());
@@ -399,42 +402,42 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 }	
 void Pipeline::Id::finish() {
 
-    cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCounter << " ms"
-         << endl;
+	cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCounter << " ms"
+		<< endl;
 
-    // Compare results with reference tables. Make sure that M, D,
-    // spline order, fc are the same as the test.
-    SimTK_ASSERT_ALWAYS(memory == 35,
-                        "ensure that MEMORY = 35 in setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(delay == 14,
-                        "ensure that DELAY = 35 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(cutoffFreq == 6,
-                        "ensure that CUTOFF_FREQ = 6 setup.ini for testing");
-    SimTK_ASSERT_ALWAYS(splineOrder == 3,
-                        "ensure that SPLINE_ORDER = 3 setup.ini for testing");
-    OpenSimUtils::compareTables(
-            *tauLogger,
-            TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
-    OpenSimUtils::compareTables(
-            *grfLeftLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/inverse_dynamics/wrench_left.sto"));
-    OpenSimUtils::compareTables(
-            *grfRightLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/inverse_dynamics/wrench_right.sto"));
-    OpenSimUtils::compareTables(
-            *qLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/inverse_dynamics/q_filtered.sto"));
-    OpenSimUtils::compareTables(
-            *qDotLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/inverse_dynamics/qDot_filtered.sto"));
-    OpenSimUtils::compareTables(
-            *qDDotLogger,
-            TimeSeriesTable(subjectDir +
-                            "real_time/inverse_dynamics/qDDot_filtered.sto"));
+	// Compare results with reference tables. Make sure that M, D,
+	// spline order, fc are the same as the test.
+	SimTK_ASSERT_ALWAYS(memory == 35,
+			"ensure that MEMORY = 35 in setup.ini for testing");
+	SimTK_ASSERT_ALWAYS(delay == 14,
+			"ensure that DELAY = 35 setup.ini for testing");
+	SimTK_ASSERT_ALWAYS(cutoffFreq == 6,
+			"ensure that CUTOFF_FREQ = 6 setup.ini for testing");
+	SimTK_ASSERT_ALWAYS(splineOrder == 3,
+			"ensure that SPLINE_ORDER = 3 setup.ini for testing");
+	OpenSimUtils::compareTables(
+			*tauLogger,
+			TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
+	OpenSimUtils::compareTables(
+			*grfLeftLogger,
+			TimeSeriesTable(subjectDir +
+				"real_time/inverse_dynamics/wrench_left.sto"));
+	OpenSimUtils::compareTables(
+			*grfRightLogger,
+			TimeSeriesTable(subjectDir +
+				"real_time/inverse_dynamics/wrench_right.sto"));
+	OpenSimUtils::compareTables(
+			*qLogger,
+			TimeSeriesTable(subjectDir +
+				"real_time/inverse_dynamics/q_filtered.sto"));
+	OpenSimUtils::compareTables(
+			*qDotLogger,
+			TimeSeriesTable(subjectDir +
+				"real_time/inverse_dynamics/qDot_filtered.sto"));
+	OpenSimUtils::compareTables(
+			*qDDotLogger,
+			TimeSeriesTable(subjectDir +
+				"real_time/inverse_dynamics/qDDot_filtered.sto"));
 }
 bool Pipeline::Id::see(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
@@ -447,23 +450,23 @@ bool Pipeline::Id::see(std_srvs::Empty::Request &req, std_srvs::Empty::Response 
 	return true;
 }
 void Pipeline::Id::write_() {
-//			std::stringstream ss;
+	//			std::stringstream ss;
 	//vector<string> data = grfRightLogger.getTableMetaData().getKeys();
 	//ss << "Data Retrieved: \n";
-//		  	std::copy(grfRightLogger.getTableMetaData().getKeys().begin(), grfRightLogger.getTableMetaData().getKeys().end(), std::ostream_iterator<string>(ss, " "));
-//		  	ss << std::endl;
-//			ROS_INFO_STREAM("grfRightLogger columns:" << ss.str());
+	//		  	std::copy(grfRightLogger.getTableMetaData().getKeys().begin(), grfRightLogger.getTableMetaData().getKeys().end(), std::ostream_iterator<string>(ss, " "));
+	//		  	ss << std::endl;
+	//			ROS_INFO_STREAM("grfRightLogger columns:" << ss.str());
 
 
-/*	ROS_INFO_STREAM("I TRY WRITE sto");
-	STOFileAdapter::write(grfRightLogger,"grfRight.sto");
-	STOFileAdapter::write(grfLeftLogger,"grfLeft.sto");
-	STOFileAdapter::write(tauLogger,"tau.sto");
-	ROS_INFO_STREAM("I TRY WRITE csv");
-	CSVFileAdapter::write(grfRightLogger,"grfRight.csv");
-	CSVFileAdapter::write(grfLeftLogger,"grfLeft.csv");
-	CSVFileAdapter::write(tauLogger,"tau.csv");
-*/
+	/*	ROS_INFO_STREAM("I TRY WRITE sto");
+		STOFileAdapter::write(grfRightLogger,"grfRight.sto");
+		STOFileAdapter::write(grfLeftLogger,"grfLeft.sto");
+		STOFileAdapter::write(tauLogger,"tau.sto");
+		ROS_INFO_STREAM("I TRY WRITE csv");
+		CSVFileAdapter::write(grfRightLogger,"grfRight.csv");
+		CSVFileAdapter::write(grfLeftLogger,"grfLeft.csv");
+		CSVFileAdapter::write(tauLogger,"tau.csv");
+		*/
 	saveCsvs();
 	saveStos();
 	ROS_INFO_STREAM("i write");
