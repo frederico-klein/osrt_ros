@@ -29,7 +29,9 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::Id::Id()
+Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
+	sync_real_wrenches(sub,sub_wl,sub_wr,10), 
+	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10)
 {
     
 	// subject data
@@ -154,6 +156,8 @@ Pipeline::Id::~Id()
 }
 
 void Pipeline::Id::onInit() {
+	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case
+	//get_second_label = false;
 	Pipeline::DualSink::onInit();
 	
 	previousTime = ros::Time::now().toSec();
@@ -285,6 +289,25 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 
 }	
 
+std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf)
+{
+	// TODO: get wrench message!!!!!!!!!!
+	std::vector<ExternalWrench::Input> wrenches;
+	double t = message_grf->time; //TODO: if it isn't the same as in message ik, this will break!
+	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
+	//cout << "left wrench.";
+	ROS_DEBUG_STREAM("rw");
+	print_wrench(grfRightWrench);
+	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
+	ROS_DEBUG_STREAM("lw");
+	print_wrench(grfLeftWrench);
+//	return;
+
+	wrenches.push_back(grfLeftWrench);
+	wrenches.push_back(grfRightWrench);
+	return wrenches;
+}
+
 void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 
 {
@@ -300,17 +323,13 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 	ROS_DEBUG_STREAM("T (msg):"<< std::setprecision (15) << t);
 	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
 
-	// TODO: get wrench message!!!!!!!!!!
-
-	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
-	//cout << "left wrench.";
-	ROS_DEBUG_STREAM("rw");
-	print_wrench(grfRightWrench);
-	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
-	ROS_DEBUG_STREAM("lw");
-	print_wrench(grfLeftWrench);
-//	return;
-
+	//gets wrenches and unpacks them:
+	
+	auto grfs = get_wrench(message_grf);
+	
+	auto grfLeftWrench = grfs[0]; 
+	auto grfRightWrench = grfs[1]; 
+	
 	//filter wrench!
 	//
 	
@@ -323,9 +342,8 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 
         if (!grfRightFiltered.isValid ||
             !grfLeftFiltered.isValid) {
-            return;
         }
-
+					       //
         // perform id
         chrono::high_resolution_clock::time_point t1;
         t1 = chrono::high_resolution_clock::now();

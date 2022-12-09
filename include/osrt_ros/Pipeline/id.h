@@ -2,6 +2,7 @@
 #define PIPELINE_ID_HEADER_FBK_27072022
 
 #include "InverseDynamics.h"
+#include "geometry_msgs/Wrench.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "SignalProcessing.h"
@@ -9,6 +10,7 @@
 #include "opensimrt_msgs/CommonTimed.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
+#include "geometry_msgs/WrenchStamped.h"
 
 namespace Pipeline
 {
@@ -18,13 +20,30 @@ namespace Pipeline
 		public:
 			Id();
 			~Id();
-
-
 			// now since I have 2 sinks I will need message_filters
 			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
 			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			void callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
+			
+			//NOW get real ros wrenches:
+			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wl; //input3
+			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wr; //input4
+			
+			virtual void callback_wl(const geometry_msgs::WrenchConstPtr wl_msg)
+			{ ROS_ERROR_STREAM("callback for wl shouldn't be registerd. getting message though.");};
+			virtual void callback_wr(const geometry_msgs::WrenchConstPtr wr_msg)
+			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
+
+			message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
+			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
+			
+			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedPtr& wl, const geometry_msgs::WrenchConstPtr& wr);
+			
+			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedPtr& wl, const geometry_msgs::WrenchConstPtr& wr);
+
+			//rest of class:
+			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
 			virtual void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf);
 
 			void onInit();
@@ -67,6 +86,7 @@ namespace Pipeline
 			void write_();
 			OpenSimRT::ExternalWrench::Input parse_message(const opensimrt_msgs::CommonTimedConstPtr& msg_grf, boost::array<int,9> grfIndexes);
 			virtual bool usesVisualizarFromId() { return true;}
+			
 	};
 
 }

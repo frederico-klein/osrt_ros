@@ -14,9 +14,9 @@ namespace Pipeline
 	{
 		public:
 
-			DualSink();
+			DualSink(bool debug=false);
 			~DualSink();
-
+			bool get_second_label = true;
 			//this is a sink, I think. should be made into a class, but I think it will be complicated, so I didnt do it.
 			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub2; //input2
 										       //ros::Subscriber sub2; //input2
