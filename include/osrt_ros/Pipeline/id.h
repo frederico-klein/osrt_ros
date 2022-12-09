@@ -36,12 +36,12 @@ namespace Pipeline
 			virtual void callback_wr(const geometry_msgs::WrenchConstPtr& wr_msg)
 			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
 
-			message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
+			message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
 			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
 			
-			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedPtr& wl, const geometry_msgs::WrenchConstPtr& wr);
+			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
-			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedPtr& wl, const geometry_msgs::WrenchConstPtr& wr);
+			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, 	const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);

@@ -170,7 +170,15 @@ void Pipeline::Id::onInit() {
 	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
 	sub1.registerCallback(&Pipeline::Id::callback1,this);
 
+
 	//TODO: add the message filters for wrenches!
+	sub_wl.subscribe(nh,"left_wrench",100);
+	sub_wr.subscribe(nh,"right_wrench",100);
+	sync_real_wrenches.connectInput(sub,sub_wl,sub_wr);
+	sync_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches,this, _1,_2,_3));
+	sync_filtered_real_wrenches.connectInput(sub_filtered,sub_wl,sub_wr);
+	sync_filtered_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
+
 
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	initializeLoggers("grfRight",grfRightLogger);
@@ -531,4 +539,15 @@ void Pipeline::Id::write_() {
 	saveStos();
 	ROS_INFO_STREAM("i write");
 }
+
+void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
+{
+	ROS_ERROR_STREAM("not implemented");
+}
+
+void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
+{
+	ROS_ERROR_STREAM("not implemented");
+}
+
 
