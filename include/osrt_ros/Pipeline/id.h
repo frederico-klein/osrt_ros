@@ -10,6 +10,7 @@
 #include "opensimrt_msgs/CommonTimed.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
+#include <SimTKcommon/internal/VectorBase.h>
 #include "geometry_msgs/WrenchStamped.h"
 
 namespace Pipeline
@@ -30,9 +31,9 @@ namespace Pipeline
 			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wl; //input3
 			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub_wr; //input4
 			
-			virtual void callback_wl(const geometry_msgs::WrenchConstPtr wl_msg)
+			virtual void callback_wl(const geometry_msgs::WrenchConstPtr& wl_msg)
 			{ ROS_ERROR_STREAM("callback for wl shouldn't be registerd. getting message though.");};
-			virtual void callback_wr(const geometry_msgs::WrenchConstPtr wr_msg)
+			virtual void callback_wr(const geometry_msgs::WrenchConstPtr& wr_msg)
 			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
 
 			message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
@@ -44,7 +45,7 @@ namespace Pipeline
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
-			virtual void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std::vector<OpenSimRT::ExternalWrench::Input>  );
+			virtual void run(double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  );
 
 			void onInit();
 
@@ -84,6 +85,9 @@ namespace Pipeline
 
 			void write_();
 			OpenSimRT::ExternalWrench::Input parse_message(const opensimrt_msgs::CommonTimedConstPtr& msg_grf, boost::array<int,9> grfIndexes);
+			OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w);
+			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t);
+			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik);
 			virtual bool usesVisualizarFromId() { return true;}
 			
 	};

@@ -1,3 +1,5 @@
+#include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
@@ -16,6 +18,7 @@
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
+#include <SimTKcommon/internal/Vector_.h>
 #include <exception>
 #include <numeric>
 #include <utility>
@@ -167,6 +170,8 @@ void Pipeline::Id::onInit() {
 	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
 	sub1.registerCallback(&Pipeline::Id::callback1,this);
 
+	//TODO: add the message filters for wrenches!
+
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
@@ -236,6 +241,16 @@ ExternalWrench::Input Pipeline::Id::parse_message(const opensimrt_msgs::CommonTi
 
 	return a;
 }
+
+ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w)
+{
+	ExternalWrench::Input wO;
+	ROS_ERROR_STREAM("parsing geometry_wrench messages Not implemented!!!");
+	return wO;
+
+}
+
+
 void Pipeline::Id::callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik) {
 	ROS_INFO_STREAM("callback ik called");
 }
@@ -255,6 +270,18 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 {
 	ROS_DEBUG_STREAM("Received message. Running Id loop"); 
 	counter++;
+	double filtered_t;
+	auto iks = parse_ik_message(message_ik, &filtered_t);
+	auto grfs = get_wrench(message_grf);
+	ROS_WARN_STREAM("filtered_t" << filtered_t);
+//	run(ikFiltered.t, iks, grfs);	
+	//TODO: maybe this will break?
+	run(filtered_t, iks, grfs);	
+}
+
+std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
+{
+	std::vector<SimTK::Vector> qVec;
 	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
 	{
@@ -270,18 +297,21 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_DEBUG_STREAM("Filter ran ok");
 	if (!ikFiltered.isValid) {
 		ROS_DEBUG_STREAM("filter results are NOT valid");
-		return; }
+		return qVec; }
 	ROS_DEBUG_STREAM("Filter results are valid");
 
-	auto grfs = get_wrench(message_grf);
+	*filtered_t = ikFiltered.t;
+	//Construct qVec
+	qVec.push_back(q);
+	qVec.push_back(qDot);
+	qVec.push_back(qDDot);
 
-	run(ikFiltered.t, q, qDot, qDDot, grfs);	
-}	
-void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+	return qVec;
+}
+
+std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik)
 {
-	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
-	counter++;
-	//cant find the right copy constructor syntax. will for loop it
+	std::vector<SimTK::Vector> qVec;
 	SimTK::Vector q(19),qDot(19),qDDot(19); 
 	for (int j = 0;j < q.size();j++)
 	{
@@ -289,8 +319,24 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 		qDot[j] = message_ik->d1_data[j];
 		qDDot[j] = message_ik->d2_data[j];
 	}
+
+	//Construct qVec :should be same as above
+	qVec.push_back(q);
+	qVec.push_back(qDot);
+	qVec.push_back(qDDot);
+	return qVec;
+
+}
+
+
+void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
+{
+	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
+	counter++;
+	//cant find the right copy constructor syntax. will for loop it
+	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(message_grf);
-	run(message_ik->time, q, qDot, qDDot,grfs);
+	run(message_ik->time, iks,grfs);
 
 }	
 
@@ -313,7 +359,7 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs
 	return wrenches;
 }
 
-void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std::vector<ExternalWrench::Input> grfs ) 
+void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs ) 
 
 {
 	ROS_DEBUG_STREAM("Received run call. Running Id loop"); 
@@ -328,9 +374,23 @@ void Pipeline::Id::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vect
 	ROS_DEBUG_STREAM("T (msg):"<< std::setprecision (15) << t);
 	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
 
-	//gets wrenches and unpacks them:
+	//unpacks iks:
+	//TODO
+	if(iks.size() == 0)
+	{
+		ROS_ERROR_STREAM("THERE ARE NO IKS!");
+		return;
+	}
+	auto q = iks[0];
+	auto qDot = iks[1];
+	auto qDDot = iks[2];
+	//unpacks wrenches:
 
-
+	if(grfs.size() == 0)
+	{
+		ROS_ERROR_STREAM("THERE ARE NO GRFS!");
+		return;
+	}
 	auto grfLeftWrench = grfs[0]; 
 	auto grfRightWrench = grfs[1]; 
 
