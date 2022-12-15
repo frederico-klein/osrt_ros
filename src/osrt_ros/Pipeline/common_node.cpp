@@ -104,7 +104,7 @@ bool Pipeline::CommonNode::outLabels(opensimrt_msgs::LabelsSrv::Request & req, o
 void Pipeline::CommonNode::initializeLoggers(std::string logger_name, OpenSim::TimeSeriesTable *logger)
 {
 	//adds loggers to loggers
-	//ROS_ERROR_STREAM("initialization not implemented!");
+	ROS_ERROR_STREAM("initialization not really implemented! Need to set the column names and this is actually not as easy as it seems, since I broke the original code.");
 	at_least_one_logger_initialized = true;
 	ROS_INFO_STREAM("At least one logger was initialized! Will be able to save this with service");
 	NamedTable this_named_table = std::make_pair(logger,logger_name);	

@@ -43,9 +43,11 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 	INIReader ini(INI_FILE);
 	auto section = "TEST_ID_FROM_FILE";
 	subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-	auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
-	auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
+	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+	std::string modelFile = "";
+	nh.param<std::string>("model_file",modelFile,"");
+	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
+	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
 	auto grfRightApplyBody =
 		ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
@@ -80,6 +82,7 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 
 	// setup model
 	Object::RegisterType(Thelen2003Muscle());
+	ROS_INFO_STREAM("Using model: " << modelFile);
 	model = new Model(modelFile);
 	OpenSimUtils::removeActuators(*model);
 	model->initSystem();
@@ -139,14 +142,17 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 
 	// initialize id and logger
 	id = new InverseDynamics(*model, wrenchParameters);
-	auto tauLoggerTemp = id->initializeLogger();
-	tauLogger = &tauLoggerTemp;
+	ROS_INFO_STREAM("Setting loggers,");
+	OpenSim::TimeSeriesTable tauLoggerTemp = id->initializeLogger();
+	tauLogger = new TimeSeriesTable();
+	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
 	auto qLoggerTemp = id->initializeLogger();
 	qLogger = &qLoggerTemp;
 	auto qDotLoggerTemp = id->initializeLogger();
 	qDotLogger = &qDotLoggerTemp;
 	auto qDDotLoggerTemp = id->initializeLogger();
 	qDDotLogger = &qDDotLoggerTemp;
+	ROS_INFO_STREAM("loggers set!");
 
 	// mean delay
 	sumDelayMS = 0;
@@ -158,6 +164,15 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 Pipeline::Id::~Id()
 {
 	ROS_INFO_STREAM("Shutting down Id");
+}
+
+void Pipeline::Id::print_vec(std::vector<std::string> vs)
+{
+	std::string s="[";
+	for (auto vsi:vs)
+		s+= ", " + vsi;
+	s+= "]";
+	ROS_INFO_STREAM(s);
 }
 
 void Pipeline::Id::onInit() {
@@ -182,8 +197,13 @@ void Pipeline::Id::onInit() {
 	sync_filtered_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
 
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
+	// TODO: set the column labels, or it will break when you try to use them!
+	ROS_INFO_STREAM("lkjfqkewjfiewjfoiew	jfpoiewqjfefpoiqjewoifjwqeoijfqoiewjf");
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
+
+	print_vec(tauLogger->getColumnLabels());
+
 	initializeLoggers("tau",tauLogger);
 	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
 	sync.registerCallback(std::bind(&Pipeline::Id::callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -268,20 +288,22 @@ ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchSta
 	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
 	try
 	{
-		//TODO: add function to actually understand the rotations as such:
-		//T-1_fixed is such that:
-		//T-1_fixed(T(w_raw)) = w_raw
-		//TODO: make these frames as params!!
+		//ATTENTION FUTURE FREDERICO:
+		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
+
 		nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
 		wO.point[0] = nulltransform.transform.translation.x;
 		wO.point[1] = nulltransform.transform.translation.y;
 		wO.point[2] = nulltransform.transform.translation.z;
-		actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
-		inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
-		ROS_DEBUG_STREAM("null transform" << nulltransform);
-		ROS_DEBUG_STREAM("actual transform" << actualtransform);
-		ROS_DEBUG_STREAM("inverse transform" << inv_t);
+		//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
+		//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
+		ROS_DEBUG_STREAM("null transform::\n" << nulltransform);
+		//ROS_DEBUG_STREAM("actual transform" << actualtransform);
+		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
 		//inv_t converts back to opensim
+		
+		//now convert it:
+
 	}
 	catch (tf2::TransformException &ex) {
 		ROS_WARN("%s",ex.what());
@@ -326,7 +348,8 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
 {
 	std::vector<SimTK::Vector> qVec;
-	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
+	ROS_WARN_STREAM("size of stuff is still hard coded!!!" << 23);
+	SimTK::Vector qRaw(23); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
 	{
 		qRaw[j] = message_ik->data[j];
@@ -356,7 +379,7 @@ std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik)
 {
 	std::vector<SimTK::Vector> qVec;
-	SimTK::Vector q(19),qDot(19),qDDot(19); 
+	SimTK::Vector q(23),qDot(23),qDDot(23); 
 	for (int j = 0;j < q.size();j++)
 	{
 		q[j] = message_ik->d0_data[j];
@@ -475,13 +498,33 @@ void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<Ext
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
+	
 	chrono::high_resolution_clock::time_point t2;
 	t2 = chrono::high_resolution_clock::now();
 	sumDelayMS +=
 		chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
 	sumDelayMSCounter++;
-
+	ROS_DEBUG_STREAM("trying to get column labels...");
+	try
+	{
+		std::vector<std::string> how_is_this_set = tauLogger->getColumnLabels();
+		if (how_is_this_set.size() != 0)
+		{
+			std::string out_print;
+			for (int kk= 0;kk < how_is_this_set.size(); kk++)
+				out_print += "," + how_is_this_set[kk];
+			ROS_INFO_STREAM("getColumnLabels Response is:" << out_print);
+		}
+		else
+		{
+			ROS_WARN_STREAM("it isn't set.");
+		}
+	}
+	catch (...)
+	{
+		ROS_ERROR_STREAM("tauColumnNames fails...");
+	}
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 
 	// visualization
@@ -521,6 +564,7 @@ void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<Ext
 	//	write_();
 	//}
 }	
+
 void Pipeline::Id::finish() {
 
 	cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCounter << " ms"

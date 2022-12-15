@@ -24,7 +24,11 @@ tmux split-window -v -p 50
 tmux select-pane -t 0
 tmux split-window -v -p 50 
 #tmux select-layout tiled
-#tmux select-pane -t 0
+tmux select-pane -t 7
+tmux split-window -h 
+tmux select-pane -t 5
+tmux split-window -v -p 50 
+
 
 #sends keys to first and second terminals
 tmux send -t mysession:1.0 "rostopic echo /ik/output" C-m
@@ -33,9 +37,13 @@ tmux send -t mysession:1.2 "roslaunch osrt_ros id.launch" C-m
 tmux send -t mysession:1.3 "roslaunch opensimrt_bridge grf.launch" C-m
 tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m
 tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
-tmux send -t mysession:1.6 "sleep 2; rosservice call /inverse_kinematics_from_file/start" C-m
+tmux send -t mysession:1.6 "rosrun osrt_ros graph_grfs.bash" C-m
+tmux send -t mysession:1.7 "sleep 2; rosservice call /inverse_kinematics_from_file/start" C-m
+tmux send -t mysession:1.8 "rostopic echo /grf_left/wrench" C-m
+tmux send -t mysession:1.9 "rostopic echo /grf_right/wrench" C-m
+
 #tmux send -t mysession:1.7 "rosrun rviz rviz -d _insole.rviz" C-m
-tmux send -t mysession:2.0 "rosrun rviz rviz -d _insole.rviz" C-m
+tmux send -t mysession:2.0 "rosrun rviz rviz -d _insole_robot.rviz" C-m
 tmux send -t mysession:2.1 "roslaunch osrt_ros custom.launch" C-m
 
 #tmux send -t mysession:2.0 "cd /catkin_opensim/src/opensimrt_core/OpenSimRT/Pipeline; nv" C-m

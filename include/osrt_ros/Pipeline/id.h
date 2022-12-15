@@ -2,6 +2,8 @@
 #define PIPELINE_ID_HEADER_FBK_27072022
 
 #include "InverseDynamics.h"
+#include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
@@ -16,6 +18,16 @@
 
 namespace Pipeline
 {
+	static const geometry_msgs::Quaternion TO_OPENSIM()
+	{
+		geometry_msgs::Quaternion	q;
+		q.x = -0.5;
+		q.y = -0.5;
+		q.z = -0.5;
+		q.w = 0.5;
+		return q;
+	};
+	
 
 	class Id:public Pipeline::DualSink
 	{
@@ -94,7 +106,8 @@ namespace Pipeline
 			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t);
 			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik);
 			virtual bool usesVisualizarFromId() { return true;}
-			
+
+			void print_vec(std::vector<std::string> vs);
 	};
 
 }
