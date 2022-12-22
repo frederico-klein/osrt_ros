@@ -9,11 +9,11 @@
 #include <Common/TimeSeriesTable.h>
 #include "ros/service_server.h"
 #include "std_srvs/Empty.h"
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 
 namespace Pipeline
 {
-	class Grf:public Pipeline::CommonNode
+	class Grf:public Ros::CommonNode
 	{
 		public:
 			//TimeSeriesTable qTable;

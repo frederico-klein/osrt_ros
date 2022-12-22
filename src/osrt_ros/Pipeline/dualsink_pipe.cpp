@@ -1,6 +1,6 @@
 #pragma once
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 #include "message_filters/synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "ros/node_handle.h"
@@ -12,7 +12,7 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-Pipeline::DualSink::DualSink(bool debug): Pipeline::CommonNode::CommonNode(debug), sync(sub,sub2,10), sync_filtered(sub_filtered,sub2,10)
+Pipeline::DualSink::DualSink(bool debug): Ros::CommonNode::CommonNode(debug), sync(sub,sub2,10), sync_filtered(sub_filtered,sub2,10)
 {
 	if(debug)
 	{
@@ -35,7 +35,7 @@ Pipeline::DualSink::~DualSink()
 void Pipeline::DualSink::onInit()
 {
 	ROS_INFO_STREAM("called onInit from DualSink");
-	Pipeline::CommonNode::onInit(2);
+	Ros::CommonNode::onInit(2);
 
 	sub.subscribe(nh, "input",100);
 	sub_filtered.subscribe(nh, "input_filtered",100);

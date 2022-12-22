@@ -1,4 +1,4 @@
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 #include "ros/message_traits.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
@@ -44,7 +44,7 @@ Pipeline::Grf::~Grf()
 }
 
 void Pipeline::Grf::onInit() {
-	Pipeline::CommonNode::onInit();
+	Ros::CommonNode::onInit();
 	previousTime = ros::Time::now().toSec();
 	previousTimeDifference = 0;
 
@@ -201,7 +201,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message) {
 	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
 	counter++;
-	SimTK::Vector qRaw(19); //cant find the right copy constructor syntax. will for loop it
+	SimTK::Vector qRaw(message->data.size()); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
 	{
 		qRaw[j] = message->data[j];
@@ -225,7 +225,7 @@ void Pipeline::Grf::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstP
 	ROS_DEBUG_STREAM("Received message. Running Grf filtered loop"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
-	SimTK::Vector q(19),qDot(19),qDDot(19); 
+	SimTK::Vector q(message->d0_data.size()),qDot(message->d1_data.size()),qDDot(message->d2_data.size()); 
 	for (int j = 0;j < q.size();j++)
 	{
 		q[j] = message->d0_data[j];

@@ -48,7 +48,7 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 	nh.param<std::string>("model_file",modelFile,"");
 	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
-
+	//TODO:params!!!! copy from bridge
 	auto grfRightApplyBody =
 		ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
 	auto grfRightForceExpressed =
@@ -348,8 +348,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
 {
 	std::vector<SimTK::Vector> qVec;
-	ROS_WARN_STREAM("size of stuff is still hard coded!!!" << 23);
-	SimTK::Vector qRaw(23); //cant find the right copy constructor syntax. will for loop it
+	SimTK::Vector qRaw(message_ik->data.size()); //cant find the right copy constructor syntax. will for loop it
 	for (int j = 0;j < qRaw.size();j++)
 	{
 		qRaw[j] = message_ik->data[j];
@@ -379,7 +378,7 @@ std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik)
 {
 	std::vector<SimTK::Vector> qVec;
-	SimTK::Vector q(23),qDot(23),qDDot(23); 
+	SimTK::Vector q(message_ik->d0_data.size()),qDot(message_ik->d0_data.size()),qDDot(message_ik->d0_data.size()); 
 	for (int j = 0;j < q.size();j++)
 	{
 		q[j] = message_ik->d0_data[j];

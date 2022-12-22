@@ -2,6 +2,7 @@
 <launch>
 
 	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
+		<rosparam param="input_labels" >['']</rosparam>
 		<remap from="/custom_joints/input" to="/ik/output"/>
 		<!-- remap from="/custom_joints/input_filtered" to="/ik/output_filtered"/ -->
 		<remap from="/in_labels" to="/ik/outlabels"/>

@@ -5,12 +5,12 @@
 #include "message_filters/time_synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "std_srvs/Empty.h"
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 
 namespace Pipeline
 {
-	class DualSink:public Pipeline::CommonNode
+	class DualSink:public Ros::CommonNode
 	{
 		public:
 

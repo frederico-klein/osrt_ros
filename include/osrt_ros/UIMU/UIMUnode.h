@@ -21,7 +21,7 @@
 
 #include <exception>
 #include "osrt_ros/UIMU/TfServer.h"
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
 
@@ -30,11 +30,11 @@ using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
 
-class UIMUnode: Pipeline::CommonNode
+class UIMUnode: Ros::CommonNode
 {
 	public:
-		UIMUnode(): Pipeline::CommonNode(false) //if true debugs
-		//UIMUnode(): Pipeline::CommonNode()
+		UIMUnode(): Ros::CommonNode(false) //if true debugs
+		//UIMUnode(): Ros::CommonNode()
 	{}
 		std::string DATA_DIR = "/srv/data";
 		std::string imuDirectionAxis;
@@ -136,7 +136,7 @@ class UIMUnode: Pipeline::CommonNode
 
 		{
 			get_params();
-			Pipeline::CommonNode::onInit(0); //we are not reading from anything, we are a source
+			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
 							 // setup model
 			ROS_DEBUG_STREAM("Setting up model.");
 			Model model(modelFile);
