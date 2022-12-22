@@ -8,7 +8,7 @@
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Header.h"
 #include <sstream>
-#include "osrt_ros/Pipeline/common_node.h"
+#include "Ros/include/common_node.h"
 #include <map>
 
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -90,13 +90,13 @@ std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs
 	return v;
 }
 
-class qJointPublisher: public Pipeline::CommonNode
+class qJointPublisher: public Ros::CommonNode
 {
 	public:
 		ros::NodeHandle n;
-		qJointPublisher() : Pipeline::CommonNode(false)
+		qJointPublisher() : Ros::CommonNode(false)
 	{}
-		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1000);
+		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
 		int count = 0;
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
 		tf2_ros::StaticTransformBroadcaster static_broadcaster;
@@ -135,7 +135,7 @@ class qJointPublisher: public Pipeline::CommonNode
 			t.y = msg_ik->data[3];
 			t.z = msg_ik->data[4];
 			tf2::Quaternion quat;
-			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
+			quat.setRPY(msg_ik->data[1], -msg_ik->data[0], msg_ik->data[2]); //models is wobbly, needs manual checking!
 			r.x = quat.x();
 			r.y = quat.y();
 			r.z = quat.z();
@@ -150,7 +150,7 @@ class qJointPublisher: public Pipeline::CommonNode
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "talker");
+	ros::init(argc, argv, "human_joint_state_publisher");
 	qJointPublisher qJ;
 	qJ.onInit();
 	ros::spin();
