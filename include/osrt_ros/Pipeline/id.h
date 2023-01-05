@@ -10,6 +10,7 @@
 #include "SignalProcessing.h"
 #include "Visualization.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "ros/message_traits.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
 #include <SimTKcommon/internal/VectorBase.h>
@@ -62,7 +63,7 @@ namespace Pipeline
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
-			virtual void run(double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  );
+			virtual void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  );
 
 			void onInit();
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+		<!-- it doesn't really work if you use this here. ROS doesn't deal too well with having things at the same time with different timestamps, so the use_sim_time needs to be set globally for every node before each node is loaded -->
+	<!-- param name="/use_sim_time" value="true"/ -->
+
+	
+	<node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
+		<rosparam param="mappings">[{old: left, new: /left_bag},{old: right, new: /right_bag}]</rosparam>
+	</node>
+	<arg name="bag_dir" 	default="/catkin_ws" />	
+	<arg name="bag_file" 	default="2022-11-17-14-35-31_migrated.bag" />
+	<!-- arg name="bag_file" 	default="2022-11-17-14-35-31.bag" / -->
+	<arg name="start_time" 	default="82" />
+	<arg name="duration" 	default="12" />
+	<arg name="bag_topics"  default="/tf /tf_static /left/wrench /right/wrench /left/cop /right/cop" />	
+
+	<!-- group ns="bag" -->
+	<group>
+		<!-- remap from="tf" to="tf_old" /-->
+		<!-- remap from="tf_static" to="tf_static_old" /-->
+		<node pkg="rosbag" type="play" name="player" args="--clock $(arg bag_dir)/$(arg bag_file) --start $(arg start_time) --duration $(arg duration) --loop --topics $(arg bag_topics) ">
+		</node>
+	</group>
+</launch>
+

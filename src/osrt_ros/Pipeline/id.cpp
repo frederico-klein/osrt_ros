@@ -4,6 +4,8 @@
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
+#include "ros/exception.h"
+#include "ros/message_traits.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Labels.h"
@@ -145,6 +147,7 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
 	ROS_INFO_STREAM("Setting loggers,");
 	OpenSim::TimeSeriesTable tauLoggerTemp = id->initializeLogger();
 	tauLogger = new TimeSeriesTable();
+	output_labels = tauLoggerTemp.getColumnLabels();
 	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
 	auto qLoggerTemp = id->initializeLogger();
 	qLogger = &qLoggerTemp;
@@ -342,7 +345,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_WARN_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
-	run(filtered_t, iks, grfs);	
+	run(message_ik->header, filtered_t, iks, grfs);	
 }
 
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
@@ -402,7 +405,7 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(message_grf);
-	run(message_ik->time, iks,grfs);
+	run(message_ik->header, message_ik->time, iks,grfs);
 
 }	
 
@@ -442,7 +445,7 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs
 	return wrenches;
 }
 
-void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs ) 
+void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs ) 
 
 {
 	ROS_DEBUG_STREAM("Received run call. Running Id run loop."); 
@@ -538,7 +541,25 @@ void Pipeline::Id::run(double t, std::vector<SimTK::Vector> iks, std::vector<Ext
 	{
 		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
-
+	try
+	{
+		//TODO: this is common for everyone that uses common messages, make it a class
+		//I need the header!!!
+		opensimrt_msgs::CommonTimed msg;
+		msg.header = h;
+		ROS_DEBUG_STREAM("attempting to print tau!");
+		for (double tau_component:idOutput.tau)
+		{
+			ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
+			msg.data.push_back(tau_component);
+		}
+		
+		pub.publish(msg);	
+	}
+	catch (ros::Exception& e)
+	{
+		ROS_ERROR_STREAM("Ros error while trying to publish ID output: " << e.what());
+	}
 	try{
 
 		// log data (use filter time to align with delay)
@@ -646,7 +667,8 @@ void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConst
 	ROS_WARN_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
-	run(filtered_t, iks, grfs);	
+	
+	run(message_ik->header, filtered_t, iks, grfs);	
 }
 
 void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
@@ -656,7 +678,7 @@ void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelA
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(wl,wr);
-	run(message_ik->time, iks,grfs);
+	run(message_ik->header,message_ik->time, iks,grfs);
 	ROS_ERROR_STREAM("callback_real_wrenches_filtered not implemented");
 }
 

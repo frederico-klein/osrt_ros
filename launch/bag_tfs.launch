@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="freq" default="25" />
+
+	<node pkg="tf" type="static_transform_publisher" name="left_broadcaster" args="0 0 0 0 0 0 1 calcn_l left $(arg freq)" >
+	</node>
+	<node pkg="tf" type="static_transform_publisher" name="right_broadcaster" args="0 0 0 0 0 0 1 calcn_r right $(arg freq)">
+	</node>
+
+</launch>
+
