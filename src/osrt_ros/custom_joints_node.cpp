@@ -103,10 +103,11 @@ class qJointPublisher: public Ros::CommonNode
 		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik");
-			std_msgs::Header h;
-			h.stamp = ros::Time::now();
+			//std_msgs::Header h;
+			//h.stamp = ros::Time::now();
 			sensor_msgs::JointState msg;
-			msg.header = h;
+			//msg.header = h;
+			msg.header = msg_ik->header;
 			msg.name = names;
 			std::vector<double> values;
 			for (auto a:names)
@@ -135,10 +136,12 @@ class qJointPublisher: public Ros::CommonNode
 			t.y = msg_ik->data[3];
 			t.z = msg_ik->data[4];
 			tf2::Quaternion quat;
-			quat.setRPY(msg_ik->data[1], -msg_ik->data[0], msg_ik->data[2]); //models is wobbly, needs manual checking!
-			r.x = quat.x();
-			r.y = quat.y();
-			r.z = quat.z();
+			//quat.setEuler(msg_ik->data[2], msg_ik->data[1], msg_ik->data[0]); //models is wobbly, needs manual checking!
+			//quat.setEuler(0, 0, msg_ik->data[2]); //models is wobbly, needs manual checking!
+			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
+			r.x = quat.z();
+			r.y = quat.x();
+			r.z = quat.y();
 			r.w = quat.w();
 			pelvisTF.transform.translation = t;
 			pelvisTF.transform.rotation = r;

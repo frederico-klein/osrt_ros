@@ -1,4 +1,3 @@
-#pragma once
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "Ros/include/common_node.h"
 #include "message_filters/synchronizer.h"

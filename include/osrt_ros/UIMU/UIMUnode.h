@@ -13,9 +13,11 @@
 //#include <OpenSim/Common/STOFileAdapter.h>
 
 #include "ros/init.h"
+#include "ros/publisher.h"
 #include "ros/rate.h"
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "std_msgs/Float64.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "opensimrt_msgs/Labels.h"
 
@@ -34,7 +36,7 @@ class UIMUnode: Ros::CommonNode
 {
 	public:
 		UIMUnode(): Ros::CommonNode(false) //if true debugs
-		//UIMUnode(): Ros::CommonNode()
+						   //UIMUnode(): Ros::CommonNode()
 	{}
 		std::string DATA_DIR = "/srv/data";
 		std::string imuDirectionAxis;
@@ -51,6 +53,7 @@ class UIMUnode: Ros::CommonNode
 		double previousDt = 0;
 		OpenSim::TimeSeriesTable imuLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
 
+		bool recording = false;
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
@@ -61,7 +64,7 @@ class UIMUnode: Ros::CommonNode
 		double cutoffFreq;
 		int splineOrder, memory, delay;
 		OpenSimRT::LowPassSmoothFilter * ikfilter;
-
+		std::vector<ros::Publisher> plottable_outputs;
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -137,7 +140,7 @@ class UIMUnode: Ros::CommonNode
 		{
 			get_params();
 			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
-							 // setup model
+						    // setup model
 			ROS_DEBUG_STREAM("Setting up model.");
 			Model model(modelFile);
 			OpenSimUtils::removeActuators(model);
@@ -195,10 +198,18 @@ class UIMUnode: Ros::CommonNode
 
 			//TODO: publish correct ROS topics
 			output_labels = qRawLogger.getColumnLabels();
+			
+			
 			string all_labels;
+			ros::NodeHandle nh("~");
+			ROS_INFO_STREAM("setting plottable_outputs");
 			for (auto l:output_labels)
+			{
+
+				plottable_outputs.push_back(nh.advertise<std_msgs::Float64>("ik/joints/"+l,1));
 				all_labels+=l+",";
-			ROS_DEBUG_STREAM("Publisher labels: "<<all_labels);
+			}
+				ROS_INFO_STREAM("Publisher labels: "<<all_labels);
 
 			// visualizer
 			ROS_DEBUG_STREAM("Setting up visualizer");
@@ -278,10 +289,15 @@ class UIMUnode: Ros::CommonNode
 					ROS_DEBUG_STREAM("delta_t   :" << Dt);
 					ROS_DEBUG_STREAM("T (pose.t):" << msg.time);
 
+					int i = 0;
 					for (double joint_angle:pose.q)
 					{
 						ROS_DEBUG_STREAM("some joint_angle:"<<joint_angle);
 						msg.data.push_back(joint_angle);
+						std_msgs::Float64 j_msg;
+						j_msg.data = joint_angle;
+						plottable_outputs[i].publish(j_msg);
+						i++;
 					}
 
 					pub.publish(msg);
@@ -311,10 +327,12 @@ class UIMUnode: Ros::CommonNode
 						// visualize filtered!
 						visualizer->update(q);
 						//adding the data to the loggers
-						qLogger.appendRow(pose.t,~q);
-						qDotLogger.appendRow(pose.t,~qDot);
-						qDDotLogger.appendRow(pose.t,~qDDot);
-
+						if (recording)
+						{
+							qLogger.appendRow(pose.t,~q);
+							qDotLogger.appendRow(pose.t,~qDot);
+							qDDotLogger.appendRow(pose.t,~qDDot);
+						}
 					}
 					else
 					{
@@ -322,8 +340,11 @@ class UIMUnode: Ros::CommonNode
 						visualizer->update(pose.q);
 					}
 					// record
-					imuLogger.appendRow(pose.t, driver->frame);//
-					qRawLogger.appendRow(pose.t, ~pose.q);
+					if (recording)
+					{
+						imuLogger.appendRow(pose.t, driver->frame);//
+						qRawLogger.appendRow(pose.t, ~pose.q);
+					}
 					previousTime = pose.t;
 					previousDt = Dt;
 					if(!ros::ok())

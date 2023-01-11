@@ -43,10 +43,10 @@ class  UIMUInputDriver : public InputDriver<UIMUData> {
     /**
      * Create a NGIMU driver that streams data from file at a constant rate.
      */
-    UIMUInputDriver(const double& sendRate = 50);
+    UIMUInputDriver(const double& sendRate = 5);
     UIMUInputDriver(const int port,
                              const double& sendRate);
-    UIMUInputDriver(const std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix = "no_prefix" ,const double& sendRate = 50);
+    UIMUInputDriver(const std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix = "no_prefix" ,const double& sendRate = 5);
     ~UIMUInputDriver(); // dtor
 
     /**

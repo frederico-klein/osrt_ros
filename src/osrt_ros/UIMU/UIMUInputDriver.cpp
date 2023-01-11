@@ -54,6 +54,7 @@ void UIMUInputDriver::startListening() {
 		try {
 			int i = 0;
 			std::cout << "Rate: " << rate << std::endl ;
+			ROS_INFO_STREAM("Rate: " << rate ) ;
 			for (;;) {
 				if (shouldTerminate())
 					THROW_EXCEPTION("??? this is not great. File stream terminated.");
