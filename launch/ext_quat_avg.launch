@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="imu_body" 	default="pelvis"/>
+	<arg name="prefix" 	default="/ik_lowerbody_node"/>
+
+	<node name="pose_average_$(arg imu_body)" type="external_average_quaternion_node" pkg="osrt_ros" >
+		<remap to="$(arg prefix)/$(arg imu_body)/imu_cal"					from="/imu_cal"/>
+		<remap to="$(arg prefix)/$(arg imu_body)/avg_pose"					from="/avg_pose"/>
+	</node>
+</launch>
+
+

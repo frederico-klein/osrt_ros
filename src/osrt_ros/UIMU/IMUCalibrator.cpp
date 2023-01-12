@@ -29,8 +29,9 @@ using namespace SimTK;
 using namespace std;
 
 void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
-	ros::NodeHandle n("~");
-    R_heading = SimTK::Rotation();
+//	ros::NodeHandle n("~");
+  	nhandle = ros::NodeHandle("~");
+	R_heading = SimTK::Rotation();
     R_GoGi = SimTK::Rotation();
 
     // copy observation order list
@@ -44,7 +45,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
     // get default model pose body orientation in ground
     for (const auto& label : imuBodiesObservationOrder) {
         const OpenSim::PhysicalFrame* frame = nullptr;
-	pub.push_back(n.advertise<geometry_msgs::PoseArray>(label +"/imu_cal",1,true)); //latching topic
+	pub.push_back(nhandle.advertise<geometry_msgs::PoseArray>(label +"/imu_cal",1,true)); //latching topic
         if ((frame = model.findComponent<OpenSim::PhysicalFrame>(label))) {
             imuBodiesInGround[label] =
                     frame->getTransformInGround(state).R(); // R_GB
@@ -160,21 +161,49 @@ void IMUCalibrator::calibrateIMUTasks(
 
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
     impl->recordNumOfSamples(numSamples);
-    publishCalibrationData();
-    ROS_INFO_STREAM("Now calculating average static pose");
-    staticPoseQuaternions = impl->computeAvgStaticPose();
+	computeAvgStaticPoseCommon();
 }
 
 void IMUCalibrator::recordTime(const double& timeout) {
     impl->recordTime(timeout);
-    publishCalibrationData();
-    staticPoseQuaternions = impl->computeAvgStaticPose();
+	computeAvgStaticPoseCommon();
 }
 
+void IMUCalibrator::computeAvgStaticPoseCommon()
+{
+    publishCalibrationData();
+    ROS_INFO_STREAM("Now calculating average static pose");
+    if (externalAveragingMethod) //this should be a service call, but service don't get saved in rosbags
+    {
+		ROS_INFO_STREAM("using external averagingMethod!");
+    		ROS_WARN("not yet implemented, using normal method");
+		for (auto imu_name:imuBodiesObservationOrder)
+		{
+			geometry_msgs::QuaternionConstPtr res_q;
+			geometry_msgs::Quaternion q;
+			auto topic_name = nhandle.resolveName(imu_name+"/avg_pose");
+			ROS_INFO_STREAM("trying to read:" <<topic_name);
+			res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
+			if (res_q)
+			{
+			ROS_INFO_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			ROS_INFO_STREAM(res_q);
+			q = *res_q;
+			ROS_INFO_STREAM(q);
+			ROS_INFO_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			}
+			else
+				ROS_FATAL_STREAM("failed to read avg_pose response for imu" << imu_name);
+		}
+		staticPoseQuaternions = impl->computeAvgStaticPose();
+    }
+    else
+    staticPoseQuaternions = impl->computeAvgStaticPose();
+
+}
 void IMUCalibrator::setMethod(bool method) {
-	ROS_INFO_STREAM("setting calibration methos");
-	impl->setMethod(method);
-	
+	ROS_INFO_STREAM("setting calibration method");
+	externalAveragingMethod = method;
 }
 
 void IMUCalibrator::publishCalibrationData()

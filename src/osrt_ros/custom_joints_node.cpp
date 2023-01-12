@@ -14,7 +14,6 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include "osrt_ros/UIMU/QuaternionAverage.h"
 
 using namespace std;
 
@@ -154,7 +153,6 @@ class qJointPublisher: public Ros::CommonNode
 
 int main(int argc, char **argv)
 {
-	Eigen::Matrix4f A = Eigen::Matrix4f::Zero();
 	ros::init(argc, argv, "human_joint_state_publisher");
 	qJointPublisher qJ;
 	qJ.onInit();

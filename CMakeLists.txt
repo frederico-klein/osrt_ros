@@ -98,14 +98,21 @@ target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${ope
 add_subdirectory(src/osrt_ros/UIMU)
 
 add_executable(custom_joints_node src/osrt_ros/custom_joints_node.cpp)
-
 add_dependencies(custom_joints_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 target_link_libraries(custom_joints_node
   ${catkin_LIBRARIES}
   ${OpenSim_LIBRARIES}
   ${opensimrt_LIBRARIES}
   osrtRosPipeline
+)
+
+
+add_executable(external_average_quaternion_node src/osrt_ros/external_average_pose.cpp)
+add_dependencies(external_average_quaternion_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+target_link_libraries(external_average_quaternion_node
+  ${catkin_LIBRARIES}
 )
 
 #add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp src/grfm_ros.cpp)

@@ -50,8 +50,9 @@ namespace OpenSimRT {
 	class  IMUCalibrator {
 		public:
 			std::vector<ros::Publisher> pub;
+			ros::NodeHandle nhandle;
+			//std::vector<ros::Subscriber> avg_pose_subs;
 
-			bool use_new_average_method = false;
 			/**
 			 * Construct a calibrator object. The constructor uses the Type-Erasure
 			 * pattern/idiom that is based on automatic type deduction to remove the
@@ -66,7 +67,7 @@ namespace OpenSimRT {
 				// instantiate the DriverErasure object by forwarding the input
 				// driver in its contructor.
 				: impl(new DriverErasure<T>(
-							std::forward<const InputDriver<T>* const>(driver), use_new_average_method)),
+							std::forward<const InputDriver<T>* const>(driver))),
 				model(*otherModel.clone()) {
 					setup(observationOrder);
 				}
@@ -106,6 +107,7 @@ namespace OpenSimRT {
 			 */
 			void setMethod(bool method);
 			void publishCalibrationData();
+			void computeAvgStaticPoseCommon();
 			template <typename T>
 				SimTK::Array_<SimTK::Rotation> transform(const std::vector<T>& imuData) {
 					SimTK::Array_<SimTK::Rotation> imuObservations;
@@ -118,6 +120,7 @@ namespace OpenSimRT {
 				}
 
 		private:
+			bool externalAveragingMethod = false;
 			/**
 			 * Type erasure on imu InputDriver types. Base class. Provides an interface
 			 * for the functionality of derived classes.
@@ -125,16 +128,10 @@ namespace OpenSimRT {
 			class DriverErasureBase {
 				public:
 					virtual ~DriverErasureBase() = default;
-					bool use_new_average_method = false;
 					virtual void recordTime(const double& timeout) = 0;
 					virtual void recordNumOfSamples(const size_t& numSamples) = 0;
 					virtual std::vector<std::vector<SimTK::Quaternion>> getTableData() = 0;
 					virtual std::vector<SimTK::Quaternion> computeAvgStaticPose() = 0;
-					void setMethod(bool method)
-					{
-						use_new_average_method = method;
-						ROS_INFO_STREAM("method set to " << use_new_average_method);
-					}
 			};
 
 			/**
@@ -144,8 +141,7 @@ namespace OpenSimRT {
 			 */
 			template <typename T> class DriverErasure : public DriverErasureBase {
 				public:
-					DriverErasure(const InputDriver<T>* const driver, bool method) : m_driver(driver) {
-					use_new_average_method = method;
+					DriverErasure(const InputDriver<T>* const driver) : m_driver(driver) {
 					}
 					virtual std::vector<std::vector<SimTK::Quaternion>> getTableData() override
 					{
@@ -203,22 +199,6 @@ namespace OpenSimRT {
 							std::vector<SimTK::Quaternion>(m, SimTK::Quaternion());
 						auto avgQuaternions(avgQuaternionErrors);
 						
-						if (use_new_average_method)
-						{
-							//calls new method for computing the avg pose
-							ROS_INFO_STREAM("NEW: Using eigenvalues average of rotations");
-							for (int j = 0; j< m ; ++j)
-							{
-								for (int i = 0; i< n; ++i)
-								{
-									SimTK::Quaternion q = initIMUDataTable[i][j].getQuaternion();
-									ROS_INFO_STREAM(j << " <imu, sample > " << i );
-									ROS_INFO_STREAM(q[0] << " " << q[1] << " " << q[2] << " " << q[3] );
-								}
-								
-							}
-							return avgQuaternions;
-						}
 							ROS_INFO_STREAM("OLD: Using norm average of rotations");
 
 			
