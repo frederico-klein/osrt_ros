@@ -21,12 +21,15 @@
 #include "Exception.h"
 #include <SimTKcommon/internal/Quaternion.h>
 #include <ros/ros.h>
+#include <geometry_msgs/PoseArray.h>
+
 using namespace OpenSimRT;
 using namespace OpenSim;
 using namespace SimTK;
 using namespace std;
 
 void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
+	ros::NodeHandle n("~");
     R_heading = SimTK::Rotation();
     R_GoGi = SimTK::Rotation();
 
@@ -41,6 +44,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
     // get default model pose body orientation in ground
     for (const auto& label : imuBodiesObservationOrder) {
         const OpenSim::PhysicalFrame* frame = nullptr;
+	pub.push_back(n.advertise<geometry_msgs::PoseArray>(label +"/imu_cal",1,true)); //latching topic
         if ((frame = model.findComponent<OpenSim::PhysicalFrame>(label))) {
             imuBodiesInGround[label] =
                     frame->getTransformInGround(state).R(); // R_GB
@@ -156,10 +160,46 @@ void IMUCalibrator::calibrateIMUTasks(
 
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
     impl->recordNumOfSamples(numSamples);
+    publishCalibrationData();
+    ROS_INFO_STREAM("Now calculating average static pose");
     staticPoseQuaternions = impl->computeAvgStaticPose();
 }
 
 void IMUCalibrator::recordTime(const double& timeout) {
     impl->recordTime(timeout);
+    publishCalibrationData();
     staticPoseQuaternions = impl->computeAvgStaticPose();
+}
+
+void IMUCalibrator::setMethod(bool method) {
+	ROS_INFO_STREAM("setting calibration methos");
+	impl->setMethod(method);
+	
+}
+
+void IMUCalibrator::publishCalibrationData()
+{
+    auto ans =  impl->getTableData();
+    int i = 0;
+    for (auto qT:ans) // so this is not necessarily aligned. it should be a smart thing, like a map
+    { 	
+	    ROS_INFO_STREAM("iterating over imus[" << i << "]: " << imuBodiesObservationOrder[i] );
+	    geometry_msgs::PoseArray p_msg;
+	    
+	    for (auto q:qT)
+	    {
+		    ROS_WARN("what is the order now???? fml");
+		    geometry_msgs::Pose pp;
+		    pp.orientation.x = q[0];
+		    pp.orientation.y = q[1];
+		    pp.orientation.z = q[2];
+		    pp.orientation.w = q[3];
+		    ROS_INFO_STREAM(q);
+		    p_msg.poses.push_back(pp);
+	    }
+	    pub[i].publish(p_msg);
+	    i++;
+    }
+
+
 }

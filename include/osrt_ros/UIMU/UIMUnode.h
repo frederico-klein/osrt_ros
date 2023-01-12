@@ -179,6 +179,9 @@ class UIMUnode: Ros::CommonNode
 			// calibrator
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
+			ROS_INFO_STREAM(clb->use_new_average_method);
+;			clb->setMethod(true);
+			ROS_INFO_STREAM(clb->use_new_average_method);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
 			ROS_DEBUG_STREAM("setGroundOrientationSeq");

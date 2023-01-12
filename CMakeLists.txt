@@ -10,6 +10,8 @@ find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"
 	#	Simbody
 	)
 
+find_package(Eigen3 3.3 REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
 	message_runtime
 	opensimrt
@@ -34,6 +36,11 @@ catkin_package(CATKIN_DEPENDS
 	tf2
 	)
 
+message(NOTICE "Eigen3")
+message(STATUS
+	${EIGEN3_INCLUDE_DIRS}
+
+	)
 message(NOTICE "OpenSim")
 message(STATUS
 	${OpenSim_INCLUDE_DIRS}
@@ -55,6 +62,7 @@ endforeach()
 include_directories(
 	include
 	${catkin_INCLUDE_DIRS}
+	${EIGEN3_INCLUDE_DIRS}
 	)
 
 file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp")
@@ -85,7 +93,7 @@ add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
 
 add_dependencies(osrtRosUIMU ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES})
+target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES} Eigen3::Eigen)
 
 add_subdirectory(src/osrt_ros/UIMU)
 

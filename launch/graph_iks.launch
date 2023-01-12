@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="ik0" default="pelvis_tilt" />
+	<arg name="ik1" default="pelvis_list" />
+	<arg name="ik2" default="pelvis_rotation" />
+	<arg name="ik3" default="pelvis_tx" />
+	<arg name="ik4" default="pelvis_ty" />
+	<arg name="ik5" default="pelvis_tz" />
+	<arg name="ik6" default="hip_flexion_r" />
+	<arg name="ik7" default="hip_adduction_r" />
+	<arg name="ik8" default="hip_rotation_r" />
+	<arg name="ik9" default="hip_flexion_l" />
+	<arg name="ik10" default="hip_adduction_l" />
+	<arg name="ik11" default="hip_rotation_l" />
+	<arg name="ik12" default="lumbar_extention" />
+	<arg name="ik13" default="lumbar_bending" />
+	<arg name="ik14" default="lumbar_rotation" />
+	<arg name="ik15" default="knee_angle_r" />
+	<arg name="ik16" default="knee_angle_l" />
+	<arg name="ik17" default="ankle_angle_r" />
+	<arg name="ik18" default="ankle_angle_l" />
+	<!--arg name="ik19" default="a19" />
+	<arg name="ik20" default="a20" />
+	<arg name="ik21" default="a21" />
+	<arg name="ik22" default="a22" />
+	<arg name="ik23" default="a23" / -->
+	<node name="$(anon transform0)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik0) std_msgs/Float64 'm.data[0]' " />
+	<node name="$(anon transform1)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik1) std_msgs/Float64 'm.data[1]' " />
+	<node name="$(anon transform2)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik2) std_msgs/Float64 'm.data[2]' " />
+	<node name="$(anon transform3)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik3) std_msgs/Float64 'm.data[3]' " />
+	<node name="$(anon transform4)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik4) std_msgs/Float64 'm.data[4]' " />
+	<node name="$(anon transform5)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik5) std_msgs/Float64 'm.data[5]' " />
+	<node name="$(anon transform6)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik6) std_msgs/Float64 'm.data[6]' " />
+	<node name="$(anon transform7)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik7) std_msgs/Float64 'm.data[7]' " />
+	<node name="$(anon transform8)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik8) std_msgs/Float64 'm.data[8]' " />
+	<node name="$(anon transform9)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik9) std_msgs/Float64 'm.data[9]' " />
+	<node name="$(anon transform10)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik10) std_msgs/Float64 'm.data[10]' " />
+	<node name="$(anon transform11)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik11) std_msgs/Float64 'm.data[11]' " />
+	<node name="$(anon transform12)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik12) std_msgs/Float64 'm.data[12]' " />
+	<node name="$(anon transform13)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik13) std_msgs/Float64 'm.data[13]' " />
+	<node name="$(anon transform14)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik14) std_msgs/Float64 'm.data[14]' " />
+	<node name="$(anon transform15)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik15) std_msgs/Float64 'm.data[15]' " />
+	<node name="$(anon transform16)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik16) std_msgs/Float64 'm.data[16]' " />
+	<node name="$(anon transform17)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik17) std_msgs/Float64 'm.data[17]' " />
+	<node name="$(anon transform18)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik18) std_msgs/Float64 'm.data[18]' " />
+	<!-- node name="$(anon transform)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik19) std_msgs/Float64 'm.data[19]' " />
+	<node name="$(anon transform)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik20) std_msgs/Float64 'm.data[20]' " />
+	<node name="$(anon transform)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik21) std_msgs/Float64 'm.data[21]' " />
+	<node name="$(anon transform)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik22) std_msgs/Float64 'm.data[22]' " />
+	<node name="$(anon transform)" pkg="topic_tools" type="transform"
+		args="/ik/output /$(arg ik23) std_msgs/Float64 'm.data[23]' " / -->
+	<node name="graph_iks" pkg="rqt_plot" type="rqt_plot" 	output="screen"
+		args="
+		/$(arg ik0) 
+		/$(arg ik1) 
+		/$(arg ik2) 
+		/$(arg ik3) 
+		/$(arg ik4) 
+		/$(arg ik5) 
+		/$(arg ik6) 
+		/$(arg ik7) 
+		/$(arg ik8) 
+		/$(arg ik9) 
+		/$(arg ik10) 
+		/$(arg ik11) 
+		/$(arg ik12) 
+		/$(arg ik13) 
+		/$(arg ik14) 
+		/$(arg ik15) 
+		/$(arg ik16) 
+		/$(arg ik17) 
+		/$(arg ik18) 
+		" >
+        </node>
+
+</launch>
+
