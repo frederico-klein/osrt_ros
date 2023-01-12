@@ -13,12 +13,15 @@ class ExternalAveragePosePublisher
 		ros::Publisher avg_pose;
 		ExternalAveragePosePublisher()
 		{
+			//n = ros::NodeHandle();
+			std::string own_name = n.resolveName("imu_cal");
+			ROS_INFO_STREAM("started avg_pose publisher reading from node" << own_name);
 			imu_poses = n.subscribe("imu_cal", 1, &ExternalAveragePosePublisher::callback, this);
 			avg_pose = n.advertise<geometry_msgs::Quaternion>("avg_pose",1,true);
 		}
 		void callback(const geometry_msgs::PoseArrayPtr& msg)
 		{
-			ROS_DEBUG_STREAM("Received pose array msg");
+			ROS_INFO_STREAM("Received pose array msg");
 			//std_msgs::Header h;
 			//h.stamp = ros::Time::now();
 			geometry_msgs::Quaternion msg_q;

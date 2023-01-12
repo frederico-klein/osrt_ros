@@ -177,6 +177,7 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
     {
 		ROS_INFO_STREAM("using external averagingMethod!");
     		ROS_WARN("not yet implemented, using normal method");
+		std::vector<SimTK::Quaternion> avg_response_list;
 		for (auto imu_name:imuBodiesObservationOrder)
 		{
 			geometry_msgs::QuaternionConstPtr res_q;
@@ -191,11 +192,19 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 			q = *res_q;
 			ROS_INFO_STREAM(q);
 			ROS_INFO_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			//create the simtk quaternion from q
+			SimTK::Quaternion s_q;
+			s_q[0] = q.x;
+			s_q[1] = q.y;
+			s_q[2] = q.z;
+			s_q[3] = q.w;
+			avg_response_list.push_back(s_q);
 			}
 			else
 				ROS_FATAL_STREAM("failed to read avg_pose response for imu" << imu_name);
 		}
-		staticPoseQuaternions = impl->computeAvgStaticPose();
+		//staticPoseQuaternions = impl->computeAvgStaticPose();
+		staticPoseQuaternions = avg_response_list;
     }
     else
     staticPoseQuaternions = impl->computeAvgStaticPose();

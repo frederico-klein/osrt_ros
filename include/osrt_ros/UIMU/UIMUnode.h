@@ -35,7 +35,7 @@ using namespace SimTK;
 class UIMUnode: Ros::CommonNode
 {
 	public:
-		UIMUnode(): Ros::CommonNode(false) //if true debugs
+		UIMUnode(): Ros::CommonNode(true) //if true debugs
 						   //UIMUnode(): Ros::CommonNode()
 	{}
 		std::string DATA_DIR = "/srv/data";

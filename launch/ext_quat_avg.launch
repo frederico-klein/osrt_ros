@@ -3,7 +3,7 @@
 	<arg name="imu_body" 	default="pelvis"/>
 	<arg name="prefix" 	default="/ik_lowerbody_node"/>
 
-	<node name="pose_average_$(arg imu_body)" type="external_average_quaternion_node" pkg="osrt_ros" >
+	<node name="pose_average_$(arg imu_body)" type="external_average_quaternion_node" pkg="osrt_ros" output="screen">
 		<remap to="$(arg prefix)/$(arg imu_body)/imu_cal"					from="/imu_cal"/>
 		<remap to="$(arg prefix)/$(arg imu_body)/avg_pose"					from="/avg_pose"/>
 	</node>
