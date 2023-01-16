@@ -105,7 +105,7 @@ class  UIMUInputDriver : public InputDriver<UIMUData> {
     void stopListening() override {}
 
  private:
-    OpenSim::TimeSeriesTable table;
+   //OpenSim::TimeSeriesTable table;
     //std::vector<double> output;
 
     double rate;

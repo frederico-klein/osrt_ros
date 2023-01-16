@@ -29,6 +29,8 @@
 using namespace OpenSimRT;
 using namespace SimTK;
 
+//TODO: this is already threaded because ROS is threaded. Remove this thread. remove the table which just grown and no one reads, since you have it inside a thread!!!!!!!!!!!!!!!!
+
 UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix, const double& sendRate)
 	: terminationFlag(false), rate(sendRate) {
 		ROS_INFO_STREAM("Starting UIMUInputDriver interface.");
@@ -75,14 +77,20 @@ void UIMUInputDriver::startListening() {
 					//std::stringstream s(server.buffer);
 					//time = output[0]; // probably a double
 					//SimTK::readUnformatted<SimTK::Vector>(s, frame);// I will keep
+					//OpenSim::TimeSeriesTable table;
 
 					ROS_DEBUG_STREAM("read input size from OrientationProvider" << output.size());
-					table.appendRow(output[0], output.begin()+1, output.end()); // superflex!
+					//table.appendRow(output[0], output.begin()+1, output.end()); // superflex!
 					ROS_DEBUG_STREAM( "added to table alright." );
 					//table.getMatrix()[0]; // OpenSim::TimeSeriesTable
 					//this will crash because table was not initialized.
-					time = table.getIndependentColumn()[i];
-					frame = table.getMatrix()[i];
+					//time = table.getIndependentColumn()[i];
+					time = output[0];
+					SimTK::RowVector newFrame(output.size()-1); 
+					for (int j= 0; j<output.size()-1;j++)
+						newFrame[j] = output[j+1];
+					frame =  newFrame;
+					//frame = table.getMatrix()[i];
 					ROS_DEBUG_STREAM("FRAME" << frame );
 					newRow = true;
 					i++;

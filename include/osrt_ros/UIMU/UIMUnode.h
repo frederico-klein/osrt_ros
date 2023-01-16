@@ -18,6 +18,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
+#include "std_msgs/Int64.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "opensimrt_msgs/Labels.h"
 
@@ -26,6 +27,7 @@
 #include "Ros/include/common_node.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
+
 
 using namespace std;
 using namespace OpenSim;
@@ -38,27 +40,29 @@ class UIMUnode: Ros::CommonNode
 		UIMUnode(): Ros::CommonNode(true) //if true debugs
 						   //UIMUnode(): Ros::CommonNode()
 	{}
-		std::string DATA_DIR = "/srv/data";
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
 		double xGroundRotDeg, yGroundRotDeg, zGroundRotDeg;
 		std::vector<std::string> imuObservationOrder;
 		double rate;
 		ros::Rate* r;
-		std::string subjectDir, modelFile;
+		std::string modelFile;
 		std::string loggerFileNameIK,loggerFileNameIMUs;
 		std::string tf_frame_prefix;
+		bool use_external_average_calibration_method = true;
 		double sumDelayMS = 0, numFrames = 0; 
 		double previousTime = 0;
 		double previousDt = 0;
 		OpenSim::TimeSeriesTable imuLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
 
+		ros::Publisher time_pub, time_ik_pub;
 		bool recording = false;
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
 		BasicModelVisualizer *visualizer;
 		bool showMarkers;
+		bool visualiseIt= false;
 		//ros::Publisher re_pub; 
 		//filter parameters
 		double cutoffFreq;
@@ -101,20 +105,10 @@ class UIMUnode: Ros::CommonNode
 			nh.param<double>("rate", rate, 0.0);
 			r = new ros::Rate(rate);
 			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
-
+			nh.param<bool>("visualise", visualiseIt, false);
 			// subject data
-			std::string subjectDir_;
-			nh.param<std::string>("subject_dir", subjectDir_, "");
-			subjectDir = DATA_DIR + subjectDir_;
-			ROS_INFO_STREAM("using subjectDir:" << subjectDir);
-			//    subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-			std::string modelFile_;
-			nh.param<std::string>("model_file", modelFile_, "");
-			modelFile = subjectDir + modelFile_;
+			nh.param<std::string>("model_file", modelFile, "");
 			ROS_INFO_STREAM("Using modelFile:" << modelFile);
-			//    modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
-			//auto ngimuDataFile =
-			//        subjectDir + ini.getString(section, "NGIMU_DATA_CSV", "");
 			nh.param<std::string>("logger_filename_ik", loggerFileNameIK, "test_ik");
 			nh.param<std::string>("logger_filename_imus", loggerFileNameIMUs, "test_imus");
 
@@ -125,6 +119,8 @@ class UIMUnode: Ros::CommonNode
 			nh.param<int>("memory", memory, 0);
 			nh.param<int>("spline_order", splineOrder, 0);
 			nh.param<int>("delay", delay, 0);
+
+			nh.param<bool>("use_external_average_calibration_method", use_external_average_calibration_method, true);
 
 			ROS_DEBUG_STREAM("Finished getting params.");	
 
@@ -140,7 +136,9 @@ class UIMUnode: Ros::CommonNode
 		{
 			get_params();
 			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
-						    // setup model
+			time_pub = nh.advertise<std_msgs::Int64>("time",1);		
+			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);		
+			// setup model
 			ROS_DEBUG_STREAM("Setting up model.");
 			Model model(modelFile);
 			OpenSimUtils::removeActuators(model);
@@ -179,7 +177,7 @@ class UIMUnode: Ros::CommonNode
 			// calibrator
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
-;			clb->setMethod(true);
+;			clb->setMethod(use_external_average_calibration_method);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
 			ROS_DEBUG_STREAM("setGroundOrientationSeq");
@@ -326,7 +324,13 @@ class UIMUnode: Ros::CommonNode
 
 						pub_filtered.publish(msg_filtered);
 						// visualize filtered!
-						visualizer->update(q);
+						if (visualiseIt)
+							visualizer->update(q);
+						else
+						{
+							ROS_WARN_ONCE("Not showing visuals. To turn it on set 'visualise' param to true.");
+							ROS_DEBUG_STREAM("not showing visuals.");
+						}
 						//adding the data to the loggers
 						if (recording)
 						{
@@ -338,7 +342,13 @@ class UIMUnode: Ros::CommonNode
 					else
 					{
 						// visualize
-						visualizer->update(pose.q);
+						if(visualiseIt)
+							visualizer->update(pose.q);
+						else
+						{
+							ROS_WARN_ONCE("Not showing visuals. To turn it on set 'visualise' param to true.");
+							ROS_DEBUG_STREAM("not showing visuals.");
+						}
 					}
 					// record
 					if (recording)
@@ -350,7 +360,17 @@ class UIMUnode: Ros::CommonNode
 					previousDt = Dt;
 					if(!ros::ok())
 						break;
-					ros::spinOnce();
+					//ros::spinOnce();
+					
+					std_msgs::Int64 time_ik_msg;
+					time_ik_msg.data = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+					time_ik_pub.publish(time_ik_msg);
+
+					chrono::high_resolution_clock::time_point t3;
+					t3 = chrono::high_resolution_clock::now();
+                                	std_msgs::Int64 time_msg;
+					time_msg.data = std::chrono::duration_cast<std::chrono::microseconds>(t3 -t1).count();
+					time_pub.publish(time_msg);
 					r->sleep();
 				}
 			} catch (std::exception& e) {

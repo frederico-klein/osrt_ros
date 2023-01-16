@@ -6,13 +6,27 @@ tmux send -t mysession:0.0 "roscore" C-m
 sleep 2
 
 tmux new-window
+tmux new-window
 tmux select-window -t 1
 tmux split-window -h 
 tmux split-window -h 
 tmux select-layout even-horizontal
+tmux select-pane -t 3
+tmux split-window -v -p 50 
+tmux select-pane -t 2
+tmux split-window -v -p 50 
+tmux select-pane -t 1 
+tmux split-window -v -p 50 
+tmux select-pane -t 0
+tmux split-window -v -p 50 
 
 tmux send -t mysession:1.0 "roslaunch osrt_ros ik_lowerbody.launch" C-m
 tmux send -t mysession:1.1 "roslaunch ximu3_ros ximu_lower.launch" C-m
+tmux send -t mysession:1.2 "roslaunch ar_test acer_video_stream.launch" C-m
+tmux send -t mysession:1.3 "ROS_NAMESPACE=usb_cam_acer rosrun image_proc image_proc" C-m
+tmux send -t mysession:1.4 "rviz -d /catkin_ws/_cam_acer_tf.rviz" C-m
+tmux send -t mysession:1.5 "rosrun osrt_ros graph_iks.bash" C-m
+
 #tmux send -t mysession:1.2 "roslaunch osrt_ros id.launch" C-m
 #tmux send -t mysession:1.3 "roslaunch osrt_ros agrfm.launch" C-m
 #tmux send -t mysession:1.4 "roslaunch opensimrt_bridge ik_acceleration_prediction_gfrm.launch" C-m
