@@ -59,7 +59,7 @@ void UIMUInputDriver::startListening() {
 			ROS_INFO_STREAM("Rate: " << rate ) ;
 			for (;;) {
 				if (shouldTerminate())
-					THROW_EXCEPTION("??? this is not great. File stream terminated.");
+					THROW_EXCEPTION("shouldTerminate called. File stream terminated.");
 				{
 					std::lock_guard<std::mutex> lock(mu);
 					// get something from the udp stream
@@ -81,7 +81,7 @@ void UIMUInputDriver::startListening() {
 
 					ROS_DEBUG_STREAM("read input size from OrientationProvider" << output.size());
 					//table.appendRow(output[0], output.begin()+1, output.end()); // superflex!
-					ROS_DEBUG_STREAM( "added to table alright." );
+					//ROS_DEBUG_STREAM( "added to table alright." );
 					//table.getMatrix()[0]; // OpenSim::TimeSeriesTable
 					//this will crash because table was not initialized.
 					//time = table.getIndependentColumn()[i];
@@ -97,8 +97,7 @@ void UIMUInputDriver::startListening() {
 				}
 				cond.notify_one();
 
-				// artificial delay
-				// maybe i don't need this.
+				// artificial delay, if I remove this it gets slower. if you want to remove this really, you have to remove this whole thread. 
 				std::this_thread::sleep_for(std::chrono::milliseconds(
 							static_cast<int>(1 / rate * 1000)));
 			}

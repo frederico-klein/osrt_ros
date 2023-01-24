@@ -60,8 +60,11 @@ SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
     auto yRad = SimTK::convertDegreesToRadians(yDegrees);
     auto zRad = SimTK::convertDegreesToRadians(zDegrees);
 
+
+    //my trusty calculator (https://www.andre-gaschler.com/rotationconverter/) tells me that this is in fact a zyx euler rotation.
     R_GoGi = Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, xRad,
                       SimTK::XAxis, yRad, SimTK::YAxis, zRad, SimTK::ZAxis);
+    ROS_WARN_STREAM("ground orientation matrix:\n" << R_GoGi);
     return R_GoGi;
 }
 
@@ -105,6 +108,11 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 		ROS_DEBUG_STREAM("Quaternion for imu[" << g << "]" << staticPoseQuaternions[g]);
 	}
         const auto q0 = staticPoseQuaternions[baseBodyIndex];
+	ROS_INFO_STREAM("Basebody q0: "<< q0);
+
+	auto inverseq0_rotation_matrix = ~Rotation(q0);
+
+	ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
         const auto base_R = R_GoGi * ~Rotation(q0);
 
         // get initial direction from the imu measurement (the axis looking
@@ -113,6 +121,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         if (baseHeadingDirection.getDirection() < 0)
             baseSegmentXheading = baseSegmentXheading.negate();
 
+	ROS_INFO_STREAM("baseSegmentXheading" << baseSegmentXheading);
         // get frame of imu body
         const PhysicalFrame* baseFrame = nullptr;
         if (!(baseFrame = model.findComponent<PhysicalFrame>(baseImuName))) {
@@ -135,13 +144,16 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
         if (xproduct.get(1) > 0) { angularDifference *= -1; }
 
+	ROS_WARN_STREAM("angularDifference: " << angularDifference);
         // set heading rotation (rotation about Y axis)
         R_heading = Rotation(angularDifference, SimTK::YAxis);
+        //R_heading = Rotation();
 
     } else {
         ROS_WARN("No heading correction is applied. Heading rotation is set to "
                 "default");
     }
+    ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
 
     return R_heading;
 }
@@ -149,13 +161,24 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 void IMUCalibrator::calibrateIMUTasks(
         vector<InverseKinematics::IMUTask>& imuTasks) {
     for (int i = 0; i < staticPoseQuaternions.size(); ++i) {
-        const auto& q0 = staticPoseQuaternions[i];
-        const auto R0 = R_heading * R_GoGi * ~Rotation(q0);
-
+	ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         const auto& bodyName = imuTasks[i].body;
+        
+	const auto& q0 = staticPoseQuaternions[i];
+
+	const auto Corrected_Q0 = ~Rotation(q0);
+    	ROS_DEBUG_STREAM("Corrected_Q0 orientation matrix:" << bodyName << "\n" << Corrected_Q0);
+
+	const auto R0 = R_heading * R_GoGi * ~Rotation(q0);
+    	
+	ROS_DEBUG_STREAM("R0 orientation matrix:" << bodyName << "\n" << R0);
+
         const auto R_BS = ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
+    	
+	ROS_DEBUG_STREAM("Fully corrected orientation matrix:" << bodyName << "\n" << R_BS);
 
         imuTasks[i].orientation = std::move(R_BS);
+	ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 }
 
@@ -172,33 +195,42 @@ void IMUCalibrator::recordTime(const double& timeout) {
 void IMUCalibrator::computeAvgStaticPoseCommon()
 {
     publishCalibrationData();
+    std::vector<SimTK::Quaternion> old_avg_response_list = impl->computeAvgStaticPose();;
+
     ROS_INFO_STREAM("Now calculating average static pose");
     if (externalAveragingMethod) //this should be a service call, but service don't get saved in rosbags
     {
 		ROS_INFO_STREAM("using external averagingMethod!");
-    		ROS_WARN("not yet implemented, using normal method");
+    		//ROS_WARN("not yet implemented, using normal method");
 		std::vector<SimTK::Quaternion> avg_response_list;
 		for (auto imu_name:imuBodiesObservationOrder)
 		{
 			geometry_msgs::QuaternionConstPtr res_q;
 			geometry_msgs::Quaternion q;
 			auto topic_name = nhandle.resolveName(imu_name+"/avg_pose");
-			ROS_INFO_STREAM("trying to read:" <<topic_name);
+			ROS_DEBUG_STREAM("trying to read: " <<topic_name);
 			res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
 			if (res_q)
 			{
-			ROS_INFO_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			ROS_INFO_STREAM(res_q);
+			ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			ROS_DEBUG_STREAM(res_q);
 			q = *res_q;
-			ROS_INFO_STREAM(q);
-			ROS_INFO_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			//create the simtk quaternion from q
-			SimTK::Quaternion s_q;
-			s_q[0] = q.x;
-			s_q[1] = q.y;
-			s_q[2] = q.z;
-			s_q[3] = q.w;
-			avg_response_list.push_back(s_q);
+			ROS_DEBUG_STREAM(q);
+			ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			//the first term of the quaternion is w in simtk:
+			//Quaternion 	( 		 )  	[inline]
+
+			//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
+			
+			SimTK::Quaternion si_q;
+			si_q[0] = q.w;
+			si_q[1] = q.x;
+			si_q[2] = q.y;
+			si_q[3] = q.z;
+			//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
+			//SimTK::Quaternion one;
+			//avg_response_list.push_back(one);
+			avg_response_list.push_back(si_q);
 			}
 			else
 				ROS_FATAL_STREAM("failed to read avg_pose response for imu" << imu_name);
@@ -206,9 +238,17 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 		//staticPoseQuaternions = impl->computeAvgStaticPose();
 		staticPoseQuaternions = avg_response_list;
     }
-    else
-    staticPoseQuaternions = impl->computeAvgStaticPose();
-
+    else {
+    	staticPoseQuaternions = impl->computeAvgStaticPose();
+    }
+    //let's compare the results:
+    ROS_INFO_STREAM("\n===== Calibration results ============");
+    for (int i=0;i<old_avg_response_list.size(); i++)
+    {
+	ROS_INFO_STREAM("\nOLD:" <<old_avg_response_list[i] <<
+			"\nNEW;" <<staticPoseQuaternions[i]);
+    }
+    ROS_INFO_STREAM("\n===== End of calibration results =====");
 }
 void IMUCalibrator::setMethod(bool method) {
 	ROS_INFO_STREAM("setting calibration method");
@@ -221,18 +261,18 @@ void IMUCalibrator::publishCalibrationData()
     int i = 0;
     for (auto qT:ans) // so this is not necessarily aligned. it should be a smart thing, like a map
     { 	
-	    ROS_INFO_STREAM("iterating over imus[" << i << "]: " << imuBodiesObservationOrder[i] );
+	    ROS_DEBUG_STREAM("iterating over imus[" << i << "]: " << imuBodiesObservationOrder[i] );
 	    geometry_msgs::PoseArray p_msg;
 	    
 	    for (auto q:qT)
 	    {
-		    ROS_WARN("what is the order now???? fml");
+		    //ROS_DEBUG_STREAM_ONCE("Is the Quaternion order correct? The SVD method shouldn't care, but maybe that could be wrong?");
 		    geometry_msgs::Pose pp;
-		    pp.orientation.x = q[0];
-		    pp.orientation.y = q[1];
-		    pp.orientation.z = q[2];
-		    pp.orientation.w = q[3];
-		    ROS_INFO_STREAM(q);
+		    pp.orientation.w = q[0];
+		    pp.orientation.x = q[1];
+		    pp.orientation.y = q[2];
+		    pp.orientation.z = q[3];
+		    ROS_DEBUG_STREAM(q);
 		    p_msg.poses.push_back(pp);
 	    }
 	    pub[i].publish(p_msg);

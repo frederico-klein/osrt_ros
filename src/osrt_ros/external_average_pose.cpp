@@ -15,13 +15,13 @@ class ExternalAveragePosePublisher
 		{
 			//n = ros::NodeHandle();
 			std::string own_name = n.resolveName("imu_cal");
-			ROS_INFO_STREAM("started avg_pose publisher reading from node" << own_name);
+			ROS_INFO_STREAM("started avg_pose publisher reading from node: " << own_name);
 			imu_poses = n.subscribe("imu_cal", 1, &ExternalAveragePosePublisher::callback, this);
 			avg_pose = n.advertise<geometry_msgs::Quaternion>("avg_pose",1,true);
 		}
 		void callback(const geometry_msgs::PoseArrayPtr& msg)
 		{
-			ROS_INFO_STREAM("Received pose array msg");
+			ROS_DEBUG_STREAM("Received pose array msg");
 			//std_msgs::Header h;
 			//h.stamp = ros::Time::now();
 			geometry_msgs::Quaternion msg_q;
@@ -39,7 +39,7 @@ class ExternalAveragePosePublisher
 				quaternions.push_back(q);
 			}
 			Eigen::Vector4f quaternionAvg = quaternionAverage(quaternions);
-			ROS_INFO_STREAM("average:" << quaternionAvg);
+			ROS_DEBUG_STREAM("average:\n " << quaternionAvg);
 			//now publish it as a ros quaternion to keep things simple....
 			//
 			geometry_msgs::Quaternion q_ ; //TODO: this should be a simtk style quaternion message

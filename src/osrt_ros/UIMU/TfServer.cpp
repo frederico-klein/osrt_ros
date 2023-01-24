@@ -93,10 +93,13 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	// now i need to set this myvec with the values i read for the quaternions somehow
 
 	auto myq = transform.getRotation();
-	myvec.push_back(myq.z());
+
+	//this is converting from ROS quaternions to OPENSIM quaternions. Is this correct?
+	
+	myvec.push_back(-myq.w());
 	myvec.push_back(myq.x());
 	myvec.push_back(myq.y());
-	myvec.push_back(myq.w());
+	myvec.push_back(myq.z());
 	// now it is a bunch of zeros
 	// TODO: maybe read other data and place here? this will be a lot of rather useless work
 	myvec.insert(myvec.end(), 14, -0.010 );

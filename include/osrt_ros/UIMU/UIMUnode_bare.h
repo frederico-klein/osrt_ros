@@ -28,8 +28,6 @@
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
 
-#include <dynamic_reconfigure/server.h>
-#include <osrt_ros/UIMUConfig.h>
 
 using namespace std;
 using namespace OpenSim;
@@ -62,7 +60,6 @@ class UIMUnode: Ros::CommonNode
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
-		bool clb_is_ready =false;
 		BasicModelVisualizer *visualizer;
 		bool showMarkers;
 		bool visualiseIt= false;
@@ -72,9 +69,6 @@ class UIMUnode: Ros::CommonNode
 		int splineOrder, memory, delay;
 		OpenSimRT::LowPassSmoothFilter * ikfilter;
 		std::vector<ros::Publisher> plottable_outputs;
-		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig> server;
-		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig>::CallbackType f;
-		OpenSim::Model model;	
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -111,7 +105,7 @@ class UIMUnode: Ros::CommonNode
 			nh.param<double>("rate", rate, 0.0);
 			r = new ros::Rate(rate);
 			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
-			nh.param<bool>("visualise", visualiseIt, true);
+			nh.param<bool>("visualise", visualiseIt, false);
 			// subject data
 			nh.param<std::string>("model_file", modelFile, "");
 			ROS_INFO_STREAM("Using modelFile:" << modelFile);
@@ -137,23 +131,17 @@ class UIMUnode: Ros::CommonNode
 			Object::registerType(*muscleModel);
 
 		}
-		void reconfigure_callback(osrt_ros::UIMUConfig &config, uint32_t level){
-		ROS_INFO("Reconfigure request %s, (%f, %f, %f)", config.imu_direction_axis_param.c_str(), config.imu_ground_rotation_x, config.imu_ground_rotation_y,config.imu_ground_rotation_z);
-			if (clb_is_ready)
-			{
-				imuDirectionAxis = config.imu_direction_axis_param;
-				xGroundRotDeg = config.imu_ground_rotation_x;
-				yGroundRotDeg = config.imu_ground_rotation_y;
-				zGroundRotDeg = config.imu_ground_rotation_z;
+		void onInit() 
 
-				start_ik();
-			}
-			else
-				ROS_WARN("calibrator not yet defined.");
-
-		}
-		void start_ik()
 		{
+			get_params();
+			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
+			time_pub = nh.advertise<std_msgs::Int64>("time",1);		
+			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);		
+			// setup model
+			ROS_DEBUG_STREAM("Setting up model.");
+			Model model(modelFile);
+			OpenSimUtils::removeActuators(model);
 
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
@@ -180,40 +168,6 @@ class UIMUnode: Ros::CommonNode
 				}
 				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
-			ROS_DEBUG_STREAM("setGroundOrientationSeq");
-			clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
-			ROS_DEBUG_STREAM("heading");
-			clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
-
-			//std::cout << boost::stacktrace::stacktrace() << std::endl;
-			clb->calibrateIMUTasks(imuTasks);
-			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
-
-			// initialize ik (lower constraint weight and accuracy -> faster tracking)
-			ROS_DEBUG_STREAM("Setting up IK");
-			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
-			qRawLogger = ik->initializeLogger();
-			initializeLoggers(loggerFileNameIK,&qRawLogger);
-
-			//TODO: publish correct ROS topics
-			output_labels = qRawLogger.getColumnLabels();
-			ROS_INFO_STREAM("done with start_ik");
-		}
-
-		void onInit() 
-
-		{
-			get_params();
-			//f = boost::bind(&UIMUnode::reconfigure_callback, this, _1,_2);
-			//server.setCallback(f);
-			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
-			time_pub = nh.advertise<std_msgs::Int64>("time",1);		
-			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);		
-			// setup model
-			ROS_DEBUG_STREAM("Setting up model.");
-			model = OpenSim::Model(modelFile);
-			OpenSimUtils::removeActuators(model);
-			
 			ROS_DEBUG_STREAM("Staring UIMUInputDriver with tf_frame_prefix" << tf_frame_prefix << " and rate: " << rate );
 			driver = new UIMUInputDriver(imuObservationOrder,tf_frame_prefix,rate); //uses tf server
 			driver->startListening();
@@ -226,9 +180,24 @@ class UIMUnode: Ros::CommonNode
 ;			clb->setMethod(use_external_average_calibration_method);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
-			clb_is_ready = true;
+			ROS_DEBUG_STREAM("setGroundOrientationSeq");
+			clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
+			ROS_DEBUG_STREAM("heading");
+			clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
+
+			std::cout << boost::stacktrace::stacktrace() << std::endl;
+			clb->calibrateIMUTasks(imuTasks);
+			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
+
+			// initialize ik (lower constraint weight and accuracy -> faster tracking)
+			ROS_DEBUG_STREAM("Setting up IK");
+			ik = new InverseKinematics(model, markerTasks, imuTasks, SimTK::Infinity, 1e-5);
+			qRawLogger = ik->initializeLogger();
+			initializeLoggers(loggerFileNameIK,&qRawLogger);
+
+			//TODO: publish correct ROS topics
+			output_labels = qRawLogger.getColumnLabels();
 			
-			start_ik();
 			
 			string all_labels;
 			ros::NodeHandle nh("~");
@@ -283,43 +252,30 @@ class UIMUnode: Ros::CommonNode
 
 		void run() {
 			try { // main loop
-				while (!driver->shouldTerminate()) {
-
-					// get input from imus
-					ROS_DEBUG_STREAM("Getting frame:");
-					auto imuData = driver->getFrame();
-					ROS_DEBUG_STREAM("Solving inverse kinematics:" );
-					numFrames++;
-
-					// solve ik
+					opensimrt_msgs::CommonTimed msg;
+					std_msgs::Header h;
+					h.frame_id = "subject";
 					chrono::high_resolution_clock::time_point t1;
+					chrono::high_resolution_clock::time_point t3;
+				while (ros::ok() && !driver->shouldTerminate()) {
 					t1 = chrono::high_resolution_clock::now();
 
+					// get input from imus
+					auto imuData = driver->getFrame();
+
+					// solve ik
 					auto pose = ik->solve(
 							{imuData.first, {}, clb->transform(imuData.second)});
 
-
-					chrono::high_resolution_clock::time_point t2;
-					t2 = chrono::high_resolution_clock::now();
-					sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
-						.count();
-					ROS_DEBUG_STREAM( "pose is:" << pose.q);
-
-					opensimrt_msgs::CommonTimed msg;
-					std_msgs::Header h;
 					h.stamp = ros::Time::now();
-					h.frame_id = "subject";
 					msg.header = h;
-					//msg.data.push_back(pose.t);
+					msg.data.clear();
+
+					for (int j= 0; j < pose.q.size()-1; j++)
+						msg.data.push_back(pose.q[j+1]);
+
 					msg.time = pose.t;
-					double Dt = msg.time-previousTime;
-					double jitter = Dt-previousDt;
-
-					ROS_DEBUG_STREAM("jitter(us):" << jitter*1000000);
-					ROS_DEBUG_STREAM("delta_t   :" << Dt);
-					ROS_DEBUG_STREAM("T (pose.t):" << msg.time);
-
-					int i = 0;
+					/*int i = 0;
 					for (double joint_angle:pose.q)
 					{
 						ROS_DEBUG_STREAM("some joint_angle:"<<joint_angle);
@@ -328,76 +284,14 @@ class UIMUnode: Ros::CommonNode
 						j_msg.data = joint_angle;
 						plottable_outputs[i].publish(j_msg);
 						i++;
-					}
-
+					}*/
 					pub.publish(msg);
-					if(publish_filtered)
-					{
-						auto ikFiltered = ikfilter->filter({pose.t, pose.q});
-						auto q = ikFiltered.x;
-						auto qDot = ikFiltered.xDot;
-						auto qDDot = ikFiltered.xDDot;
-						ROS_DEBUG_STREAM("Filter ran ok");
-						if (!ikFiltered.isValid) {
-							ROS_DEBUG_STREAM("filter results are NOT valid");
-							continue; }
-						ROS_DEBUG_STREAM("Filter results are valid");
-						opensimrt_msgs::PosVelAccTimed msg_filtered;
-						msg_filtered.header = h;
-						msg_filtered.time = ikFiltered.t;
-						//for loop to fill the data appropriately:
-						for (int i=0;i<q.size();i++)
-						{
-							msg_filtered.d0_data.push_back(q[i]);
-							msg_filtered.d1_data.push_back(qDot[i]);
-							msg_filtered.d2_data.push_back(qDDot[i]);
-						}
-
-						pub_filtered.publish(msg_filtered);
-						// visualize filtered!
-						if (visualiseIt)
-							visualizer->update(q);
-						else
-						{
-							ROS_WARN_ONCE("Not showing visuals. To turn it on set 'visualise' param to true.");
-							ROS_DEBUG_STREAM("not showing visuals.");
-						}
-						//adding the data to the loggers
-						if (recording)
-						{
-							qLogger.appendRow(pose.t,~q);
-							qDotLogger.appendRow(pose.t,~qDot);
-							qDDotLogger.appendRow(pose.t,~qDDot);
-						}
-					}
-					else
-					{
-						// visualize
-						if(visualiseIt)
-							visualizer->update(pose.q);
-						else
-						{
-							ROS_WARN_ONCE("Not showing visuals. To turn it on set 'visualise' param to true.");
-							ROS_DEBUG_STREAM("not showing visuals.");
-						}
-					}
-					// record
 					if (recording)
 					{
 						imuLogger.appendRow(pose.t, driver->frame);//
 						qRawLogger.appendRow(pose.t, ~pose.q);
 					}
-					previousTime = pose.t;
-					previousDt = Dt;
-					if(!ros::ok())
-						break;
-					ros::spinOnce();
 					
-					std_msgs::Int64 time_ik_msg;
-					time_ik_msg.data = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-					time_ik_pub.publish(time_ik_msg);
-
-					chrono::high_resolution_clock::time_point t3;
 					t3 = chrono::high_resolution_clock::now();
                                 	std_msgs::Int64 time_msg;
 					time_msg.data = std::chrono::duration_cast<std::chrono::microseconds>(t3 -t1).count();
@@ -409,8 +303,6 @@ class UIMUnode: Ros::CommonNode
 
 				driver->shouldTerminate(true);
 			}
-
-			cout << "Mean delay: " << (double) sumDelayMS / numFrames << " ms" << endl;
 
 			//CSVFileAdapter::write( qRawLogger, loggerFileNameIK);
 			//CSVFileAdapter::write( imuLogger, loggerFileNameIMUs);

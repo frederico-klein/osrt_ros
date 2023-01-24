@@ -13,6 +13,7 @@ find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"
 find_package(Eigen3 3.3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
+	dynamic_reconfigure
 	message_runtime
 	opensimrt
 	opensimrt_msgs
@@ -22,6 +23,10 @@ find_package(catkin REQUIRED COMPONENTS
 	tf2
 	)
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
+
+generate_dynamic_reconfigure_options(
+	cfg/UIMU.cfg
+)
 
 find_package(opensimrt REQUIRED COMPONENTS
 	Common
