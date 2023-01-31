@@ -82,9 +82,8 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	ROS_DEBUG_STREAM("Trying to find transform " << tf_name);
 	tf::StampedTransform transform;
 	try{
-		listener.waitForTransform(world_tf_reference, tf_name, ros::Time(0), ros::Duration(3.0));
-		listener.lookupTransform(world_tf_reference, tf_name,
-				ros::Time(0), transform);
+		listener.waitForTransform(tf_name, world_tf_reference, ros::Time(0), ros::Duration(3.0));
+		listener.lookupTransform(tf_name, world_tf_reference, ros::Time(0), transform); //flipped, new attempt to try to avoid -w
 	}
 	catch (tf::TransformException ex){
 		ROS_ERROR("Transform exception! %s",ex.what());
@@ -95,8 +94,8 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	auto myq = transform.getRotation();
 
 	//this is converting from ROS quaternions to OPENSIM quaternions. Is this correct?
-	
-	myvec.push_back(-myq.w());
+
+	myvec.push_back(myq.w());
 	myvec.push_back(myq.x());
 	myvec.push_back(myq.y());
 	myvec.push_back(myq.z());
