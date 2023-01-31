@@ -563,10 +563,9 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	try{
 
 		// log data (use filter time to align with delay)
-		if(false)
+		if(recording)
 		{
-			ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
-
+			//ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			tauLogger->appendRow(t, ~idOutput.tau);
 			grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
 			grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);

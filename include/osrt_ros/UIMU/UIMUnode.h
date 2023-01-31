@@ -58,7 +58,6 @@ class UIMUnode: Ros::CommonNode
 		OpenSim::TimeSeriesTable imuLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
 
 		ros::Publisher time_pub, time_ik_pub;
-		bool recording = false;
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
@@ -384,6 +383,7 @@ class UIMUnode: Ros::CommonNode
 					// record
 					if (recording)
 					{
+						ROS_WARN_ONCE("Recording!");
 						imuLogger.appendRow(pose.t, driver->frame);//
 						qRawLogger.appendRow(pose.t, ~pose.q);
 					}

@@ -174,9 +174,9 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 
 	try{
 		// log data (use filter time to align with delay)
-		if(false)
+		if(recording)
 		{
-			ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
+			//ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			grfRightLogger->appendRow(grfmOutput.t, ~grfmOutput.right.toVector());
 			grfLeftLogger->appendRow(grfmOutput.t, ~grfmOutput.left.toVector());
 			tauLogger->appendRow(t, ~idOutput.tau);
