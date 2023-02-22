@@ -95,7 +95,7 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	auto imu_q = transform.getRotation();
 
 
-	ROS_INFO_STREAM("tf_name: " << tf_name << " transform:\n " 	
+	ROS_DEBUG_STREAM("tf_name: " << tf_name << " transform:\n " 	
 			<< "w: " << imu_q.getW() 
 			//<< " " << imu_q.w() 
 			<< "\n" 
