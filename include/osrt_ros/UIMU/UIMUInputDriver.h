@@ -88,6 +88,8 @@ class  UIMUInputDriver : public InputDriver<UIMUData> {
     OrientationProvider* server;
 
     OpenSim::TimeSeriesTable initializeLogger() const;
+    OpenSim::TimeSeriesTable setLogger(std::vector<std::string> suffixes) const;
+    OpenSim::TimeSeriesTable initializeCalibrationValuesLogger() const;
 
     // buffers
     SimTK::RowVector frame;

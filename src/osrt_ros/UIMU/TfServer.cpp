@@ -57,22 +57,22 @@ void TfServer::set_world_reference(std::string world_name)
 bool TfServer::receive()
 {
 	ROS_DEBUG_STREAM("not simple");
-	std::vector<double> myvec;
-	// now i need to set this myvec with the values i read for the quaternions somehow
+	std::vector<double> combined_imu_data_vec;
+	// now i need to set this combined_imu_data_vec with the values i read for the quaternions somehow
 	//std::vector<std::string> tf_strs = {"/a", "b", "c"};	
 	double time = ros::Time::now().toSec();// i need to get this from the transform somehow
-	myvec.push_back(time);
+	combined_imu_data_vec.push_back(time);
 
 	for (auto i:tf_strs)
 	{
 		std::vector<double> anImu = readTransformIntoOpensim(i);
-		myvec.insert(myvec.end(),anImu.begin(), anImu.end());
+		combined_imu_data_vec.insert(combined_imu_data_vec.end(),anImu.begin(), anImu.end());
 	}
-	//for( auto i:myvec)
+	for( auto i:combined_imu_data_vec)
 	//	ROS_INFO_STREAM("THIS THING" << i);
-	ROS_DEBUG_STREAM("THIS THING:" << myvec.size());
+	ROS_DEBUG_STREAM("THIS THING:" << combined_imu_data_vec.size());
 
-	output = myvec;
+	output = combined_imu_data_vec;
 	return true;	
 
 }
@@ -83,30 +83,45 @@ std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
 	tf::StampedTransform transform;
 	try{
 		listener.waitForTransform(tf_name, world_tf_reference, ros::Time(0), ros::Duration(3.0));
+		//listener.lookupTransform(world_tf_reference, tf_name, ros::Time(0), transform); // this would give OpenSim the raw quaternions, however, it seems to be incorrect as it is not possible to find the correct R matrix to put all the axis in the correct orientation. To solve this we either changed the order of some vectors or inverted w.
 		listener.lookupTransform(tf_name, world_tf_reference, ros::Time(0), transform); //flipped, new attempt to try to avoid -w
 	}
 	catch (tf::TransformException ex){
 		ROS_ERROR("Transform exception! %s",ex.what());
 	}
-	std::vector<double> myvec;
-	// now i need to set this myvec with the values i read for the quaternions somehow
+	std::vector<double> imu_data_vec;
+	// now i need to set this imu_data_vec with the values i read for the quaternions somehow
 
-	auto myq = transform.getRotation();
+	auto imu_q = transform.getRotation();
 
+
+	ROS_INFO_STREAM("tf_name: " << tf_name << " transform:\n " 	
+			<< "w: " << imu_q.getW() 
+			//<< " " << imu_q.w() 
+			<< "\n" 
+			<< "x: " << imu_q.getX() 
+			//<< " " << imu_q.x() 
+			<< "\n" 
+			<< "y: " << imu_q.getY() 
+			//<< " " << imu_q.y() 
+			<< "\n"
+			<< "z: " << imu_q.getZ() 
+			//<< " " << imu_q.z() 
+			<< "\n");
 	//this is converting from ROS quaternions to OPENSIM quaternions. Is this correct?
 
-	myvec.push_back(myq.w());
-	myvec.push_back(myq.x());
-	myvec.push_back(myq.y());
-	myvec.push_back(myq.z());
+	imu_data_vec.push_back(imu_q.w());
+	imu_data_vec.push_back(imu_q.x());
+	imu_data_vec.push_back(imu_q.y());
+	imu_data_vec.push_back(imu_q.z());
 	// now it is a bunch of zeros
 	// TODO: maybe read other data and place here? this will be a lot of rather useless work
-	myvec.insert(myvec.end(), 14, -0.010 );
-	//for( auto i:myvec)
+	imu_data_vec.insert(imu_data_vec.end(), 14, -1.010 );
+	//for( auto i:imu_data_vec)
 	//	ROS_INFO_STREAM("THIS THING" << i);
-	//ROS_INFO_STREAM("THIS THING:" << myvec.size());
+	//ROS_INFO_STREAM("THIS THING:" << imu_data_vec.size());
 
-	return myvec;
+	return imu_data_vec;
 
 }
 

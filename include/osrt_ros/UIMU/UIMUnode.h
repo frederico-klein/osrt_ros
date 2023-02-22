@@ -16,15 +16,19 @@
 #include "ros/publisher.h"
 #include "ros/rate.h"
 #include "ros/ros.h"
+#include "ros/service_server.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Int64.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "opensimrt_msgs/Labels.h"
 
+#include <SimTKcommon/internal/Quaternion.h>
+#include <SimTKcommon/internal/ReinitOnCopy.h>
 #include <exception>
 #include "osrt_ros/UIMU/TfServer.h"
 #include "Ros/include/common_node.h"
+#include "std_srvs/Empty.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
 
@@ -55,9 +59,10 @@ class UIMUnode: Ros::CommonNode
 		double sumDelayMS = 0, numFrames = 0; 
 		double previousTime = 0;
 		double previousDt = 0;
-		OpenSim::TimeSeriesTable imuLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
+		OpenSim::TimeSeriesTable imuLogger, imuCalibrationLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
 
 		ros::Publisher time_pub, time_ik_pub;
+		ros::ServiceServer calibrationService;
 		UIMUInputDriver *driver;
 		InverseKinematics * ik;
 		IMUCalibrator * clb;
@@ -199,6 +204,53 @@ class UIMUnode: Ros::CommonNode
 			ROS_INFO_STREAM("done with start_ik");
 		}
 
+		SimTK::RowVector fromVectorOfSimTKQuaternionsToARowVector(std::vector<SimTK::Quaternion> vv)
+		{
+			std::vector<double> serialized;
+			
+				for (auto q:vv)
+				{
+					ROS_INFO_STREAM(q[0] <<","<<q[1]<<","<<q[2]<<","<<q[3]);
+					serialized.push_back(q[0]);	
+					serialized.push_back(q[1]);	
+					serialized.push_back(q[2]);	
+					serialized.push_back(q[3]);	
+				}
+
+			SimTK::RowVector serializedv(serialized.size());
+			for (int ii = 0; ii <serializedv.size(); ii++)
+			{
+				serializedv[ii] = serialized[ii];
+			}
+			return serializedv;
+		}
+		void clearLogger(TimeSeriesTable &t) //TODO: move it somewhere nice. maybe make loggers a wrapper class
+		{
+			for (int iii= 0; iii<t.getNumRows();iii++)
+				t.removeRow(0);
+			if (t.getNumRows() == 0)
+				ROS_INFO_STREAM("logger cleared");
+			else
+				ROS_WARN_STREAM("couldnt clear logger table!");
+		}
+		void doCalibrate()
+		{
+;			clb->setMethod(use_external_average_calibration_method);
+			ROS_DEBUG_STREAM("clb samples");
+			clb->recordNumOfSamples(10);
+			clb_is_ready = true;
+			clearLogger(imuCalibrationLogger);
+			ROS_INFO_STREAM("number of rows in table is" << imuCalibrationLogger.getNumRows());
+			imuCalibrationLogger.appendRow(0, fromVectorOfSimTKQuaternionsToARowVector(clb->staticPoseQuaternions));
+		}
+		bool calibrationSrv(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+		{
+			ROS_INFO_STREAM("Calibration service called!");
+			doCalibrate();
+			//I need to restart ik again as well
+			start_ik();
+			return true;
+		}
 		void onInit() 
 
 		{
@@ -208,6 +260,7 @@ class UIMUnode: Ros::CommonNode
 			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
 			time_pub = nh.advertise<std_msgs::Int64>("time",1);		
 			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);		
+			calibrationService = nh.advertiseService("calibrate", &UIMUnode::calibrationSrv, this);
 			// setup model
 			ROS_DEBUG_STREAM("Setting up model.");
 			model = OpenSim::Model(modelFile);
@@ -218,15 +271,14 @@ class UIMUnode: Ros::CommonNode
 			driver->startListening();
 			imuLogger = driver->initializeLogger();
 			initializeLoggers(loggerFileNameIMUs,&imuLogger);
+			imuCalibrationLogger = driver->initializeCalibrationValuesLogger();
+			initializeLoggers("calib", &imuCalibrationLogger);
 
 			// calibrator
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
-;			clb->setMethod(use_external_average_calibration_method);
-			ROS_DEBUG_STREAM("clb samples");
-			clb->recordNumOfSamples(10);
-			clb_is_ready = true;
-			
+			doCalibrate();
+
 			start_ik();
 			
 			string all_labels;

@@ -176,6 +176,18 @@ OpenSim::TimeSeriesTable UIMUInputDriver::initializeLogger() const {
 		"_mx",       "_my",       "_mz",      "_barometer", "_linAcc_x",
 		"_linAcc_y", "_linAcc_z", "_altitude"};
 
+	return setLogger(suffixes);
+}
+
+OpenSim::TimeSeriesTable UIMUInputDriver::initializeCalibrationValuesLogger() const {
+	std::vector<std::string> suffixes = {
+		"_q1",       "_q2",       "_q3",      "_q4"};
+
+	return setLogger(suffixes);
+}
+
+OpenSim::TimeSeriesTable UIMUInputDriver::setLogger(std::vector<std::string> suffixes ) const 
+{
 	// create column names for each combination of imu names and measurement
 	// suffixes
 	std::vector<std::string> columnNames;

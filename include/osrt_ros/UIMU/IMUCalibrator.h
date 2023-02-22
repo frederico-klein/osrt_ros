@@ -49,6 +49,7 @@ namespace OpenSimRT {
 	 */
 	class  IMUCalibrator {
 		public:
+			std::vector<SimTK::Quaternion> staticPoseQuaternions; // static pose data
 			std::vector<ros::Publisher> pub;
 			ros::NodeHandle nhandle;
 			//std::vector<ros::Subscriber> avg_pose_subs;
@@ -132,6 +133,7 @@ namespace OpenSimRT {
 					virtual void recordNumOfSamples(const size_t& numSamples) = 0;
 					virtual std::vector<std::vector<SimTK::Quaternion>> getTableData() = 0;
 					virtual std::vector<SimTK::Quaternion> computeAvgStaticPose() = 0;
+					virtual void clearCalibration() = 0;
 			};
 
 			/**
@@ -160,6 +162,7 @@ namespace OpenSimRT {
 						return table;
 					}
 					virtual void recordTime(const double& timeout) override {
+						initIMUDataTable.clear(); // if you want to do something fancy, remove this and then just create another service to allow to record multiple calibrations, for instance. no idea if this makes any sense though.
 						std::cout << "Recording Static Pose..." << std::endl;
 						const auto start = std::chrono::steady_clock::now();
 						while (std::chrono::duration_cast<std::chrono::seconds>(
@@ -172,6 +175,7 @@ namespace OpenSimRT {
 					}
 
 					virtual void recordNumOfSamples(const size_t& numSamples) override {
+						initIMUDataTable.clear();
 						std::cout << "Recording Static Pose..." << std::endl;
 						size_t i = 0;
 						while (i < numSamples) {
@@ -231,7 +235,10 @@ namespace OpenSimRT {
 
 						return avgQuaternions;
 					}
-					
+					virtual void clearCalibration() override 
+					{
+						initIMUDataTable.clear();
+					}
 				private:
 					SimTK::ReferencePtr<const InputDriver<T>> m_driver;
 					std::vector<std::vector<T>> initIMUDataTable;
@@ -246,7 +253,6 @@ namespace OpenSimRT {
 			SimTK::State state;
 			std::unique_ptr<DriverErasureBase>
 				impl; // pointer to DriverErasureBase class
-			std::vector<SimTK::Quaternion> staticPoseQuaternions; // static pose data
 			std::map<std::string, SimTK::Rotation> imuBodiesInGround; // R_GB per body
 			std::vector<std::string> imuBodiesObservationOrder;       // imu order
 			SimTK::Rotation R_GoGi;    // ground-to-ground transformation
