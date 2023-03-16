@@ -35,7 +35,7 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::Id::Id(): Pipeline::DualSink::DualSink(true),
+Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	sync_real_wrenches(sub,sub_wl,sub_wr,10), 
 	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
 	tfListener(tfBuffer)
@@ -342,9 +342,9 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	counter++;
 	double filtered_t;
 	auto iks = parse_ik_message(message_ik, &filtered_t);
-	ROS_INFO_STREAM("message_grf" << *message_grf);
+	//ROS_DEBUG_STREAM("message_grf\n" << *message_grf);
 	auto grfs = get_wrench(message_grf);
-	ROS_WARN_STREAM("filtered_t" << filtered_t);
+	ROS_DEBUG_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
 	run(message_ik->header, filtered_t, iks, grfs);	
@@ -466,7 +466,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	//TODO
 	if(iks.size() == 0)
 	{
-		ROS_ERROR_STREAM("THERE ARE NO IKS!");
+		ROS_WARN_STREAM("THERE ARE NO IKS!");
 		return;
 	}
 	auto q = iks[0];
@@ -476,7 +476,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 
 	if(grfs.size() == 0)
 	{
-		ROS_ERROR_STREAM("THERE ARE NO GRFS!");
+		ROS_WARN_STREAM("THERE ARE NO GRFS!");
 		return;
 	}
 	auto grfLeftWrench = grfs[0]; 
@@ -493,6 +493,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 
 	if (!grfRightFiltered.isValid ||
 			!grfLeftFiltered.isValid) {
+		ROS_WARN_STREAM("GRFS are not valid!");
 		return;
 	}
 	//

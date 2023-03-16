@@ -160,7 +160,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
-	ROS_INFO_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << idOutput.tau << "]");
+	//ROS_INFO_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << idOutput.tau << "]");
 
 	// visualization
 	try {
