@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-
+	<!-- arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" / -->
+	<arg name="model_file" 	default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" />
         <node pkg="osrt_ros" type="agrf" 	name="grf_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
+                <param name="model_file" 		value="$(arg model_file)" />
 		<!-- I can simplify this if I put the reader in the global namespace. it won't be because it's remmapped, but it will make it easier to write. Unsure, consider-->
 		<remap from="/grf_node/input" to="/ik/output"/>
 		<!-- so this is weird, since it is a standalone service call, it is in the global namespace (or so thinks the node)  -->

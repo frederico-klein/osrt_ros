@@ -4,6 +4,7 @@
 
         <node pkg="osrt_ros" type="id" 	name="id_node2" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
+                <param name="get_second_label" 		value="true" />
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<remap from="/id_node2/input" to="/ik/output"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>

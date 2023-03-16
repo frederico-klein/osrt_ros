@@ -21,6 +21,8 @@ namespace Pipeline
 			//void callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			//void old_callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf);
+			void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  ) override;
+
 
 
 			void So();
@@ -38,7 +40,7 @@ namespace Pipeline
 			OpenSimRT::MomentArmFunctionT calcMomentArm; 
 			OpenSim::TimeSeriesTable fmLogger;
 			OpenSim::TimeSeriesTable amLogger;
-			virtual bool usesVisualizarFromId() {return false;}
+			virtual bool usesVisualizarFromId() override {return false;}
 
 	};
 

@@ -2,9 +2,10 @@
 <launch>
 	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 
-        <node pkg="osrt_ros" type="id_combined" 	name="id_node" output="screen">
+        <node pkg="osrt_ros" type="id_so_jr" 	name="id_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
 		<!-- param name="resample_period" 		value="0.01" / -->
+                <param name="get_second_label" 		value="true" />
 		<remap from="/id_node/input" to="/ik/output"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>

@@ -52,7 +52,7 @@ void Pipeline::Grf::get_params()
 }
 
 void Pipeline::Grf::onInit() {
-	Ros::CommonNode::onInit();
+	Ros::CommonNode::onInit(true);
 	Pipeline::Grf::get_params();
 	previousTime = ros::Time::now().toSec();
 	previousTimeDifference = 0;
@@ -160,6 +160,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
+	ROS_INFO_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << idOutput.tau << "]");
 
 	// visualization
 	try {

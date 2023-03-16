@@ -12,7 +12,7 @@ void mySigintHandler(int sig)
 }
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "id_combined_show");
-	ROS_INFO_STREAM("called node InverseDynamics.");
+	ROS_INFO_STREAM("called node InverseDynamicsCombined.");
     try {
 	Pipeline::IdSoJr perenial;
 

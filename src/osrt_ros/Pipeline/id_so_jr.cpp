@@ -157,6 +157,104 @@ void Pipeline::IdSoJr::onInitJr()
 	ROS_DEBUG_STREAM("onInitJr");
 }
 
+void Pipeline::IdSoJr::run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> grfs )
+{
+	ROS_DEBUG_STREAM("Received run call. Running IdSoJr loop"); 
+	ROS_ERROR_STREAM("not implemented!");
+
+	if(iks.size() == 0)
+	{
+		ROS_ERROR_STREAM("THERE ARE NO IKS!");
+		return;
+	}
+	auto q = iks[0];
+	auto qDot = iks[1];
+	auto qDDot = iks[2];
+	//unpacks wrenches:
+
+	if(grfs.size() == 0)
+	{
+		ROS_ERROR_STREAM("THERE ARE NO GRFS!");
+		return;
+	}
+	auto grfLeftWrench = grfs[0]; 
+	auto grfRightWrench = grfs[1]; 
+
+	//filter wrench!
+	//
+	auto grfRightFiltered =
+		grfRightFilter->filter({t, grfRightWrench.toVector()});
+	grfRightWrench.fromVector(grfRightFiltered.x);
+	auto grfLeftFiltered =
+		grfLeftFilter->filter({t, grfLeftWrench.toVector()});
+	grfLeftWrench.fromVector(grfLeftFiltered.x);
+
+	if (!grfRightFiltered.isValid ||
+			!grfLeftFiltered.isValid) {
+	return;
+	}
+	//
+	// perform id
+	chrono::high_resolution_clock::time_point t1;
+	t1 = chrono::high_resolution_clock::now();
+	auto idOutput = id->solve(
+			{t, q, qDot, qDDot,
+			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+	auto tau = idOutput.tau;
+
+	
+	ROS_DEBUG_STREAM("inverse dynamics ran ok");
+
+
+	ROS_DEBUG_STREAM("attempting to call SO.");
+	if (!so)
+	{
+		ROS_ERROR_STREAM("so not initialized!");
+		return;
+	}
+	ROS_DEBUG_STREAM("attempting to run SO.");
+	ROS_DEBUG_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << tau << "]");
+        auto soOutput = so->solve({t, q, tau});
+	chrono::high_resolution_clock::time_point t2;
+        t2 = chrono::high_resolution_clock::now();
+        double dddd = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        sumDelayMS += dddd;
+	//cout << "freq:" << 1000/dddd << endl;
+	ROS_DEBUG_STREAM_THROTTLE(2,"Average delay:"<< sumDelayMS/sumDelayMSCounter << "ms. Fps:" << 1000/dddd );
+	try {
+	        visualizer->update(q, soOutput.am);
+	}
+	catch (std::exception& e)
+	{
+		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+	}
+
+	try{
+
+	// log data (use filter time to align with delay)
+	if(false)
+	{
+		ROS_WARN_STREAM("THIS SHOULDNT BE RUN.");
+		tauLogger->appendRow(t, ~idOutput.tau);
+		grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
+		grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+		qLogger->appendRow(t, ~q);
+		qDotLogger->appendRow(t, ~qDot);
+		qDDotLogger->appendRow(t, ~qDDot);
+	// loggers from SO
+		// log data (use filter time to align with delay)
+        	fmLogger.appendRow(t, ~soOutput.fm);
+        	amLogger.appendRow(t, ~soOutput.am);
+
+		ROS_INFO_STREAM("Added data to loggers. "<< sumDelayMSCounter);
+	}}
+	catch (std::exception& e)
+	{
+		ROS_WARN_STREAM("Error while updating loggers, data will not be saved" <<std::endl << e.what());
+	}
+
+}
+
 void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
 	ROS_DEBUG_STREAM("Received run call. Running IdSoJr loop"); 
@@ -185,8 +283,14 @@ void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::
 
 	sumDelayMSCounter++;
 	auto tau = idOutput.tau;
+	ROS_DEBUG_STREAM("attempting to call SO.");
+	if (!so)
+	{
+		ROS_ERROR_STREAM("so not initialized!");
+		return;
+	}
         auto soOutput = so->solve({t, q, tau});
-        chrono::high_resolution_clock::time_point t2;
+	chrono::high_resolution_clock::time_point t2;
         t2 = chrono::high_resolution_clock::now();
         double dddd = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
         sumDelayMS += dddd;
@@ -205,7 +309,7 @@ void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::
 	// log data (use filter time to align with delay)
 	if(false)
 	{
-		ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
+		ROS_WARN_STREAM("THIS SHOULDNT BE RUN.");
 		tauLogger->appendRow(t, ~idOutput.tau);
 		grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
 		grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);

@@ -173,14 +173,15 @@ void Pipeline::Id::print_vec(std::vector<std::string> vs)
 {
 	std::string s="[";
 	for (auto vsi:vs)
-		s+= ", " + vsi;
+		s+= vsi+", ";
 	s+= "]";
 	ROS_INFO_STREAM(s);
 }
 
 void Pipeline::Id::onInit() {
 	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case
-	get_second_label = false;
+	nh.getParam("get_second_label", get_second_label);
+	//get_second_label = false;
 	Pipeline::DualSink::onInit();
 
 	previousTime = ros::Time::now().toSec();
@@ -201,7 +202,7 @@ void Pipeline::Id::onInit() {
 
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	// TODO: set the column labels, or it will break when you try to use them!
-	ROS_INFO_STREAM("lkjfqkewjfiewjfoiew	jfpoiewqjfefpoiqjewoifjwqeoijfqoiewjf");
+	ROS_INFO_STREAM("Attempting to set loggers.");
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
 
@@ -210,7 +211,7 @@ void Pipeline::Id::onInit() {
 	initializeLoggers("tau",tauLogger);
 	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
 	sync.registerCallback(std::bind(&Pipeline::Id::callback, this, std::placeholders::_1, std::placeholders::_2));
-	//sync.registerCallback(&Pipeline::Id::callback, this);
+	sync.registerCallback(&Pipeline::Id::callback, this);
 
 	//i should have the input labels from grf already
 	if(get_second_label)
@@ -341,6 +342,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	counter++;
 	double filtered_t;
 	auto iks = parse_ik_message(message_ik, &filtered_t);
+	ROS_INFO_STREAM("message_grf" << *message_grf);
 	auto grfs = get_wrench(message_grf);
 	ROS_WARN_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
@@ -491,6 +493,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 
 	if (!grfRightFiltered.isValid ||
 			!grfLeftFiltered.isValid) {
+		return;
 	}
 	//
 	// perform id
