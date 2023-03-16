@@ -11,6 +11,8 @@ namespace Pipeline
 		//OpenSimRT::ContactForceBasedPhaseDetector* detector;
 		const std::string section = "TEST_CONTACT_FORCE_GRFM_PREDICTION_FROM_FILE";
 		public:
+			void get_params();
+			void onInit();
 			Fc();
 			~Fc();
 	};

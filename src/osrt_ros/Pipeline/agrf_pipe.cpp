@@ -1,3 +1,4 @@
+#include "osrt_ros/Pipeline/grf_pipe.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Labels.h"
@@ -27,11 +28,21 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 Pipeline::Acc::Acc()
+{}
+void Pipeline::Acc::onInit()
+{
+	Pipeline::Grf::onInit();
+	get_params();
+
+}
+
+void Pipeline::Acc::get_params()
 {
 	// subject data
+	//TODO: make it real params
 	INIReader ini(INI_FILE);
-	subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+	//subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
 	auto grfRightApplyBody =

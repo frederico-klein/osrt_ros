@@ -18,7 +18,9 @@ int main(int argc, char **argv) {
 	Pipeline::Fc perenial;
 
 	//	signal(SIGINT, mySigintHandler);
-	perenial.onInit();		
+	ROS_INFO_STREAM("calling onInit");
+	perenial.onInit();	
+	ROS_INFO_STREAM("onInit finished ok.");
 			//ros::Subscriber sub = n.subscribe<opensimrt_msgs::CommonTimed>("r_data", 1, perenial);	
 	ros::ServiceServer seecsv = n.advertiseService("see", &Pipeline::Fc::see, (Pipeline::Grf*)&perenial);
 	ros::spin();

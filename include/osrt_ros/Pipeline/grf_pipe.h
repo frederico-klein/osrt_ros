@@ -35,9 +35,11 @@ namespace Pipeline
 			int counter;
 			double previousTime, previousTimeDifference;
 
+			std::string modelFile;
 			Grf();
 			~Grf();
-			void onInit(); 
+			void onInit();
+			virtual void get_params();
 			void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h);
 			void callback(const opensimrt_msgs::CommonTimedConstPtr& message) ;
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message) ;

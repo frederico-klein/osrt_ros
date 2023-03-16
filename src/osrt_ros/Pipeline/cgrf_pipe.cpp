@@ -26,11 +26,21 @@ using namespace OpenSimRT;
 
 
 Pipeline::Fc::Fc()
+{}
+void Pipeline::Fc::onInit()
+{
+	Pipeline::Grf::onInit();
+	get_params();
+	
+}
+
+void Pipeline::Fc::get_params()
 {
 	// subject data
+	//TODO: make real params
 	INIReader ini(INI_FILE);
-	subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
+	//subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
+	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 
 	auto grfRightApplyBody =

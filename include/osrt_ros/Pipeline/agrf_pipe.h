@@ -11,6 +11,8 @@ namespace Pipeline
 		//OpenSimRT::AccelerationBasedPhaseDetector* detector;
 		const std::string section = "TEST_ACCELERATION_GRFM_PREDICTION_FROM_FILE";	
 		public:
+			void get_params();
+			void onInit();
 			Acc();
 			~Acc();
 	};

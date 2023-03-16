@@ -1,5 +1,6 @@
 #include "Ros/include/common_node.h"
 #include "ros/message_traits.h"
+#include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
@@ -42,9 +43,17 @@ Pipeline::Grf::~Grf()
 {
 	ROS_INFO_STREAM("Shutting down Grf");
 }
+void Pipeline::Grf::get_params()
+{
+	ros::NodeHandle nh("~");
+	nh.param<std::string>("model_file", modelFile, "");
+	ROS_INFO_STREAM("Using modelFile:" << modelFile);
+
+}
 
 void Pipeline::Grf::onInit() {
 	Ros::CommonNode::onInit();
+	Pipeline::Grf::get_params();
 	previousTime = ros::Time::now().toSec();
 	previousTimeDifference = 0;
 
