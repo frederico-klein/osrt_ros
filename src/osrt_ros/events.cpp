@@ -7,7 +7,7 @@
 
 void addEvent(std::string event_name, opensimrt_msgs::Event & e)
 {
-	ROS_INFO_STREAM("Added event" << event_name);
+	ROS_DEBUG_STREAM("Added event" << event_name);
 	e.header.stamp = ros::Time::now(); 
 	e.name = event_name;
 }
