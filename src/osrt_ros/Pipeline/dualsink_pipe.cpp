@@ -10,8 +10,9 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
-
-Pipeline::DualSink::DualSink(bool debug): Ros::CommonNode::CommonNode(debug), sync(sub,sub2,10), sync_filtered(sub_filtered,sub2,10)
+#define INPUT_LENGTH 10 
+#define FILTER_LENGTH 3 
+Pipeline::DualSink::DualSink(bool debug): Ros::CommonNode::CommonNode(debug), sync(sub,sub2,FILTER_LENGTH), sync_filtered(sub_filtered,sub2,FILTER_LENGTH)
 {
 	if(debug)
 	{
@@ -36,15 +37,15 @@ void Pipeline::DualSink::onInit()
 	ROS_INFO_STREAM("called onInit from DualSink");
 	Ros::CommonNode::onInit(2);
 
-	sub.subscribe(nh, "input",100);
-	sub_filtered.subscribe(nh, "input_filtered",100);
+	sub.subscribe(nh, "input",INPUT_LENGTH);
+	sub_filtered.subscribe(nh, "input_filtered",INPUT_LENGTH);
 
 	ros::Rate r(1);
 	opensimrt_msgs::LabelsSrv l;
 	//while(!ros::service::call("in_labels", l))
 	if (get_second_label)
 	{
-		sub2.subscribe(nh, "input2",100);
+		sub2.subscribe(nh, "input2",INPUT_LENGTH);
 		while(ros::ok())
 		{
 			if(ros::service::call("in_labels2", l))
