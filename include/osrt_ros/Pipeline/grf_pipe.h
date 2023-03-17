@@ -2,6 +2,7 @@
 #define PIPELINE_GRFM_HEADER_FBK_01062022
 
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/Events.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "experimental/GRFMPrediction.h"
 #include "SignalProcessing.h"
@@ -40,7 +41,7 @@ namespace Pipeline
 			~Grf();
 			void onInit();
 			virtual void get_params();
-			void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h);
+			void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h, opensimrt_msgs::Events e);
 			void callback(const opensimrt_msgs::CommonTimedConstPtr& message) ;
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message) ;
 			void finish(); 

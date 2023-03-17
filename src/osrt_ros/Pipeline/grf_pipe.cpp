@@ -1,4 +1,6 @@
 #include "Ros/include/common_node.h"
+#include "opensimrt_msgs/Event.h"
+#include "opensimrt_msgs/Events.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/ros.h"
@@ -27,6 +29,7 @@
 #include "signal.h"
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/grf_pipe.h"
+#include "osrt_ros/events.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -92,7 +95,7 @@ opensimrt_msgs::CommonTimed Pipeline::Grf::get_GRFMs_as_common_msg(OpenSimRT::GR
 	return msg;
 }
 
-void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h) 
+void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h, opensimrt_msgs::Events e) 
 {
 	double timediff = t- previousTime;
 	double ddt = timediff-previousTimeDifference;
@@ -153,7 +156,8 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 
 	ROS_DEBUG_STREAM("updated visuals ok");
 
-	//TODO: remove ID from here
+	//TODO: conside if ID here is necessary
+	addEvent("grf before id",e);
 	// solve ID
 	auto idOutput = id->solve(
 			{t, q, qDot, qDDot,
@@ -161,7 +165,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 	//ROS_INFO_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << idOutput.tau << "]");
-
+	addEvent("grf aftr id", e);
 	// visualization
 	try {
 		visualizer->update(q);
@@ -169,6 +173,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 				grfmOutput.right.force);
 		leftGRFDecorator->update(grfmOutput.left.point, grfmOutput.left.force);
 		ROS_DEBUG_STREAM("visualizer ran ok.");
+		addEvent("grf after visualizer", e);
 	}
 	catch (std::exception& e)
 	{
@@ -179,7 +184,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	//OpenSim::TimeSeriesTable output;
 
 	opensimrt_msgs::CommonTimed msg = get_GRFMs_as_common_msg(grfmOutput,t,h);
-
+	msg.events = e;
 	pub.publish(msg);
 
 	try{
@@ -209,6 +214,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 
 
 void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message) {
+	auto newEvents = addEvent("grf received ik", message);
 	ROS_DEBUG_STREAM("Received message. Running Grf loop"); 
 	counter++;
 	SimTK::Vector qRaw(message->data.size()); //cant find the right copy constructor syntax. will for loop it
@@ -229,9 +235,10 @@ void Pipeline::Grf::callback(const opensimrt_msgs::CommonTimedConstPtr& message)
 		return; }
 	ROS_DEBUG_STREAM("Filter results are valid");
 
-	run(ikFiltered.t, q, qDot, qDDot,message->header);	
+	run(ikFiltered.t, q, qDot, qDDot,message->header, newEvents);	
 }	
 void Pipeline::Grf::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message) {
+	auto newEvents = addEvent("grf received ik", message);
 	ROS_DEBUG_STREAM("Received message. Running Grf filtered loop"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
@@ -242,7 +249,7 @@ void Pipeline::Grf::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstP
 		qDot[j] = message->d1_data[j];
 		qDDot[j] = message->d2_data[j];
 	}
-	run(message->time, q, qDot, qDDot,message->header);
+	run(message->time, q, qDot, qDDot,message->header, newEvents);
 
 }	
 void Pipeline::Grf::finish() {

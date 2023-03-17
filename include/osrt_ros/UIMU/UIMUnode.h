@@ -34,6 +34,7 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <osrt_ros/UIMUConfig.h>
+#include "osrt_ros/events.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -335,6 +336,11 @@ class UIMUnode: Ros::CommonNode
 		void run() {
 			try { // main loop
 				while (!driver->shouldTerminate()) {
+					opensimrt_msgs::CommonTimed msg;
+					std_msgs::Header h;
+					h.stamp = ros::Time::now();
+					h.frame_id = "subject";
+					msg.header = h;
 
 					// get input from imus
 					ROS_DEBUG_STREAM("Getting frame:");
@@ -349,18 +355,13 @@ class UIMUnode: Ros::CommonNode
 					auto pose = ik->solve(
 							{imuData.first, {}, clb->transform(imuData.second)});
 
-
+					addEvent("ik",msg);
 					chrono::high_resolution_clock::time_point t2;
 					t2 = chrono::high_resolution_clock::now();
 					sumDelayMS += chrono::duration_cast<chrono::milliseconds>(t2 - t1)
 						.count();
 					ROS_DEBUG_STREAM( "pose is:" << pose.q);
 
-					opensimrt_msgs::CommonTimed msg;
-					std_msgs::Header h;
-					h.stamp = ros::Time::now();
-					h.frame_id = "subject";
-					msg.header = h;
 					//msg.data.push_back(pose.t);
 					msg.time = pose.t;
 					double Dt = msg.time-previousTime;

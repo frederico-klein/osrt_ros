@@ -70,7 +70,7 @@ include_directories(
 	${EIGEN3_INCLUDE_DIRS}
 	)
 
-file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp")
+file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
 set(target osrtRosPipeline)
@@ -89,7 +89,7 @@ add_subdirectory(src/osrt_ros/Pipeline)
 
 
 
-file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp")
+file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp""src/osrt_ros/events.cpp" )
 file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 
 set(target osrtRosUIMU)

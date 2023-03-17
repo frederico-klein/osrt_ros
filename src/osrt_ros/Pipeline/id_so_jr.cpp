@@ -1,3 +1,4 @@
+#include "opensimrt_msgs/Events.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Labels.h"
@@ -157,9 +158,11 @@ void Pipeline::IdSoJr::onInitJr()
 	ROS_DEBUG_STREAM("onInitJr");
 }
 
-void Pipeline::IdSoJr::run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> grfs )
+void Pipeline::IdSoJr::run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> grfs, opensimrt_msgs::Events e )
 {
 	ROS_DEBUG_STREAM("Received run call. Running IdSoJr loop"); 
+	opensimrt_msgs::CommonTimed msg_out;
+	msg_out.header = h;
 
 	if(iks.size() == 0)
 	{
@@ -197,9 +200,11 @@ void Pipeline::IdSoJr::run(const std_msgs::Header h, double t, std::vector<SimTK
 	// perform id
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
+	addEvent("id_combined before id", e);
 	auto idOutput = id->solve(
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+	addEvent("id_combined after id",e);
 	auto tau = idOutput.tau;
 
 
@@ -215,13 +220,17 @@ void Pipeline::IdSoJr::run(const std_msgs::Header h, double t, std::vector<SimTK
 	ROS_DEBUG_STREAM("attempting to run SO.");
 	//ROS_DEBUG_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << tau << "]");
 	auto soOutput = so->solve({t, q, tau});
+	addEvent("id_combined after so",e);
 	chrono::high_resolution_clock::time_point t2;
 	t2 = chrono::high_resolution_clock::now();
 	double dddd = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 	sumDelayMS += dddd;
 	//cout << "freq:" << 1000/dddd << endl;
 	ROS_DEBUG_STREAM_THROTTLE(2,"Average delay:"<< sumDelayMS/sumDelayMSCounter << "ms. Fps:" << 1000/dddd );
+	msg_out.events = e;
+	pub.publish(msg_out);
 	try {
+
 		visualizer->update(q, soOutput.am);
 	}
 	catch (std::exception& e)

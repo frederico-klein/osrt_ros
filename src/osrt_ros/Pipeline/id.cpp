@@ -1,6 +1,7 @@
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
 #include "geometry_msgs/WrenchStamped.h"
+#include "opensimrt_msgs/Events.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
@@ -28,6 +29,7 @@
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
+
 #include "osrt_ros/Pipeline/id.h"
 
 using namespace std;
@@ -338,6 +340,8 @@ void Pipeline::Id::print_wrench(ExternalWrench::Input w)
 }
 void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
+	auto bothEvents = combineEvents(message_ik, message_grf);
+	addEvent("id received ik & grf",bothEvents);
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback."); 
 	counter++;
 	double filtered_t;
@@ -347,7 +351,7 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_DEBUG_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
-	run(message_ik->header, filtered_t, iks, grfs);	
+	run(message_ik->header, filtered_t, iks, grfs, bothEvents);	
 }
 
 std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
@@ -402,12 +406,14 @@ std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::
 
 void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
+	auto bothEvents = combineEvents(message_ik, message_grf);
+	addEvent("id received ik & grf",bothEvents);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(message_grf);
-	run(message_ik->header, message_ik->time, iks,grfs);
+	run(message_ik->header, message_ik->time, iks,grfs, bothEvents);
 
 }	
 
@@ -447,10 +453,10 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs
 	return wrenches;
 }
 
-void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs ) 
+void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs, opensimrt_msgs::Events e ) 
 
 {
-	ROS_DEBUG_STREAM("Received run call. Running Id run loop."); 
+	ROS_DEBUG_STREAM("Received run call. Running Id run loop.");	    
 	counter++;
 
 	double timediff = t- previousTime;
@@ -557,7 +563,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 			ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
 			msg.data.push_back(tau_component);
 		}
-		
+		msg.events = e;
 		pub.publish(msg);	
 	}
 	catch (ros::Exception& e)
@@ -662,6 +668,7 @@ void Pipeline::Id::write_() {
 
 void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
+	auto newEvents1 = addEvent("id received ik & wrenches",message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback_real_wrenches"); 
 	counter++;
 	double filtered_t;
@@ -671,17 +678,18 @@ void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConst
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
 	
-	run(message_ik->header, filtered_t, iks, grfs);	
+	run(message_ik->header, filtered_t, iks, grfs, newEvents1);	
 }
 
 void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
+	auto newEvents1 = addEvent("id received ik & wrenches", message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(wl,wr);
-	run(message_ik->header,message_ik->time, iks,grfs);
+	run(message_ik->header,message_ik->time, iks,grfs, newEvents1);
 	ROS_ERROR_STREAM("callback_real_wrenches_filtered not implemented");
 }
 

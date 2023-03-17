@@ -5,6 +5,7 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
+#include "opensimrt_msgs/Events.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "SignalProcessing.h"
@@ -16,6 +17,7 @@
 #include <SimTKcommon/internal/VectorBase.h>
 #include "geometry_msgs/WrenchStamped.h"
 #include "tf2_ros/transform_listener.h"
+#include "osrt_ros/events.h"
 
 namespace Pipeline
 {
@@ -63,7 +65,7 @@ namespace Pipeline
 
 			//rest of class:
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
-			virtual void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  );
+			virtual void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> ,  opensimrt_msgs::Events e);
 
 			void onInit();
 

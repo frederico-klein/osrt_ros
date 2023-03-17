@@ -2,6 +2,7 @@
 #define PIPELINE_ID_SO_JR_HEADER_FBK_21072022
 
 #include "InverseDynamics.h"
+#include "opensimrt_msgs/Events.h"
 #include "osrt_ros/Pipeline/id.h"
 #include "SignalProcessing.h"
 #include "Visualization.h"
@@ -9,6 +10,8 @@
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
 #include "MuscleOptimization.h"
+#include "osrt_ros/events.h"
+
 namespace Pipeline
 {
 
@@ -21,7 +24,7 @@ namespace Pipeline
 			//void callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			//void old_callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			void run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, const opensimrt_msgs::CommonTimedConstPtr& message_grf);
-			void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input>  ) override;
+			void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> , opensimrt_msgs::Events e ) override;
 
 
 
