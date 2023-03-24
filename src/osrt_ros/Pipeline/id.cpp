@@ -506,9 +506,11 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	// perform id
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
+	addEvent("id_combined before id", e);
 	auto idOutput = id->solve(
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
+	addEvent("id_combined after id",e);
 
 	
 	chrono::high_resolution_clock::time_point t2;
@@ -517,6 +519,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 		chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
 
 	sumDelayMSCounter++;
+	//TODO: remove!
 	ROS_DEBUG_STREAM("trying to get column labels...");
 	try
 	{
@@ -526,7 +529,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 			std::string out_print;
 			for (int kk= 0;kk < how_is_this_set.size(); kk++)
 				out_print += "," + how_is_this_set[kk];
-			ROS_INFO_STREAM("getColumnLabels Response is:" << out_print);
+			ROS_DEBUG_STREAM("getColumnLabels Response is:" << out_print);
 		}
 		else
 		{
