@@ -17,7 +17,9 @@
 
 using namespace std;
 
-//this is a hack. I would ideally get this from opensim somehow, since it must be calculated before it can be printed on the screen
+//this whole implementation is a hack. 
+//I would ideally get this from opensim somehow (and hence deal with different models and complex joints that don't exist in an URDF),
+//since opensim is already calculating this for its own visualization
 
 map<string, int> rjoint_to_ojoint 
 {
@@ -129,15 +131,15 @@ class qJointPublisher: public Ros::CommonNode
 			pelvisTF.header.stamp = ros::Time::now();
 			pelvisTF.header.frame_id = "ground";
 			pelvisTF.child_frame_id = "pelvis";
-			// ATTENTION: x,y,z are different between OSIM and ROS, so this is likely incorrect. Needs visual inspection
+			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
+			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
 			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
 			geometry_msgs::Vector3 t;// = pelvisTF.transform.translation;
 			t.x = msg_ik->data[5];
 			t.y = msg_ik->data[3];
 			t.z = msg_ik->data[4];
 			tf2::Quaternion quat;
-			//quat.setEuler(msg_ik->data[2], msg_ik->data[1], msg_ik->data[0]); //models is wobbly, needs manual checking!
-			//quat.setEuler(0, 0, msg_ik->data[2]); //models is wobbly, needs manual checking!
+			//quat.setEuler(msg_ik->data[2], msg_ik->data[1], msg_ik->data[0]); //this is worse.
 			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
 			r.x = quat.x();
 			r.y = quat.y();
