@@ -17,7 +17,7 @@
 
 using namespace std;
 
-//this whole implementation is a hack. 
+//TODO: this whole implementation is a hack. 
 //I would ideally get this from opensim somehow (and hence deal with different models and complex joints that don't exist in an URDF),
 //since opensim is already calculating this for its own visualization
 
