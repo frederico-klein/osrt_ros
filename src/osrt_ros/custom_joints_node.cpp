@@ -139,9 +139,9 @@ class qJointPublisher: public Ros::CommonNode
 			//quat.setEuler(msg_ik->data[2], msg_ik->data[1], msg_ik->data[0]); //models is wobbly, needs manual checking!
 			//quat.setEuler(0, 0, msg_ik->data[2]); //models is wobbly, needs manual checking!
 			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
-			r.x = quat.z();
-			r.y = quat.x();
-			r.z = quat.y();
+			r.x = quat.x();
+			r.y = quat.y();
+			r.z = quat.z();
 			r.w = quat.w();
 			pelvisTF.transform.translation = t;
 			pelvisTF.transform.rotation = r;

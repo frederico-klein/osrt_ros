@@ -26,10 +26,10 @@ tmux split-window -v -p 50
 tmux send -t mysession:1.0 "sleep 2; rosservice call /ik/outlabels" C-m
 tmux send -t mysession:1.1 "rostopic echo /model_generic/joint_states" C-m
 tmux send -t mysession:1.3 "roslaunch gait1992_description human_control.launch" C-m
-tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare.launch" C-m
+tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare_1992.launch" C-m
 tmux send -t mysession:1.5 "rosrun rqt_graph rqt_graph" C-m
 tmux send -t mysession:1.6 "roslaunch osrt_ros custom.launch" C-m
-tmux send -t mysession:1.7 "rosservice call /inverse_kinematics_from_file/start" C-m
+tmux send -t mysession:1.7 "sleep 2.2; rosservice call /inverse_kinematics_from_file/start" C-m
 #tmux send -t mysession:1.7 "ls -la" C-m
 #tmux setw synchronize-panes on
 
