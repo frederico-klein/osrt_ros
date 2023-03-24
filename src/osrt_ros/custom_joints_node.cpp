@@ -139,8 +139,7 @@ class qJointPublisher: public Ros::CommonNode
 			t.y = msg_ik->data[3];
 			t.z = msg_ik->data[4];
 			tf2::Quaternion quat;
-			//quat.setEuler(msg_ik->data[2], msg_ik->data[1], msg_ik->data[0]); //this is worse.
-			quat.setRPY(msg_ik->data[0], msg_ik->data[1], msg_ik->data[2]); //models is wobbly, needs manual checking!
+			quat.setEuler(msg_ik->data[1], msg_ik->data[0], msg_ik->data[2]); //TODO: based on visual inspection. Needs confirmation.
 			r.x = quat.x();
 			r.y = quat.y();
 			r.z = quat.z();
