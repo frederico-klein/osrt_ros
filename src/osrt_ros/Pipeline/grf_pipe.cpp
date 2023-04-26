@@ -1,3 +1,4 @@
+#include "InverseDynamics.h"
 #include "Ros/include/common_node.h"
 #include "opensimrt_msgs/Event.h"
 #include "opensimrt_msgs/Events.h"
@@ -99,7 +100,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 {
 	double timediff = t- previousTime;
 	double ddt = timediff-previousTimeDifference;
-	if (std::abs(ddt) > 1e-5 )
+	if (std::abs(ddt) > 1e-3 )
 		ROS_WARN_STREAM("Time difference greater than what our filter can handle: "<< std::setprecision(7) << ddt ); 
 	previousTime = t;
 	previousTimeDifference = timediff;
@@ -128,10 +129,13 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
 
+	//TODO: add these events as well
 	// perform grfm prediction
 	detector->updDetector({t, q, qDot, qDDot});
+	addEvent("grf updated detector",e);
 	ROS_DEBUG_STREAM("Update detector ok");
 	OpenSimRT::GRFMNonSmooth::Output grfmOutput = grfm->solve({t, q, qDot, qDDot});
+	addEvent("grf solved GRFMNonSmooth estimation",e);
 	ROS_DEBUG_STREAM("GRFM estimation ran ok");
 
 	chrono::high_resolution_clock::time_point t2;
@@ -154,21 +158,23 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 		grfmOutput.left.force,
 		grfmOutput.left.torque};
 
-	ROS_DEBUG_STREAM("updated visuals ok");
-
 	//TODO: conside if ID here is necessary
 	addEvent("grf before id",e);
 	// solve ID
-	auto idOutput = id->solve(
+	OpenSimRT::InverseDynamics::Output idOutput;
+	bool do_inverse_dynamics = false;
+	if (do_inverse_dynamics)
+		idOutput = id->solve(
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 	//ROS_INFO_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << idOutput.tau << "]");
-	addEvent("grf aftr id", e);
+	addEvent("grf after id", e);
 	// visualization
 	try {
 		visualizer->update(q);
+		ROS_DEBUG_STREAM("updated visuals ok");
 		rightGRFDecorator->update(grfmOutput.right.point,
 				grfmOutput.right.force);
 		leftGRFDecorator->update(grfmOutput.left.point, grfmOutput.left.force);

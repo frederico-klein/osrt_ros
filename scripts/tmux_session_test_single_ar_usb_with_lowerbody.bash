@@ -29,7 +29,7 @@ tmux send -t ar_session:1.0 "rviz -d /catkin_ws/_cam_tf.rviz" C-m
 tmux send -t ar_session:1.1 "roslaunch ar_test ar_cube.launch" C-m
 tmux send -t ar_session:1.2 "roslaunch ar_test usb_cal.launch" C-m
 tmux send -t ar_session:1.3 "roslaunch osrt_ros ik_lowerbody.launch" C-m
-tmux send -t ar_session:1.4 "roslaunch osrt_ros lower_body_tfs.launch name:=ar_marker_10" C-m
+tmux send -t ar_session:1.4 "roslaunch osrt_ros lower_body_tfs_pelvis.launch name:=ar_marker_10" C-m
 #tmux send -t ar_session:1.5 "roslaunch opensimrt	id.launch" C-m
 
 #tmux send -t ar_session:1.6 "ls -la" C-m

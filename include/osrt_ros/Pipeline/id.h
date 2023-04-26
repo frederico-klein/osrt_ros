@@ -18,6 +18,9 @@
 #include "geometry_msgs/WrenchStamped.h"
 #include "tf2_ros/transform_listener.h"
 #include "osrt_ros/events.h"
+#include <message_filters/sync_policies/approximate_time.h>
+
+typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_approx_wrench_policy;
 
 namespace Pipeline
 {
@@ -37,6 +40,7 @@ namespace Pipeline
 		public:
 			Id();
 			~Id();
+			std::string left_foot_tf_name, right_foot_tf_name;
 			// now since I have 2 sinks I will need message_filters
 			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
 			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
@@ -54,7 +58,8 @@ namespace Pipeline
 			virtual void callback_wr(const geometry_msgs::WrenchConstPtr& wr_msg)
 			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
 
-			message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
+			message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches;
+			//message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
 			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
 			
 			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
@@ -96,6 +101,7 @@ namespace Pipeline
 			void print_wrench(OpenSimRT::ExternalWrench::Input w);
 
 			//do I need this?
+			bool use_grfm_filter;
 			int counter;
 			int memory, delay, splineOrder;
 			double cutoffFreq;

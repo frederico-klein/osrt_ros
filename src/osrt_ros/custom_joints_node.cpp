@@ -102,15 +102,56 @@ class qJointPublisher: public Ros::CommonNode
 		int count = 0;
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
 		tf2_ros::StaticTransformBroadcaster static_broadcaster;
-		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
+		
+		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 pelvis_translation, geometry_msgs::Quaternion pelvis_rotation)
 		{
-			ROS_DEBUG_STREAM("Received msg_ik");
 			//std_msgs::Header h;
 			//h.stamp = ros::Time::now();
 			sensor_msgs::JointState msg;
 			//msg.header = h;
-			msg.header = msg_ik->header;
+			msg.header = h;
 			msg.name = names;
+			msg.position = joint_values;
+			chatter_pub.publish(msg);
+			/// let's publish a tf for the pelvis now!
+			geometry_msgs::TransformStamped pelvisTF;
+			pelvisTF.header.stamp = ros::Time::now();
+			pelvisTF.header.frame_id = "ground";
+			pelvisTF.child_frame_id = "pelvis";
+			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
+			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
+			pelvisTF.transform.translation = pelvis_translation;
+			pelvisTF.transform.rotation = pelvis_rotation;
+			/*for (auto tf_:rotate_then_translate(r,t))
+				static_broadcaster.sendTransform(tf_);*/
+			static_broadcaster.sendTransform(pelvisTF);
+
+
+		}
+		void pub_zero()
+		{
+			std::vector<double> zero_joints(names.size(),0.1);
+			//ROS_INFO_STREAM("zero_joints length: " << zero_joints.size() << "vals" );
+			//for (auto a:zero_joints)
+			//	ROS_INFO_STREAM(a);
+			geometry_msgs::Quaternion zero_rot;
+			zero_rot.w = 1;
+			std_msgs::Header h;
+			h.frame_id = "subject";
+			ros::Rate poll_rate(100);
+			while(chatter_pub.getNumSubscribers() == 0)
+    				poll_rate.sleep();
+			for (int i = 0; i<=10; i++)
+			{
+				h.stamp = ros::Time::now();
+				pub_pose(h, zero_joints, geometry_msgs::Vector3(), zero_rot);
+			}
+
+		}
+		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
+		{
+			ROS_DEBUG_STREAM("Received msg_ik");
+			//msg.header = h;
 			std::vector<double> values;
 			for (auto a:names)
 			{
@@ -123,14 +164,8 @@ class qJointPublisher: public Ros::CommonNode
 				}
 				values.push_back(joint_value);
 			}
-			msg.position = values;
-			chatter_pub.publish(msg);
 			++count;
 			/// let's publish a tf for the pelvis now!
-			geometry_msgs::TransformStamped pelvisTF;
-			pelvisTF.header.stamp = ros::Time::now();
-			pelvisTF.header.frame_id = "ground";
-			pelvisTF.child_frame_id = "pelvis";
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
 			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
@@ -144,11 +179,7 @@ class qJointPublisher: public Ros::CommonNode
 			r.y = quat.y();
 			r.z = quat.z();
 			r.w = quat.w();
-			pelvisTF.transform.translation = t;
-			pelvisTF.transform.rotation = r;
-			/*for (auto tf_:rotate_then_translate(r,t))
-				static_broadcaster.sendTransform(tf_);*/
-			static_broadcaster.sendTransform(pelvisTF);
+			pub_pose(msg_ik->header, values, t, r);
 		}
 };
 
@@ -157,6 +188,8 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "human_joint_state_publisher");
 	qJointPublisher qJ;
 	qJ.onInit();
+	// publish initial zero pose:
+	qJ.pub_zero();
 	ros::spin();
 	return 0;
 }

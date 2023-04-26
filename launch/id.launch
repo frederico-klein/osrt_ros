@@ -4,11 +4,16 @@
 	<!-- arg name="model_file" 	default="/srv/data/gait1992/model/model_generic.osim" / -->
 	<!-- a gait2392 model is not currently working. we think it has to do with the moment arm library which is done for a 1992 model.-->
 	<!-- arg name="model_file" 	default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" / -->
+	<arg name="get_second_label" default="true"/>
+	<arg name="left_foot_tf_name" default="left_foot_forceplate" />
+	<arg name="right_foot_tf_name" default="right_foot_forceplate" />
 
         <node pkg="osrt_ros" type="id" 	name="id_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
                 <param name="model_file" 		value="$(arg model_file)" />
-                <param name="get_second_label" 		value="true" />
+                <param name="get_second_label" 		value="$(arg get_second_label)" />
+		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
+		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
 		<remap from="/id_node/input" to="/ik/output"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>

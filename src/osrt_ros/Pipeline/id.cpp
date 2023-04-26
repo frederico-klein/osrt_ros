@@ -38,7 +38,7 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
-	sync_real_wrenches(sub,sub_wl,sub_wr,10), 
+	sync_real_wrenches(grf_approx_wrench_policy(10),sub,sub_wl,sub_wr), 
 	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
 	tfListener(tfBuffer)
 {
@@ -50,6 +50,9 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	std::string modelFile = "";
 	nh.param<std::string>("model_file",modelFile,"");
+	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
+	nh.param<std::string>("left_foot_tf_name", left_foot_tf_name, "left_foot_forceplate");
+	nh.param<std::string>("right_foot_tf_name", right_foot_tf_name, "right_foot_forceplate");
 	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 	//TODO:params!!!! copy from bridge
@@ -99,17 +102,21 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
 			grfRightPointIdentifier, grfRightForceIdentifier,
 			grfRightTorqueIdentifier);
-	auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
-	grfRightLogger = &grfRightLoggerTemp; 
-
+	if (false)
+	{ //very wrong
+		auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
+		grfRightLogger = &grfRightLoggerTemp; 
+	}
 	ExternalWrench::Parameters grfLeftFootPar{
 		grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
 	grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
 			grfLeftPointIdentifier, grfLeftForceIdentifier,
 			grfLeftTorqueIdentifier);
-	auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
-	grfLeftLogger = &grfLeftLoggerTemp;
-
+	if (false)
+	{ //very wrong
+		auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
+		grfLeftLogger = &grfLeftLoggerTemp;
+	}
 	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
 	wrenchParameters.push_back(grfLeftFootPar);
@@ -151,12 +158,15 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	tauLogger = new TimeSeriesTable();
 	output_labels = tauLoggerTemp.getColumnLabels();
 	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
-	auto qLoggerTemp = id->initializeLogger();
-	qLogger = &qLoggerTemp;
-	auto qDotLoggerTemp = id->initializeLogger();
-	qDotLogger = &qDotLoggerTemp;
-	auto qDDotLoggerTemp = id->initializeLogger();
-	qDDotLogger = &qDDotLoggerTemp;
+	if (false)
+	{ //this is super wrong
+		auto qLoggerTemp = id->initializeLogger();
+		qLogger = &qLoggerTemp;
+		auto qDotLoggerTemp = id->initializeLogger();
+		qDotLogger = &qDotLoggerTemp;
+		auto qDDotLoggerTemp = id->initializeLogger();
+		qDDotLogger = &qDDotLoggerTemp;
+	}
 	ROS_INFO_STREAM("loggers set!");
 
 	// mean delay
@@ -205,8 +215,8 @@ void Pipeline::Id::onInit() {
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	// TODO: set the column labels, or it will break when you try to use them!
 	ROS_INFO_STREAM("Attempting to set loggers.");
-	initializeLoggers("grfRight",grfRightLogger);
-	initializeLoggers("grfLeft", grfLeftLogger);
+	//initializeLoggers("grfRight",grfRightLogger);
+	//initializeLoggers("grfLeft", grfLeftLogger);
 
 	print_vec(tauLogger->getColumnLabels());
 
@@ -240,19 +250,31 @@ void Pipeline::Id::onInit() {
 boost::array<int,9> Pipeline::Id::generateIndexes(std::vector<std::string> pick, std::vector<std::string> whole) // point,force, torque
 {
 	boost::array<int,9> grfIndexes;
+	/*ROS_INFO_STREAM("whole.size: " << whole.size());
+	for (auto label:whole)
+		ROS_INFO_STREAM("whole labels: " << label);
+	for (auto label:pick)
+		ROS_INFO_STREAM("pick labels: " << label);
+	*/
+
 	for (int i= 0; i<9 ; i++)
 	{
 		//im assuming this is in order. if it isnt this will break
 		int j = 0;
+		bool found_it = false;
 		for (auto label:whole)
 		{
 			if(label.compare(pick[i])==0)
 			{
-				// the pick_label and the label are the same, so the index i is what we want
-				grfIndexes[i] = j; 
+				// the pick_label and the label are the same, so the index j is what we want
+				grfIndexes[i] = j;
+				found_it = true;
+				break;
 			}
 			j++;
 		}
+		if (!found_it)
+			ROS_FATAL_STREAM("Did not find label: [" << pick[i] << "]. Cannot proceed. Check if you loaded the correct MOT file or you set the correct Parameters in the launch file for this node.") ;
 	}
 	for (auto ind: grfIndexes)
 		ROS_WARN_STREAM(ind);
@@ -312,7 +334,7 @@ ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchSta
 
 	}
 	catch (tf2::TransformException &ex) {
-		ROS_WARN("%s",ex.what());
+		ROS_WARN("transform exception: %s",ex.what());
 		ros::Duration(1.0).sleep();
 		return wO;
 	}
@@ -421,11 +443,11 @@ std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs:
 {
 	// TODO: get wrench message!!!!!!!!!!
 	std::vector<ExternalWrench::Input> wrenches;
-	ExternalWrench::Input grfRightWrench = parse_message(wr, "right_foot_forceplate");
+	ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name);
 	//cout << "left wrench.";
 	ROS_DEBUG_STREAM("rw");
 	print_wrench(grfRightWrench);
-	ExternalWrench::Input grfLeftWrench = parse_message(wl, "left_foot_forceplate");
+	ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name);
 	ROS_DEBUG_STREAM("lw");
 	print_wrench(grfLeftWrench);
 	//	return;
@@ -468,6 +490,32 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	ROS_DEBUG_STREAM("T (msg):"<< std::setprecision (15) << t);
 	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
 
+	//unpacks wrenches:
+
+	if(grfs.size() == 0)
+	{
+		ROS_WARN_STREAM("THERE ARE NO GRFS!");
+		return;
+	}
+	auto grfLeftWrench = grfs[0]; 
+	auto grfRightWrench = grfs[1]; 
+	
+	//filter wrench!
+	OpenSimRT::LowPassSmoothFilter::Output grfRightFiltered, grfLeftFiltered;
+	if (use_grfm_filter){
+		grfRightFiltered =
+			grfRightFilter->filter({t, grfRightWrench.toVector()});
+		grfRightWrench.fromVector(grfRightFiltered.x);
+		grfLeftFiltered =
+			grfLeftFilter->filter({t, grfLeftWrench.toVector()});
+		grfLeftWrench.fromVector(grfLeftFiltered.x);
+
+		if (!grfRightFiltered.isValid ||
+				!grfLeftFiltered.isValid) {
+			ROS_WARN_STREAM("GRFS are not valid!");
+			return;
+		}
+	}
 	//unpacks iks:
 	//TODO
 	if(iks.size() == 0)
@@ -478,30 +526,6 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	auto q = iks[0];
 	auto qDot = iks[1];
 	auto qDDot = iks[2];
-	//unpacks wrenches:
-
-	if(grfs.size() == 0)
-	{
-		ROS_WARN_STREAM("THERE ARE NO GRFS!");
-		return;
-	}
-	auto grfLeftWrench = grfs[0]; 
-	auto grfRightWrench = grfs[1]; 
-
-	//filter wrench!
-	//
-	auto grfRightFiltered =
-		grfRightFilter->filter({t, grfRightWrench.toVector()});
-	grfRightWrench.fromVector(grfRightFiltered.x);
-	auto grfLeftFiltered =
-		grfLeftFilter->filter({t, grfLeftWrench.toVector()});
-	grfLeftWrench.fromVector(grfLeftFiltered.x);
-
-	if (!grfRightFiltered.isValid ||
-			!grfLeftFiltered.isValid) {
-		ROS_WARN_STREAM("GRFS are not valid!");
-		return;
-	}
 	//
 	// perform id
 	chrono::high_resolution_clock::time_point t1;
@@ -580,13 +604,16 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 		{
 			//ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			tauLogger->appendRow(t, ~idOutput.tau);
-			grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
-			grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-			qLogger->appendRow(t, ~q);
+			ROS_INFO_STREAM("Tau added data to loggers. "<< counter);
+			/*qLogger->appendRow(t, ~q);
 			qDotLogger->appendRow(t, ~qDot);
 			qDDotLogger->appendRow(t, ~qDDot);
+			ROS_INFO_STREAM("q filtered data added data to loggers. "<< counter);
+			
+			grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
+			grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
+			ROS_INFO_STREAM("GRFM data added data to loggers. "<< counter);*/
 
-			ROS_INFO_STREAM("Added data to loggers. "<< counter);
 		}}
 	catch (std::exception& e)
 	{

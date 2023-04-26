@@ -22,7 +22,7 @@ tmux select-pane -t 0
 tmux split-window -v -p 50 
 
 tmux send -t mysession:1.0 "sleep 2 ;roslaunch osrt_ros ik_lowerbody_inverted_pelvis.launch" C-m
-tmux send -t mysession:1.1 "roslaunch ximu3_ros ximu_lower.launch do_calibration:=false" C-m
+tmux send -t mysession:1.1 "roslaunch ximu3_ros ximu_lower.launch do_calibration:=true" C-m
 #tmux send -t mysession:1.2 "roslaunch ar_test acer_video_stream.launch" C-m
 tmux send -t mysession:1.2 "rosrun vicon_sync play_sounds.py" C-m
 #tmux send -t mysession:1.3 "ROS_NAMESPACE=usb_cam_acer rosrun image_proc image_proc" C-m

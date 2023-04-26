@@ -28,8 +28,9 @@ tmux send -t ar_acer_session:1.0 "rviz -d /catkin_ws/_cam_acer_tf.rviz" C-m
  #rviz -d ./_default.rviz
 tmux send -t ar_acer_session:1.1 "roslaunch ar_test ar_cube_acer.launch" C-m
 tmux send -t ar_acer_session:1.2 "roslaunch ar_test acer_video_stream.launch" C-m
-tmux send -t ar_acer_session:1.3 "ROS_NAMESPACE=usb_cam_acer rosrun image_proc image_proc" C-m
-#tmux send -t ar_acer_session:1.4 "roslaunch moticon_insoles see_wrench.launch" C-m
+tmux send -t ar_acer_session:1.3 "roslaunch osrt_ros ik_lowerbody.launch" C-m
+tmux send -t ar_acer_session:1.4 "roslaunch osrt_ros lower_body_tfs_pelvis.launch name:=ar_marker_10" C-m
+tmux send -t ar_acer_session:1.5 "ROS_NAMESPACE=usb_cam_acer rosrun image_proc image_proc" C-m
 #tmux send -t ar_acer_session:1.5 "roslaunch opensimrt	id.launch" C-m
 
 #tmux send -t ar_acer_session:1.6 "ls -la" C-m
@@ -37,3 +38,4 @@ tmux send -t ar_acer_session:1.3 "ROS_NAMESPACE=usb_cam_acer rosrun image_proc i
 #tmux setw synchronize-panes on
 
 tmux -2 a -t ar_acer_session
+
