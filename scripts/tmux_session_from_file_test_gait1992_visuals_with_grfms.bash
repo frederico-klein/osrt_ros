@@ -27,7 +27,7 @@ tmux send -t mysession:1.0 "sleep 2; rosservice call /ik/outlabels" C-m
 tmux send -t mysession:1.1 "rostopic echo /model_generic/joint_states" C-m
 tmux send -t mysession:1.2 "roslaunch osrt_ros cgrfm_as_grf.launch model_file:=/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" C-m
 
-tmux send -t mysession:1.3 "roslaunch gait1992_description human_control.launch" C-m
+tmux send -t mysession:1.3 "roslaunch gait1992_description human_control.launch rviz_file:=/catkin_ws/src/gait1992_description/rviz/gait1992_description_wrenches2.rviz" C-m
 tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare_1992.launch" C-m
 ## this can also play ik with size 23 for a very similar lowerbody model. scaling is not done, so distances will be off.
 #tmux send -t mysession:1.4 "roslaunch osrt_ros ik_bare_2392.launch" C-m

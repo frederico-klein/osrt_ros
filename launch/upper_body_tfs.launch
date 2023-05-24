@@ -3,12 +3,13 @@
 
 	<arg name="freq" default="25" />
 	<arg name="name" 		default="ximu3" />
+	<arg name="tf_frame_prefix" 	default="imu"/>
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) thorax $(arg freq)" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) humerus $(arg freq)" />
-<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) radius $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/thorax $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/humerus $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/radius $(arg freq)" />
 
-<!-- thorax humerus radius  -->
+	<!-- thorax humerus radius  -->
 
 </launch>
 

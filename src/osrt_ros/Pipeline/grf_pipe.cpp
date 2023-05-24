@@ -60,7 +60,11 @@ void Pipeline::Grf::onInit() {
 	Pipeline::Grf::get_params();
 	previousTime = ros::Time::now().toSec();
 	previousTimeDifference = 0;
-
+	ros::NodeHandle nh("~");
+	w_foot_l = WrenchPub(nh, "left"); //TODO:spaget, fix
+	w_foot_l.onInit();
+	w_foot_r = WrenchPub(nh, "right");
+	w_foot_r.onInit();
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
@@ -192,6 +196,8 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	opensimrt_msgs::CommonTimed msg = get_GRFMs_as_common_msg(grfmOutput,t,h);
 	msg.events = e;
 	pub.publish(msg);
+	w_foot_r.publish(h, grfRightWrench);
+	w_foot_l.publish(h, grfLeftWrench);
 
 	try{
 		// log data (use filter time to align with delay)

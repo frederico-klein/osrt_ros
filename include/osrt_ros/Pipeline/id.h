@@ -21,6 +21,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_approx_wrench_policy;
+typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::PosVelAccTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_approx_wrench_filtered_policy;
 
 namespace Pipeline
 {
@@ -60,8 +61,9 @@ namespace Pipeline
 
 			message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches;
 			//message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
-			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
-			
+			//message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
+			message_filters::Synchronizer<grf_approx_wrench_filtered_policy> sync_filtered_real_wrenches;
+
 			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
 			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, 	const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);

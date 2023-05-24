@@ -39,10 +39,11 @@ using namespace OpenSimRT;
 
 Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	sync_real_wrenches(grf_approx_wrench_policy(10),sub,sub_wl,sub_wr), 
-	sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
+	//sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
+	sync_filtered_real_wrenches(grf_approx_wrench_filtered_policy(10),sub_filtered,sub_wl,sub_wr),
 	tfListener(tfBuffer)
 {
-
+	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
 	// subject data
 	INIReader ini(INI_FILE);
 	auto section = "TEST_ID_FROM_FILE";
@@ -530,11 +531,11 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	// perform id
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
-	addEvent("id_combined before id", e);
+	addEvent("id_normal before id", e);
 	auto idOutput = id->solve(
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
-	addEvent("id_combined after id",e);
+	addEvent("id_normal after id",e);
 
 	
 	chrono::high_resolution_clock::time_point t2;
@@ -625,7 +626,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 }	
 
 void Pipeline::Id::finish() {
-
+	ROS_ERROR_STREAM("deprecated.");
 	cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCounter << " ms"
 		<< endl;
 
@@ -713,14 +714,13 @@ void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConst
 
 void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
-	auto newEvents1 = addEvent("id received ik & wrenches", message_ik);
+	auto newEvents1 = addEvent("id received ik filtered & wrenches", message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = parse_ik_message(message_ik);
 	auto grfs = get_wrench(wl,wr);
 	run(message_ik->header,message_ik->time, iks,grfs, newEvents1);
-	ROS_ERROR_STREAM("callback_real_wrenches_filtered not implemented");
 }
 
 

@@ -1,6 +1,7 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/Vector3.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/PosVelAccTimed.h"
 #include "ros/init.h"
 #include "ros/message_traits.h"
 #include "ros/ros.h"
@@ -99,7 +100,6 @@ class qJointPublisher: public Ros::CommonNode
 		qJointPublisher() : Ros::CommonNode(false)
 	{}
 		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
-		int count = 0;
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
 		tf2_ros::StaticTransformBroadcaster static_broadcaster;
 		
@@ -151,6 +151,15 @@ class qJointPublisher: public Ros::CommonNode
 		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik");
+			parse_msg(msg_ik->header, msg_ik->data);
+		}
+		void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& msg_ik)
+		{
+			ROS_DEBUG_STREAM("Received msg_ik filtered");
+			parse_msg(msg_ik->header, msg_ik->d0_data);
+		}
+		void parse_msg(std_msgs::Header h, std::vector<double> q)
+		{
 			//msg.header = h;
 			std::vector<double> values;
 			for (auto a:names)
@@ -159,27 +168,26 @@ class qJointPublisher: public Ros::CommonNode
 				int index = rjoint_to_ojoint[a];
 				if (index>=0)
 				{
-					joint_value = msg_ik->data[index];
+					joint_value = q[index];
 					//joint_value = msg_ik->data[index]/180*3.14159265;
 				}
 				values.push_back(joint_value);
 			}
-			++count;
 			/// let's publish a tf for the pelvis now!
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
 			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
 			geometry_msgs::Vector3 t;// = pelvisTF.transform.translation;
-			t.x = msg_ik->data[5];
-			t.y = msg_ik->data[3];
-			t.z = msg_ik->data[4];
+			t.x = q[5];
+			t.y = q[3];
+			t.z = q[4];
 			tf2::Quaternion quat;
-			quat.setEuler(msg_ik->data[1], msg_ik->data[0], msg_ik->data[2]); //TODO: based on visual inspection. Needs confirmation.
+			quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
 			r.x = quat.x();
 			r.y = quat.y();
 			r.z = quat.z();
 			r.w = quat.w();
-			pub_pose(msg_ik->header, values, t, r);
+			pub_pose(h, values, t, r);
 		}
 };
 

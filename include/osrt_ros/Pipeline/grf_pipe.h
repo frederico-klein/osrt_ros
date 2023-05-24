@@ -8,6 +8,7 @@
 #include "SignalProcessing.h"
 #include "Visualization.h"
 #include <Common/TimeSeriesTable.h>
+#include "osrt_ros/Pipeline/wrench_publisher.h"
 #include "ros/service_server.h"
 #include "std_srvs/Empty.h"
 #include "Ros/include/common_node.h"
@@ -35,7 +36,7 @@ namespace Pipeline
 			SimTK::Vec3 grfOrigin;
 			int counter;
 			double previousTime, previousTimeDifference;
-
+			WrenchPub w_foot_r, w_foot_l;
 			std::string modelFile;
 			Grf();
 			~Grf();
