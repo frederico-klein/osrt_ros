@@ -35,6 +35,13 @@ add_dependencies(agrf ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 target_link_libraries(agrf
 	${DEPENDENCY_LIBS}
 )
+add_executable(so_rr nodes/so_round_robin.cpp)
+
+add_dependencies(so_rr ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(so_rr
+	${DEPENDENCY_LIBS}
+)
 add_executable(so nodes/so.cpp)
 
 add_dependencies(so ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
