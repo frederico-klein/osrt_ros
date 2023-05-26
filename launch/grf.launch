@@ -46,8 +46,7 @@
 
 	</node>
 	<arg name="freq" default="25" />
-	<!--node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0 0.7071 0.7071 0 map subject_opensim $(arg freq)" / -->
-	<node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject_opensim $(arg freq)" />
+	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
 
 
 </launch>

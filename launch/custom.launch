@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-
 	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
 		<rosparam param="input_labels" >['']</rosparam>
+		<param name="case_rotation"    value="5"/>
+		<param name="case_translation" value="0"/>
+		<param name="model_base_frame" value="urdf_pelvis"/>
+		<param name="parent_base_frame" value="subject_opensim"/>
+		
 		<!--remap from="/custom_joints/input" to="/ik/output"/ -->
 		<remap from="/custom_joints/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
-
 </launch>

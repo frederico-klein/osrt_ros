@@ -4,6 +4,7 @@
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "ros/init.h"
 #include "ros/message_traits.h"
+#include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "ros/time.h"
 #include "sensor_msgs/JointState.h"
@@ -82,11 +83,11 @@ std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs
 	geometry_msgs::Quaternion eye_q;
 	eye_q.w = 1;
 	/*geometry_msgs::Quaternion ros_q;
-			ros_q.x = 0;
-			ros_q.y = 0.7071;
-			ros_q.z = 0.7071;
-			ros_q.w = 0;
-	pelvisTF_t.transform.rotation = ros_q;*/
+	  ros_q.x = 0;
+	  ros_q.y = 0.7071;
+	  ros_q.z = 0.7071;
+	  ros_q.w = 0;
+	  pelvisTF_t.transform.rotation = ros_q;*/
 	pelvisTF_t.transform.rotation = eye_q;
 	pelvisTF_t.transform.translation = t;
 	v.push_back(pelvisTF_t);
@@ -97,12 +98,24 @@ class qJointPublisher: public Ros::CommonNode
 {
 	public:
 		ros::NodeHandle n;
+		std::string model_base_frame, parent_base_frame;
+		int case_translation, case_rotation;
 		qJointPublisher() : Ros::CommonNode(false)
-	{}
+	{
+		ros::NodeHandle nh("~");
+		if (nh.param<int>("case_rotation", case_rotation,2))
+			ROS_INFO_STREAM("has param!");
+		ROS_INFO_STREAM("case_rotation" << case_rotation);
+		if (nh.param<int>("case_translation",case_translation, 4))
+			ROS_INFO_STREAM("has param!");
+		ROS_INFO_STREAM("case_translation" << case_translation);
+		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
+		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
+	}
 		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
 		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
 		tf2_ros::StaticTransformBroadcaster static_broadcaster;
-		
+
 		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 pelvis_translation, geometry_msgs::Quaternion pelvis_rotation)
 		{
 			//std_msgs::Header h;
@@ -116,14 +129,15 @@ class qJointPublisher: public Ros::CommonNode
 			/// let's publish a tf for the pelvis now!
 			geometry_msgs::TransformStamped pelvisTF;
 			pelvisTF.header.stamp = ros::Time::now();
-			pelvisTF.header.frame_id = "ground";
-			pelvisTF.child_frame_id = "pelvis";
+			pelvisTF.header.frame_id = parent_base_frame;
+			pelvisTF.child_frame_id = model_base_frame;
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
 			pelvisTF.transform.translation = pelvis_translation;
 			pelvisTF.transform.rotation = pelvis_rotation;
 			/*for (auto tf_:rotate_then_translate(r,t))
-				static_broadcaster.sendTransform(tf_);*/
+			  static_broadcaster.sendTransform(tf_);*/
+			ROS_INFO_STREAM("initial pelvisTF" << pelvisTF);
 			static_broadcaster.sendTransform(pelvisTF);
 
 
@@ -140,7 +154,7 @@ class qJointPublisher: public Ros::CommonNode
 			h.frame_id = "subject";
 			ros::Rate poll_rate(100);
 			while(chatter_pub.getNumSubscribers() == 0)
-    				poll_rate.sleep();
+				poll_rate.sleep();
 			for (int i = 0; i<=10; i++)
 			{
 				h.stamp = ros::Time::now();
@@ -178,11 +192,69 @@ class qJointPublisher: public Ros::CommonNode
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
 			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
 			geometry_msgs::Vector3 t;// = pelvisTF.transform.translation;
-			t.x = q[5];
-			t.y = q[3];
-			t.z = q[4];
+
+			switch (case_translation){
+				case 0:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 0");
+					t.x = q[3]; t.y = q[4]; t.z = q[5];
+					break;
+				case 1:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 1");
+					t.x = q[3]; t.y = q[5]; t.z = q[4];
+					break;
+				case 2:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 2");
+					t.x = q[4]; t.y = q[3]; t.z = q[5];
+					break;
+				case 3:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 3");
+					t.x = q[4]; t.y = q[5]; t.z = q[3];
+					break;
+				case 4:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 4");
+					t.x = q[5]; t.y = q[3]; t.z = q[4];
+					break;
+				case 5:
+					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 5");
+					t.x = q[5]; t.y = q[4]; t.z = q[3];
+					break;
+				default:
+					ROS_ERROR_STREAM("unknown case");
+					return;
+			}
+
+			////t.x = q[5]; t.y = q[3]; t.z = q[4];
 			tf2::Quaternion quat;
-			quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
+			switch (case_rotation){
+				case 0:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 0");
+					quat.setEuler(q[0], q[1], q[2]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				case 1:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 1");
+					quat.setEuler(q[0], q[2], q[1]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				case 2:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 2");
+					quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				case 3:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 3");
+					quat.setEuler(q[1], q[2], q[0]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				case 4:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 4");
+					quat.setEuler(q[2], q[0], q[1]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				case 5:
+					ROS_INFO_STREAM_ONCE("CASE ROTATION 5");
+					quat.setEuler(q[2], q[1], q[0]); //TODO: based on visual inspection. Needs confirmation.
+					break;
+				default:
+					ROS_ERROR_STREAM("unknown case");
+					return;
+			}
+			////quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
 			r.x = quat.x();
 			r.y = quat.y();
 			r.z = quat.z();
