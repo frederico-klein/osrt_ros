@@ -10,6 +10,7 @@
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
+		<param name="grf_reference_frame"        value="subject_opensim"/>
 
 		<remap from="/id_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>

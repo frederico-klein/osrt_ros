@@ -4,6 +4,7 @@
 
         <node pkg="osrt_ros" type="id_so_jr" 	name="id_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
+		<param name="grf_reference_frame"        value="subject_opensim"/>
 		<!-- param name="resample_period" 		value="0.01" / -->
                 <param name="get_second_label" 		value="true" />
 		<remap from="/id_node/input" to="/ik/output"/>

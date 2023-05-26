@@ -54,6 +54,7 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
 	nh.param<std::string>("left_foot_tf_name", left_foot_tf_name, "left_foot_forceplate");
 	nh.param<std::string>("right_foot_tf_name", right_foot_tf_name, "right_foot_forceplate");
+	nh.param<std::string>("grf_reference_frame", grf_reference_frame, "map");
 	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 	//TODO:params!!!! copy from bridge
@@ -320,7 +321,7 @@ ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchSta
 		//ATTENTION FUTURE FREDERICO:
 		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
 
-		nulltransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
+		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, ros::Time(0));
 		//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
 		wO.point[0] = nulltransform.transform.translation.x;
 		wO.point[1] = nulltransform.transform.translation.y;

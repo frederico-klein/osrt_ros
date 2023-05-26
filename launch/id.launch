@@ -14,6 +14,7 @@
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
+		<param name="grf_reference_fram"        value="subject_opensim"/>
 		<remap from="/id_node/input" to="/ik/output"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>

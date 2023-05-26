@@ -41,7 +41,7 @@ namespace Pipeline
 		public:
 			Id();
 			~Id();
-			std::string left_foot_tf_name, right_foot_tf_name;
+			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;
 			// now since I have 2 sinks I will need message_filters
 			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
 			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
