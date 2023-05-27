@@ -15,8 +15,8 @@ namespace Visualizers
 		void modify_vis() {
 			OpenSimRT::OpenSimUtils::removeActuators(model);
 			//Subscribers.
-			sub = nh.subscribe<opensimrt_msgs::CommonTimed>("input", 1 ,&Visualizers::IkVis::callback, dynamic_cast<Visualizers::IkVis*>(this));
-			sub_filtered = nh.subscribe<opensimrt_msgs::PosVelAccTimed>("input_filtered",1, &Visualizers::IkVis::callback_filtered, dynamic_cast<Visualizers::IkVis*>(this));
+			sub = nh.subscribe<opensimrt_msgs::CommonTimed>("input", 1 ,&Visualizers::IkVis::callback, this);
+			sub_filtered = nh.subscribe<opensimrt_msgs::PosVelAccTimed>("input_filtered",1, &Visualizers::IkVis::callback_filtered, this);
 
 		};
 		void after_callback() {};

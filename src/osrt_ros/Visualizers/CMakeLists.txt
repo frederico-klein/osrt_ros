@@ -18,34 +18,34 @@ foreach(dir ${dirs})
   message(STATUS "dir='${dir}'")
 endforeach()
 
-add_executable(grf_vis nodes/grf_vis.cpp)
+add_executable(vis_grf nodes/grf_vis.cpp)
 
-add_dependencies(grf_vis ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(vis_grf ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(grf_vis
+target_link_libraries(vis_grf
 	${DEPENDENCY_LIBS}
 	)
 
-add_executable(so_vis nodes/so_vis.cpp)
+add_executable(vis_so nodes/so_vis.cpp)
 
-add_dependencies(so_vis ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(vis_so ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(so_vis
+target_link_libraries(vis_so
 	${DEPENDENCY_LIBS}
 )
-add_executable(id_vis nodes/id_vis.cpp)
+add_executable(vis_id nodes/id_vis.cpp)
 
-add_dependencies(id_vis ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(vis_id ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(id_vis
+target_link_libraries(vis_id
 	${DEPENDENCY_LIBS}
 )
 
-add_executable(ik_vis nodes/ik_vis.cpp)
+add_executable(vis_ik nodes/ik_vis.cpp)
 
-add_dependencies(ik_vis ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(vis_ik ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(ik_vis
+target_link_libraries(vis_ik
 	${DEPENDENCY_LIBS}
 )
 set(CMAKE_VERBOSE_MAKEFILE OFF)

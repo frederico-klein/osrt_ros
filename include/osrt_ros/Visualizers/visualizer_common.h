@@ -37,7 +37,7 @@ namespace Visualizers
 				// subject data
 				nh.param<std::string>("model_file", modelFile, "");
 				ROS_INFO_STREAM("Using modelFile:" << modelFile);
-				nh.param<int>("which_model_1_2", m, -1);
+				nh.param<int>("which_model_1_2", m, 2);
 				ROS_DEBUG_STREAM("Finished getting params.");	
 
 			}
@@ -73,11 +73,11 @@ namespace Visualizers
 				ROS_DEBUG_STREAM("Setting up visualizer");
 				//TODO: remove!
 				OpenSim::ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
+				modify_vis();
 				visualizer = new OpenSimRT::BasicModelVisualizer(model);
 				
 
 				ROS_DEBUG_STREAM("onInit finished just fine.");
-				modify_vis();
 			}
 			virtual void modify_vis()
 			{
