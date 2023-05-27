@@ -73,16 +73,21 @@ namespace Visualizers
 				ROS_DEBUG_STREAM("Setting up visualizer");
 				//TODO: remove!
 				OpenSim::ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
-				modify_vis();
+				before_vis();
 				visualizer = new OpenSimRT::BasicModelVisualizer(model);
-				
+				after_vis();	
 
 				ROS_DEBUG_STREAM("onInit finished just fine.");
 			}
-			virtual void modify_vis()
+			virtual void before_vis()
 			{
 				ROS_WARN("Not implemented for VisualizerCommon. initial setup of the thing");
 			}
+			virtual void after_vis()
+			{
+				ROS_WARN("Not implemented for VisualizerCommon. post-setup of the thing");
+			}
+
 			virtual void after_callback()
 			{
 				ROS_WARN("Not implemented. does something after the callbacks.");

@@ -12,6 +12,7 @@ void Visualizers::DualSinkVis::callback(const opensimrt_msgs::DualConstPtr &mess
 	try {
 
 		visualizer->update(q);
+		after_callback();
 	}
 	catch (std::exception& e)
 	{
@@ -29,6 +30,7 @@ void Visualizers::DualSinkVis::callback_filtered(const opensimrt_msgs::DualPosCo
 	try {
 
 		visualizer->update(q);
+		after_callback();
 	}
 	catch (std::exception& e)
 	{

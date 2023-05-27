@@ -5,7 +5,7 @@
 
 using opensimrt_msgs::DualConstPtr;
 
-void Visualizers::GrfVis::modify_vis()
+void Visualizers::GrfVis::after_vis()
 {
 	rightGRFDecorator = new OpenSimRT::ForceDecorator(SimTK::Green, 0.001, 3);
 	visualizer->addDecorationGenerator(rightGRFDecorator);

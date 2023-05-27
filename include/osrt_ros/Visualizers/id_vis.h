@@ -10,7 +10,7 @@ namespace Visualizers
 	{
 		void callback(const opensimrt_msgs::DualConstPtr& message);
 		void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
-		void modify_vis() {
+		void before_vis() {
 			OpenSimRT::OpenSimUtils::removeActuators(model);
 		};
 		void after_callback() {};

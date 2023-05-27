@@ -1,6 +1,6 @@
 #include "osrt_ros/Visualizers/so_vis.h"
 #include <SimTKcommon/internal/BigMatrix.h>
-void Visualizers::SoVis::modify_vis()
+void Visualizers::SoVis::before_vis()
 {
 	//TODO:
 	ROS_ERROR_STREAM("not implemented");

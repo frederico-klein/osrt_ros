@@ -15,7 +15,8 @@ namespace Visualizers
 			OpenSimRT::ForceDecorator* leftGRFDecorator;
 			void callback(const opensimrt_msgs::DualConstPtr& message);
 			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
-			void modify_vis();
+			void after_vis();
+			void after_callback();
 	};
 }
 #endif
