@@ -11,17 +11,17 @@
 #include <vector>
 #include "MuscleOptimization.h"
 #include "osrt_ros/events.h"
-#include "dualsink_pipe.h"
 
 namespace Pipeline
 {
 
-	class So
+	class SoBare
 	{
 		public:
-			So();
-			~So();
-			void run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
+			SoBare();
+			~SoBare();
+			ros::NodeHandle nh{"~"};
+			opensimrt_msgs::CommonTimed run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 
 			void onInit();
 			void finish();

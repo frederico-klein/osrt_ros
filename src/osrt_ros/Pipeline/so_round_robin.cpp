@@ -3,6 +3,7 @@
 #include "opensimrt_msgs/DualPos.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/so.h"
+#include "osrt_ros/Pipeline/so_bare.h"
 #include "osrt_ros/Pipeline/so_rr.h"
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Vec.h>
@@ -19,7 +20,7 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 	for (int i=0; i<num_processes_; i++)
 	{
 		std::string pub_name = "so_rr"+std::to_string(i);
-		Pipeline::So aso;
+		Pipeline::SoBare aso;
 		sos.push_back(aso);
 		pubs_.push_back(node_handle_.advertise<opensimrt_msgs::Dual>(pub_name,1000)); //publishes the input values for each thread
 		pubs_filtered.push_back(node_handle_.advertise<opensimrt_msgs::DualPos>(pub_name+"_filtered",1000)); //publishes the input values for each thread
@@ -41,8 +42,8 @@ void Pipeline::SoRR::init()
 	//initializeLoggers("grfLeft", grfLeftLogger);
 
 	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
-	sync.registerCallback(std::bind(&Pipeline::So::callback, this, std::placeholders::_1, std::placeholders::_2));
-	sync.registerCallback(&Pipeline::So::callback, this);
+	sync.registerCallback(std::bind(&Pipeline::SoRR::callback, this, std::placeholders::_1, std::placeholders::_2));
+	sync.registerCallback(&Pipeline::SoRR::callback, this);
 
 	//these need to be shared with the rest:
 	for (int i=0; i<num_processes_; i++)
@@ -118,10 +119,11 @@ void Pipeline::SoRR::runRR(const std_msgs::Header h, double t, SimTK::Vector q, 
 {
 	ROS_INFO_STREAM("I heard: [something...] in [" << process << "] [thread=" << boost::this_thread::get_id() << "]");
 	ROS_INFO("This is a long thread and takes long to execute each thing");
-	//run actual process
-	sos[process].run(h,t, q,tau,e);
 	//I kinda need an output though.
 	opensimrt_msgs::CommonTimed out_msg;
+	//run actual process
+	out_msg = sos[process].run(h,t, q,tau,e);
+	
 	out_msg.header = h;
 	out_msg.events = e;
 	SimTK::Vector so_am(2);

@@ -1,8 +1,9 @@
+#include "opensimrt_msgs/CommonTimed.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/Labels.h"
 #include "INIReader.h"
 #include "OpenSimUtils.h"
-//#include "Settings.h"
+#include "Settings.h"
 #include <Actuators/Thelen2003Muscle.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
@@ -13,16 +14,16 @@
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
-#include "osrt_ros/Pipeline/so.h"
+#include "osrt_ros/Pipeline/so_bare.h"
 
 using namespace std;
 using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::So::So(): Pipeline::DualSink::DualSink(false)  
+Pipeline::SoBare::SoBare()  
 {
-	ROS_DEBUG_STREAM("fake constructor of SO");
+	ROS_DEBUG_STREAM("constructor of SoBare");
 	cout << "Warning" << endl
 		<< "This test might fail on different machines. "
 		<< "The performance of the optimization depends on the underlying OS. "
@@ -110,43 +111,24 @@ Pipeline::So::So(): Pipeline::DualSink::DualSink(false)
 	//so = &so_temp;
 	ROS_DEBUG_STREAM("SO fake constructor ran ok.");
 }
-Pipeline::So::~So()
+Pipeline::SoBare::~SoBare()
 {
 
-	ROS_INFO_STREAM("Shutting down So");
+	ROS_INFO_STREAM("Shutting down SoBare");
 }
 
-void Pipeline::So::onInit() {
-	nh.getParam("get_second_label", get_second_label);
-	//get_second_label = false;
-	Pipeline::DualSink::onInit();
-
-	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
-	sub0.registerCallback(&Pipeline::So::callback0,this);
-	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
-	sub1.registerCallback(&Pipeline::So::callback1,this);
-
-
-	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
-	// TODO: set the column labels, or it will break when you try to use them!
-	ROS_INFO_STREAM("Attempting to set loggers.");
-	//initializeLoggers("grfRight",grfRightLogger);
-	//initializeLoggers("grfLeft", grfLeftLogger);
-
-	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
-	sync.registerCallback(std::bind(&Pipeline::So::callback, this, std::placeholders::_1, std::placeholders::_2));
-	sync.registerCallback(&Pipeline::So::callback, this);
+void Pipeline::SoBare::onInit() {
+	ROS_DEBUG_STREAM("onInitSoBare bare");
 
 	visualizer = new BasicModelVisualizer(*model);
-	ROS_DEBUG_STREAM("onInitSo");
 	//these need to be shared with the rest:
 	fmLogger = so->initializeMuscleLogger();
 	amLogger = so->initializeMuscleLogger();
 }
 
-void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std::vector<double> Rtau, opensimrt_msgs::Events e )
+opensimrt_msgs::CommonTimed Pipeline::SoBare::run(const std_msgs::Header h, double t, SimTK::Vector q, std::vector<double> Rtau, opensimrt_msgs::Events e )
 {
-	ROS_DEBUG_STREAM("Received run call. Running So loop"); 
+	ROS_DEBUG_STREAM("Received run call. Running SoBare loop"); 
 	opensimrt_msgs::CommonTimed msg_out;
 	msg_out.header = h;
 	//unpacking tau
@@ -161,7 +143,7 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 	if (!so)
 	{
 		ROS_ERROR_STREAM("so not initialized!");
-		return;
+		return msg_out;
 	}
 	ROS_DEBUG_STREAM("attempting to run SO.");
 	//ROS_DEBUG_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << tau << "]");
@@ -170,8 +152,10 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 	chrono::high_resolution_clock::time_point t2;
 	t2 = chrono::high_resolution_clock::now();
 
+	//TODO: actually capture return params from soOutput!!!
 	msg_out.events = e;
-	pub.publish(msg_out);
+	//pub.publish(msg_out);
+	return msg_out;
 	try {
 
 		visualizer->update(q, soOutput.am);
@@ -200,49 +184,4 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 
 }
 
-
-void Pipeline::So::callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik) {
-	ROS_INFO_STREAM("callback ik called");
-}
-void Pipeline::So::callback1(const opensimrt_msgs::CommonTimedConstPtr& message_id) {
-	ROS_INFO_STREAM("callback tau called");
-}
-
-void Pipeline::So::finish() {
-
-	//finish for other parts
-
-}
-
-void Pipeline::So::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_tau) 
-{
-	auto bothEvents = combineEvents(message_ik, message_tau);
-	addEvent("so received ik & tau",bothEvents);
-	ROS_DEBUG_STREAM("Received message. Running So loop callback."); 
-	SimTK::Vector qRaw(message_ik->data.size()); //cant find the right copy constructor syntax. will for loop it
-	for (int j = 0;j < qRaw.size();j++)
-	{
-		qRaw[j] = message_ik->data[j];
-	}
-
-	double t = message_ik->time;
-	//	I dont need to filter things, but I need to get either q if unfiltered or q[0] if filtered and then run stuff
-	run(message_ik->header, message_ik->time, qRaw, message_tau->data, bothEvents);	
-}
-
-void Pipeline::So::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_tau) 
-{
-	auto bothEvents = combineEvents(message_ik, message_tau);
-	addEvent("so received ik & tau",bothEvents);
-	ROS_DEBUG_STREAM("Received message. Running So filtered loop"); 
-	SimTK::Vector q(message_ik->d0_data.size()); 
-	for (int j = 0;j < q.size();j++)
-	{
-		q[j] = message_ik->d0_data[j];
-	}
-
-	//Construct qVec :should be same as above
-	run(message_ik->header, message_ik->time, q, message_tau->data, bothEvents);
-
-}	
 

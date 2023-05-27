@@ -8,7 +8,7 @@
 #include "ros/ros.h"
 #include "so.h"
 #include <boost/thread.hpp>
-
+#include "osrt_ros/Pipeline/so_bare.h"
 
 namespace Pipeline
 {
@@ -22,7 +22,7 @@ namespace Pipeline
 			std::vector<ros::Publisher> pubs_;
 			std::vector<ros::Publisher> pubs_filtered;
 			//hack
-			std::vector<Pipeline::So> sos;
+			std::vector<Pipeline::SoBare> sos;
 			ros::Publisher outcome_pub;
 			int counter = 0;
 			int num_processes_;
