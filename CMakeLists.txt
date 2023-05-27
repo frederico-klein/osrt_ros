@@ -70,6 +70,8 @@ include_directories(
 	${EIGEN3_INCLUDE_DIRS}
 	)
 
+##PIPELINE ############################################################
+
 file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
@@ -87,9 +89,26 @@ add_dependencies(osrtRosPipeline ${catkin_EXPORTED_TARGETS})
 
 add_subdirectory(src/osrt_ros/Pipeline)
 
+###/PIPELINE############################################################
 
+###VISUALIZER############################################################
 
-file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp""src/osrt_ros/events.cpp" )
+file (GLOB Visualizers_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Visualizers/*.cpp" "src/osrt_ros/events.cpp") # do i need events?
+file (GLOB Visualizers_HEADERS CONFIGURE_DEPENDS "include/Visualizers/*.h")
+
+set(target osrtRosVisualizers)
+
+add_library(osrtRosVisualizers ${Visualizers_HEADERS} ${Visualizers_SOURCES} )
+
+target_link_libraries(osrtRosVisualizers ${catkin_LIBRARIES} ${OpenSim_LIBRARIES})
+
+add_dependencies(osrtRosVisualizers ${catkin_EXPORTED_TARGETS})
+
+add_subdirectory(src/osrt_ros/Visualizers)
+###\VISUALIZER############################################################
+
+###UIMU############################################################
+file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp" "src/osrt_ros/events.cpp" )
 file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 
 set(target osrtRosUIMU)
@@ -101,6 +120,7 @@ add_dependencies(osrtRosUIMU ${catkin_EXPORTED_TARGETS})
 target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES} Eigen3::Eigen)
 
 add_subdirectory(src/osrt_ros/UIMU)
+###\UIMU############################################################
 
 add_executable(custom_joints_node src/osrt_ros/custom_joints_node.cpp)
 add_dependencies(custom_joints_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
