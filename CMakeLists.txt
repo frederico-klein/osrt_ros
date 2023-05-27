@@ -72,7 +72,7 @@ include_directories(
 
 ##PIPELINE ############################################################
 
-file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp")
+file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp" "src/osrt_ros/utils.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
 set(target osrtRosPipeline)
@@ -93,7 +93,7 @@ add_subdirectory(src/osrt_ros/Pipeline)
 
 ###VISUALIZER############################################################
 
-file (GLOB Visualizers_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Visualizers/*.cpp" "src/osrt_ros/events.cpp") # do i need events?
+file (GLOB Visualizers_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Visualizers/*.cpp" "src/osrt_ros/events.cpp" "src/osrt_ros/utils.cpp") # do i need events?
 file (GLOB Visualizers_HEADERS CONFIGURE_DEPENDS "include/Visualizers/*.h")
 
 set(target osrtRosVisualizers)
@@ -108,7 +108,7 @@ add_subdirectory(src/osrt_ros/Visualizers)
 ###\VISUALIZER############################################################
 
 ###UIMU############################################################
-file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp" "src/osrt_ros/events.cpp" )
+file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp" "src/osrt_ros/events.cpp" "src/osrt_ros/utils.cpp" )
 file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 
 set(target osrtRosUIMU)

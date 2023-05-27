@@ -2,6 +2,8 @@
 #include "Ros/include/common_node.h"
 #include "message_filters/synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/Dual.h"
+#include "opensimrt_msgs/DualPos.h"
 #include "ros/node_handle.h"
 #include "ros/rate.h"
 #include "opensimrt_msgs/LabelsSrv.h"
@@ -86,6 +88,10 @@ void Pipeline::DualSink::onInit()
 	//sub.registerCallback(&DualSink::callback1,this);
 	//sub2.registerCallback(&DualSink::callback2,this);
 
+	ROS_INFO_STREAM("Setting up synchronized output for visualizers");
+	ROS_WARN_STREAM("Outlabels are not implemented for these outputs, if there is reshuffling, they will not look correct.");
+	sync_output = nh.advertise<opensimrt_msgs::Dual>("output_combined", 1);
+	sync_output_filtered = nh.advertise<opensimrt_msgs::DualPos>("output_combined_filtered", 1);
 
 	ROS_INFO_STREAM("Finished onInit from DualSink");
 }

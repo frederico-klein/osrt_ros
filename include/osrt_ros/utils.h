@@ -1,0 +1,20 @@
+/**
+ * @author      : frekle (frekle@bml01.mech.kth.se)
+ * @file        : utils
+ * @created     : Saturday May 27, 2023 19:26:06 CEST
+ */
+
+#ifndef UTILS_H
+
+#define UTILS_H
+
+#include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/PosVelAccTimed.h"
+#include <SimTKcommon/internal/BigMatrix.h>
+opensimrt_msgs::PosVelAccTimed get_as_ik_filtered_msg(std_msgs::Header h, double t, SimTK::Vector q, SimTK::Vector qDot, SimTK::Vector qDDot);
+
+opensimrt_msgs::CommonTimed get_as_ik_msg(std_msgs::Header h, double t, SimTK::Vector q);
+void update_pose(opensimrt_msgs::CommonTimed& msg, double t, SimTK::Vector q);
+
+#endif /* end of include guard UTILS_H */
+

@@ -4,6 +4,7 @@
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "ros/publisher.h"
 #include "std_srvs/Empty.h"
 #include "Ros/include/common_node.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
@@ -24,6 +25,7 @@ namespace Pipeline
 			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, opensimrt_msgs::CommonTimed> sync_filtered;
 			std::vector<std::string> input2_labels;
 			void onInit();
+			ros::Publisher sync_output, sync_output_filtered;
 			virtual void callback(const opensimrt_msgs::CommonTimedConstPtr& message, const opensimrt_msgs::CommonTimedConstPtr& message2) 
 			{
 				ROS_ERROR_STREAM("dual message callback not implemented!");

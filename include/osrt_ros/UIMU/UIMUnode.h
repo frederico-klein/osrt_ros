@@ -13,6 +13,7 @@
 //#include <OpenSim/Common/STOFileAdapter.h>
 
 #include "ros/init.h"
+#include "ros/message_traits.h"
 #include "ros/publisher.h"
 #include "ros/rate.h"
 #include "ros/ros.h"
@@ -23,6 +24,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "opensimrt_msgs/Labels.h"
 
+#include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Quaternion.h>
 #include <SimTKcommon/internal/ReinitOnCopy.h>
 #include <exception>
@@ -35,6 +37,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <osrt_ros/UIMUConfig.h>
 #include "osrt_ros/events.h"
+#include "osrt_ros/utils.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -45,7 +48,7 @@ class UIMUnode: Ros::CommonNode
 {
 	public:
 		UIMUnode(): Ros::CommonNode(true) //if true debugs
-						   //UIMUnode(): Ros::CommonNode()
+						  //UIMUnode(): Ros::CommonNode()
 	{}
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
@@ -143,7 +146,7 @@ class UIMUnode: Ros::CommonNode
 
 		}
 		void reconfigure_callback(osrt_ros::UIMUConfig &config, uint32_t level){
-		ROS_INFO("Reconfigure request %s, (%f, %f, %f)", config.imu_direction_axis_param.c_str(), config.imu_ground_rotation_x, config.imu_ground_rotation_y,config.imu_ground_rotation_z);
+			ROS_INFO("Reconfigure request %s, (%f, %f, %f)", config.imu_direction_axis_param.c_str(), config.imu_ground_rotation_x, config.imu_ground_rotation_y,config.imu_ground_rotation_z);
 			if (clb_is_ready)
 			{
 				imuDirectionAxis = config.imu_direction_axis_param;
@@ -208,15 +211,15 @@ class UIMUnode: Ros::CommonNode
 		SimTK::RowVector fromVectorOfSimTKQuaternionsToARowVector(std::vector<SimTK::Quaternion> vv)
 		{
 			std::vector<double> serialized;
-			
-				for (auto q:vv)
-				{
-					ROS_INFO_STREAM(q[0] <<","<<q[1]<<","<<q[2]<<","<<q[3]);
-					serialized.push_back(q[0]);	
-					serialized.push_back(q[1]);	
-					serialized.push_back(q[2]);	
-					serialized.push_back(q[3]);	
-				}
+
+			for (auto q:vv)
+			{
+				ROS_INFO_STREAM(q[0] <<","<<q[1]<<","<<q[2]<<","<<q[3]);
+				serialized.push_back(q[0]);	
+				serialized.push_back(q[1]);	
+				serialized.push_back(q[2]);	
+				serialized.push_back(q[3]);	
+			}
 
 			SimTK::RowVector serializedv(serialized.size());
 			for (int ii = 0; ii <serializedv.size(); ii++)
@@ -236,7 +239,7 @@ class UIMUnode: Ros::CommonNode
 		}
 		void doCalibrate()
 		{
-;			clb->setMethod(use_external_average_calibration_method);
+			;			clb->setMethod(use_external_average_calibration_method);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
 			clb_is_ready = true;
@@ -266,7 +269,7 @@ class UIMUnode: Ros::CommonNode
 			ROS_DEBUG_STREAM("Setting up model.");
 			model = OpenSim::Model(modelFile);
 			OpenSimUtils::removeActuators(model);
-			
+
 			ROS_DEBUG_STREAM("Staring UIMUInputDriver with tf_frame_prefix" << tf_frame_prefix << " and rate: " << rate );
 			driver = new UIMUInputDriver(imuObservationOrder,tf_frame_prefix,rate); //uses tf server
 			driver->startListening();
@@ -281,7 +284,7 @@ class UIMUnode: Ros::CommonNode
 			doCalibrate();
 
 			start_ik();
-			
+
 			string all_labels;
 			ros::NodeHandle nh("~");
 			ROS_INFO_STREAM("setting plottable_outputs");
@@ -291,7 +294,7 @@ class UIMUnode: Ros::CommonNode
 				plottable_outputs.push_back(nh.advertise<std_msgs::Float64>("ik/joints/"+l,1));
 				all_labels+=l+",";
 			}
-				ROS_INFO_STREAM("Publisher labels: "<<all_labels);
+			ROS_INFO_STREAM("Publisher labels: "<<all_labels);
 
 			// visualizer
 			ROS_DEBUG_STREAM("Setting up visualizer");
@@ -332,7 +335,6 @@ class UIMUnode: Ros::CommonNode
 			ROS_DEBUG_STREAM("onInit finished just fine.");
 		}
 
-
 		void run() {
 			try { // main loop
 				while (!driver->shouldTerminate()) {
@@ -354,7 +356,7 @@ class UIMUnode: Ros::CommonNode
 
 					auto pose = ik->solve(
 							{imuData.first, {}, clb->transform(imuData.second)});
-
+					
 					addEvent("ik",msg);
 					chrono::high_resolution_clock::time_point t2;
 					t2 = chrono::high_resolution_clock::now();
@@ -363,19 +365,18 @@ class UIMUnode: Ros::CommonNode
 					ROS_DEBUG_STREAM( "pose is:" << pose.q);
 
 					//msg.data.push_back(pose.t);
-					msg.time = pose.t;
-					double Dt = msg.time-previousTime;
+					update_pose(msg, pose.t, pose.q);
+					double Dt = pose.t-previousTime;
 					double jitter = Dt-previousDt;
 
 					ROS_DEBUG_STREAM("jitter(us):" << jitter*1000000);
 					ROS_DEBUG_STREAM("delta_t   :" << Dt);
-					ROS_DEBUG_STREAM("T (pose.t):" << msg.time);
+					ROS_DEBUG_STREAM("T (pose.t):" << pose.t);
 
 					int i = 0;
 					for (double joint_angle:pose.q)
 					{
 						ROS_DEBUG_STREAM("some joint_angle:"<<joint_angle);
-						msg.data.push_back(joint_angle);
 						std_msgs::Float64 j_msg;
 						j_msg.data = joint_angle;
 						plottable_outputs[i].publish(j_msg);
@@ -394,17 +395,7 @@ class UIMUnode: Ros::CommonNode
 							ROS_DEBUG_STREAM("filter results are NOT valid");
 							continue; }
 						ROS_DEBUG_STREAM("Filter results are valid");
-						opensimrt_msgs::PosVelAccTimed msg_filtered;
-						msg_filtered.header = h;
-						msg_filtered.time = ikFiltered.t;
-						//for loop to fill the data appropriately:
-						for (int i=0;i<q.size();i++)
-						{
-							msg_filtered.d0_data.push_back(q[i]);
-							msg_filtered.d1_data.push_back(qDot[i]);
-							msg_filtered.d2_data.push_back(qDDot[i]);
-						}
-
+						opensimrt_msgs::PosVelAccTimed msg_filtered = get_as_ik_filtered_msg(h, ikFiltered.t, q, qDot, qDDot);
 						pub_filtered.publish(msg_filtered);
 						// visualize filtered!
 						if (visualiseIt)
@@ -445,14 +436,14 @@ class UIMUnode: Ros::CommonNode
 					if(!ros::ok())
 						break;
 					ros::spinOnce();
-					
+
 					std_msgs::Int64 time_ik_msg;
 					time_ik_msg.data = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
 					time_ik_pub.publish(time_ik_msg);
 
 					chrono::high_resolution_clock::time_point t3;
 					t3 = chrono::high_resolution_clock::now();
-                                	std_msgs::Int64 time_msg;
+					std_msgs::Int64 time_msg;
 					time_msg.data = std::chrono::duration_cast<std::chrono::microseconds>(t3 -t1).count();
 					time_pub.publish(time_msg);
 					r->sleep();

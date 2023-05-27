@@ -1,7 +1,10 @@
 #include "InverseDynamics.h"
 #include "Ros/include/common_node.h"
+#include "opensimrt_msgs/Dual.h"
+#include "opensimrt_msgs/DualPos.h"
 #include "opensimrt_msgs/Event.h"
 #include "opensimrt_msgs/Events.h"
+#include "osrt_ros/utils.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/ros.h"
@@ -69,6 +72,11 @@ void Pipeline::Grf::onInit() {
 	initializeLoggers("grfRight",grfRightLogger);
 	initializeLoggers("grfLeft", grfLeftLogger);
 	initializeLoggers("tau",tauLogger);
+	
+	ROS_INFO_STREAM("Setting up synchronized output for visualizers");
+	ROS_WARN_STREAM("Outlabels are not implemented for these outputs, if there is reshuffling, they will not look correct.");
+	sync_output = nh.advertise<opensimrt_msgs::Dual>("output_combined", 1);
+	sync_output_filtered = nh.advertise<opensimrt_msgs::DualPos>("output_combined_filtered", 1);
 
 }
 opensimrt_msgs::CommonTimed Pipeline::Grf::get_GRFMs_as_common_msg(OpenSimRT::GRFMNonSmooth::Output grfmOutput, double t, std_msgs::Header h)
@@ -199,6 +207,20 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	w_foot_r.publish(h, grfRightWrench);
 	w_foot_l.publish(h, grfLeftWrench);
 
+	//setting up synchronized output
+	opensimrt_msgs::CommonTimed msg_ik;
+	opensimrt_msgs::PosVelAccTimed msg_ik_filtered = get_as_ik_filtered_msg(h, t, q, qDot, qDDot);
+	
+	update_pose(msg_ik,t,q);
+        opensimrt_msgs::Dual dual_msg;
+	dual_msg.q = msg_ik;
+	dual_msg.tau = msg;
+	sync_output.publish(dual_msg);
+        opensimrt_msgs::DualPos dual_filtered_msg;
+	dual_filtered_msg.qqq = msg_ik_filtered;
+	dual_filtered_msg.tau = msg;
+	sync_output_filtered.publish(dual_filtered_msg);
+	//added publisher for the already synchronized msgs.
 	try{
 		// log data (use filter time to align with delay)
 		if(recording)
