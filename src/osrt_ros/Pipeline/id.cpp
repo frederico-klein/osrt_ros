@@ -31,6 +31,8 @@
 #include "std_srvs/Empty.h"
 
 #include "osrt_ros/Pipeline/id.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
+
 
 using namespace std;
 using namespace OpenSim;
@@ -230,10 +232,11 @@ void Pipeline::Id::onInit() {
 	//i should have the input labels from grf already
 	if(get_second_label)
 	{
+		//TODO:: this looks like a reimplementation of the Reshuffler idea. check and fix!
 		ROS_INFO_STREAM("left");
-		grfLeftIndexes = generateIndexes(grfLeftLabels,input2_labels);
+		grfLeftIndexes = Osb::generateIndexes(grfLeftLabels,input2_labels);
 		ROS_INFO_STREAM("right");
-		grfRightIndexes = generateIndexes(grfRightLabels, input2_labels);
+		grfRightIndexes = Osb::generateIndexes(grfRightLabels, input2_labels);
 	}
 	// visualizer
 	if (usesVisualizarFromId())
@@ -249,103 +252,6 @@ void Pipeline::Id::onInit() {
 }
 
 
-boost::array<int,9> Pipeline::Id::generateIndexes(std::vector<std::string> pick, std::vector<std::string> whole) // point,force, torque
-{
-	boost::array<int,9> grfIndexes;
-	/*ROS_INFO_STREAM("whole.size: " << whole.size());
-	for (auto label:whole)
-		ROS_INFO_STREAM("whole labels: " << label);
-	for (auto label:pick)
-		ROS_INFO_STREAM("pick labels: " << label);
-	*/
-
-	for (int i= 0; i<9 ; i++)
-	{
-		//im assuming this is in order. if it isnt this will break
-		int j = 0;
-		bool found_it = false;
-		for (auto label:whole)
-		{
-			if(label.compare(pick[i])==0)
-			{
-				// the pick_label and the label are the same, so the index j is what we want
-				grfIndexes[i] = j;
-				found_it = true;
-				break;
-			}
-			j++;
-		}
-		if (!found_it)
-			ROS_FATAL_STREAM("Did not find label: [" << pick[i] << "]. Cannot proceed. Check if you loaded the correct MOT file or you set the correct Parameters in the launch file for this node.") ;
-	}
-	for (auto ind: grfIndexes)
-		ROS_WARN_STREAM(ind);
-
-	return grfIndexes;
-}
-
-
-ExternalWrench::Input Pipeline::Id::parse_message(const opensimrt_msgs::CommonTimedConstPtr & msg_grf, boost::array<int,9> grfIndexes)
-{
-	//ROS_DEBUG_STREAM("Parsing wrench from message");
-	ExternalWrench::Input a;
-	//for (auto ind:grfIndexes)
-	//	ROS_INFO_STREAM("index:" << ind);
-	a.point  = SimTK::Vec3(msg_grf->data[grfIndexes[0]],msg_grf->data[grfIndexes[1]],msg_grf->data[grfIndexes[2]]);
-	a.force  = SimTK::Vec3(msg_grf->data[grfIndexes[3]],msg_grf->data[grfIndexes[4]],msg_grf->data[grfIndexes[5]]);
-	a.torque = SimTK::Vec3(msg_grf->data[grfIndexes[6]],msg_grf->data[grfIndexes[7]],msg_grf->data[grfIndexes[8]]);
-
-	//ROS_DEBUG_STREAM("wrench i got:");
-	//print_wrench(a);
-
-	return a;
-}
-
-ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame)
-{
-	ExternalWrench::Input wO;
-	wO.force[0] = w->wrench.force.x;
-	wO.force[1] = w->wrench.force.y;
-	wO.force[2] = w->wrench.force.z;
-	wO.torque[0] = w->wrench.torque.x;
-	wO.torque[1] = w->wrench.torque.y;
-	wO.torque[2] = w->wrench.torque.z;
-	// now get the translations from the transform
-	// for the untranslated version I just want to get the reference in their own coordinate reference frame
-	wO.point[0] = 0;
-	wO.point[1] = 0;
-	wO.point[2] = 0;
-	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
-	try
-	{
-		//ATTENTION FUTURE FREDERICO:
-		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
-
-		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, ros::Time(0));
-		//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
-		wO.point[0] = nulltransform.transform.translation.x;
-		wO.point[1] = nulltransform.transform.translation.y;
-		wO.point[2] = nulltransform.transform.translation.z;
-		//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
-		//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
-		ROS_INFO_STREAM("null transform::\n" << nulltransform);
-		//ROS_DEBUG_STREAM("actual transform" << actualtransform);
-		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
-		//inv_t converts back to opensim
-		
-		//now convert it:
-
-	}
-	catch (tf2::TransformException &ex) {
-		ROS_ERROR("transform exception: %s",ex.what());
-		ros::Duration(1.0).sleep();
-		return wO;
-	}
-
-	ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
-	return wO;
-
-}
 
 
 void Pipeline::Id::callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik) {
@@ -355,14 +261,6 @@ void Pipeline::Id::callback1(const opensimrt_msgs::CommonTimedConstPtr& message_
 	ROS_INFO_STREAM("callback grf called");
 }
 
-void Pipeline::Id::print_wrench(ExternalWrench::Input w)
-{
-	ROS_DEBUG_STREAM("POINT" << w.point[0] << ","<< w.point[1] << "," << w.point[2] );
-	ROS_DEBUG_STREAM("FORCE" << w.force[0] << ","<< w.force[1] << "," << w.force[2] );
-	ROS_DEBUG_STREAM("TORQUE" << w.torque[0] << ","<< w.torque[1] << "," << w.torque[2] );
-
-
-}
 void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
 {
 	auto bothEvents = combineEvents(message_ik, message_grf);
@@ -370,63 +268,15 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback."); 
 	counter++;
 	double filtered_t;
-	auto iks = parse_ik_message(message_ik, &filtered_t);
+	auto iks = Osb::parse_ik_message(message_ik, &filtered_t, ikfilter);
 	//ROS_DEBUG_STREAM("message_grf\n" << *message_grf);
-	auto grfs = get_wrench(message_grf);
+	auto grfs = Osb::get_wrench(message_grf, grfRightIndexes, grfLeftIndexes);
 	ROS_DEBUG_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
 	run(message_ik->header, filtered_t, iks, grfs, bothEvents);	
 }
 
-std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t)
-{
-	std::vector<SimTK::Vector> qVec;
-	SimTK::Vector qRaw(message_ik->data.size()); //cant find the right copy constructor syntax. will for loop it
-	for (int j = 0;j < qRaw.size();j++)
-	{
-		qRaw[j] = message_ik->data[j];
-	}
-
-	double t = message_ik->time;
-	// filter
-	auto ikFiltered = ikfilter->filter({t, qRaw});
-	auto q = ikFiltered.x;
-	auto qDot = ikFiltered.xDot;
-	auto qDDot = ikFiltered.xDDot;
-	ROS_DEBUG_STREAM("Filter ran ok");
-	if (!ikFiltered.isValid) {
-		ROS_DEBUG_STREAM("filter results are NOT valid");
-		return qVec; }
-	ROS_DEBUG_STREAM("Filter results are valid");
-
-	*filtered_t = ikFiltered.t;
-	//Construct qVec
-	qVec.push_back(q);
-	qVec.push_back(qDot);
-	qVec.push_back(qDDot);
-
-	return qVec;
-}
-
-std::vector<SimTK::Vector> Pipeline::Id::parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik)
-{
-	std::vector<SimTK::Vector> qVec;
-	SimTK::Vector q(message_ik->d0_data.size()),qDot(message_ik->d0_data.size()),qDDot(message_ik->d0_data.size()); 
-	for (int j = 0;j < q.size();j++)
-	{
-		q[j] = message_ik->d0_data[j];
-		qDot[j] = message_ik->d1_data[j];
-		qDDot[j] = message_ik->d2_data[j];
-	}
-
-	//Construct qVec :should be same as above
-	qVec.push_back(q);
-	qVec.push_back(qDot);
-	qVec.push_back(qDDot);
-	return qVec;
-
-}
 
 
 void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf) 
@@ -436,47 +286,12 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
-	auto iks = parse_ik_message(message_ik);
-	auto grfs = get_wrench(message_grf);
+	auto iks = Osb::parse_ik_message(message_ik);
+	auto grfs = Osb::get_wrench(message_grf, grfRightIndexes, grfLeftIndexes);
 	run(message_ik->header, message_ik->time, iks,grfs, bothEvents);
 
 }	
 
-std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
-{
-	// TODO: get wrench message!!!!!!!!!!
-	std::vector<ExternalWrench::Input> wrenches;
-	ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name);
-	//cout << "left wrench.";
-	ROS_DEBUG_STREAM("rw");
-	print_wrench(grfRightWrench);
-	ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name);
-	ROS_DEBUG_STREAM("lw");
-	print_wrench(grfLeftWrench);
-	//	return;
-
-	wrenches.push_back(grfLeftWrench);
-	wrenches.push_back(grfRightWrench);
-	return wrenches;
-}
-
-std::vector<ExternalWrench::Input> Pipeline::Id::get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf)
-{
-	std::vector<ExternalWrench::Input> wrenches;
-	double t = message_grf->time; //TODO: if it isn't the same as in message ik, this will break!
-	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
-	//cout << "left wrench.";
-	ROS_DEBUG_STREAM("rw");
-	print_wrench(grfRightWrench);
-	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
-	ROS_DEBUG_STREAM("lw");
-	print_wrench(grfLeftWrench);
-	//	return;
-
-	wrenches.push_back(grfLeftWrench);
-	wrenches.push_back(grfRightWrench);
-	return wrenches;
-}
 
 void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs, opensimrt_msgs::Events e ) 
 
@@ -705,8 +520,8 @@ void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConst
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback_real_wrenches"); 
 	counter++;
 	double filtered_t;
-	auto iks = parse_ik_message(message_ik, &filtered_t);
-	auto grfs = get_wrench(wl,wr);
+	auto iks = Osb::parse_ik_message(message_ik, &filtered_t, ikfilter);
+	auto grfs = Osb::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
 	ROS_WARN_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
@@ -720,8 +535,8 @@ void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelA
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
 	counter++;
 	//cant find the right copy constructor syntax. will for loop it
-	auto iks = parse_ik_message(message_ik);
-	auto grfs = get_wrench(wl,wr);
+	auto iks = Osb::parse_ik_message(message_ik);
+	auto grfs = Osb::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
 	run(message_ik->header,message_ik->time, iks,grfs, newEvents1);
 }
 

@@ -68,10 +68,6 @@ namespace Pipeline
 			
 			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, 	const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
-			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
-
-			//rest of class:
-			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const opensimrt_msgs::CommonTimedConstPtr& message_grf);
 			virtual void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> ,  opensimrt_msgs::Events e);
 
 			void onInit();
@@ -98,9 +94,7 @@ namespace Pipeline
 			OpenSimRT::LowPassSmoothFilter* ikfilter, *grfRightFilter, *grfLeftFilter;
 			std::vector<std::string> grfRightLabels, grfLeftLabels;
 			
-			boost::array<int,9> generateIndexes(std::vector<std::string> pick, std::vector<std::string> whole); 
 			boost::array<int,9> grfLeftIndexes, grfRightIndexes;
-			void print_wrench(OpenSimRT::ExternalWrench::Input w);
 
 			//do I need this?
 			bool use_grfm_filter;
@@ -112,10 +106,6 @@ namespace Pipeline
 			bool see(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
 			void write_();
-			OpenSimRT::ExternalWrench::Input parse_message(const opensimrt_msgs::CommonTimedConstPtr& msg_grf, boost::array<int,9> grfIndexes);
-			OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme);
-			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::CommonTimedConstPtr& message_ik, double* filtered_t);
-			std::vector<SimTK::Vector> parse_ik_message(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik);
 			virtual bool usesVisualizarFromId() { return true;}
 
 			void print_vec(std::vector<std::string> vs);

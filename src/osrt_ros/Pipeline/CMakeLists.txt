@@ -5,6 +5,7 @@ set(DEPENDENCY_LIBS
   ${catkin_LIBRARIES}
   #${OpenSim_LIBRARIES}
   #${opensimrt_LIBRARIES}
+  #${opensimrt_bridge_LIBRARIES}
   osrtRosPipeline
 )
 

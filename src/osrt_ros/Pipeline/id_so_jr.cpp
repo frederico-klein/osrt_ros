@@ -17,6 +17,7 @@
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/id_so_jr.h"
 #include "MuscleOptimization.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -269,8 +270,8 @@ void Pipeline::IdSoJr::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::
 	ROS_DEBUG_STREAM("Received run call. Running IdSoJr loop"); 
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
-	ExternalWrench::Input grfRightWrench = parse_message(message_grf, grfRightIndexes);
-	ExternalWrench::Input grfLeftWrench = parse_message(message_grf, grfLeftIndexes);
+	ExternalWrench::Input grfRightWrench = Osb::parse_message(message_grf, grfRightIndexes);
+	ExternalWrench::Input grfLeftWrench = Osb::parse_message(message_grf, grfLeftIndexes);
 	auto grfRightFiltered =
 		grfRightFilter->filter({t, grfRightWrench.toVector()});
 	grfRightWrench.fromVector(grfRightFiltered.x);
