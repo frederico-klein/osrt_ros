@@ -2,7 +2,7 @@
 #include "experimental/GRFMPrediction.h"
 #include "opensimrt_msgs/Dual.h"
 #include <SimTKcommon/internal/BigMatrix.h>
-#include "osrt_ros/utils.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 using opensimrt_msgs::DualConstPtr;
 

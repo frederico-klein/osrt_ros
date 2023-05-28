@@ -1,4 +1,7 @@
+message("VISUALIZERS ==============================================================================================")
+
 message(${opensimrt_LIBRARIES})
+
 
 
 set(DEPENDENCY_LIBS 
@@ -12,7 +15,7 @@ foreach(lib ${DEPENDENCY_LIBS})
   message(STATUS "lib=${lib}")
 endforeach()
 
-
+message("what am i actually including...")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
   message(STATUS "dir='${dir}'")

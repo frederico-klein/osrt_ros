@@ -37,7 +37,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <osrt_ros/UIMUConfig.h>
 #include "osrt_ros/events.h"
-#include "osrt_ros/utils.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -365,7 +365,7 @@ class UIMUnode: Ros::CommonNode
 					ROS_DEBUG_STREAM( "pose is:" << pose.q);
 
 					//msg.data.push_back(pose.t);
-					update_pose(msg, pose.t, pose.q);
+					Osb::update_pose(msg, pose.t, pose.q);
 					double Dt = pose.t-previousTime;
 					double jitter = Dt-previousDt;
 
@@ -395,7 +395,7 @@ class UIMUnode: Ros::CommonNode
 							ROS_DEBUG_STREAM("filter results are NOT valid");
 							continue; }
 						ROS_DEBUG_STREAM("Filter results are valid");
-						opensimrt_msgs::PosVelAccTimed msg_filtered = get_as_ik_filtered_msg(h, ikFiltered.t, q, qDot, qDDot);
+						opensimrt_msgs::PosVelAccTimed msg_filtered = Osb::get_as_ik_filtered_msg(h, ikFiltered.t, q, qDot, qDDot);
 						pub_filtered.publish(msg_filtered);
 						// visualize filtered!
 						if (visualiseIt)

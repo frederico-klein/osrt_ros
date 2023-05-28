@@ -4,7 +4,6 @@
 #include "opensimrt_msgs/DualPos.h"
 #include "opensimrt_msgs/Event.h"
 #include "opensimrt_msgs/Events.h"
-#include "osrt_ros/utils.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/ros.h"
@@ -34,7 +33,7 @@
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/grf_pipe.h"
 #include "osrt_ros/events.h"
-#include "osrt_ros/utils.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -174,7 +173,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	//
 	//OpenSim::TimeSeriesTable output;
 
-	opensimrt_msgs::CommonTimed msg = get_GRFMs_as_common_msg(grfmOutput,t,h);
+	opensimrt_msgs::CommonTimed msg = Osb::get_GRFMs_as_common_msg(grfmOutput,t,h);
 	msg.events = e;
 	pub.publish(msg);
 	w_foot_r.publish(h, grfRightWrench);
@@ -182,9 +181,9 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 
 	//setting up synchronized output
 	opensimrt_msgs::CommonTimed msg_ik;
-	opensimrt_msgs::PosVelAccTimed msg_ik_filtered = get_as_ik_filtered_msg(h, t, q, qDot, qDDot);
+	opensimrt_msgs::PosVelAccTimed msg_ik_filtered = Osb::get_as_ik_filtered_msg(h, t, q, qDot, qDDot);
 	
-	update_pose(msg_ik,t,q);
+	Osb::update_pose(msg_ik,t,q);
         opensimrt_msgs::Dual dual_msg;
 	dual_msg.q = msg_ik;
 	dual_msg.tau = msg;
