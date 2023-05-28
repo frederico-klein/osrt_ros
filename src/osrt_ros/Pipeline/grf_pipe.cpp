@@ -34,6 +34,7 @@
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/grf_pipe.h"
 #include "osrt_ros/events.h"
+#include "osrt_ros/utils.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -78,34 +79,6 @@ void Pipeline::Grf::onInit() {
 	sync_output = nh.advertise<opensimrt_msgs::Dual>("output_combined", 1);
 	sync_output_filtered = nh.advertise<opensimrt_msgs::DualPos>("output_combined_filtered", 1);
 
-}
-opensimrt_msgs::CommonTimed Pipeline::Grf::get_GRFMs_as_common_msg(OpenSimRT::GRFMNonSmooth::Output grfmOutput, double t, std_msgs::Header h)
-{
-	//TODO: NO LABELS FOR ORDER??
-	//
-
-	//OpenSim::TimeSeriesTable output;
-	std::vector<double> p;
-	auto a = grfmOutput.right.toVector() ;
-	auto b = grfmOutput.left.toVector() ;
-
-	p.insert(p.end(),a.begin(),a.end());
-	p.insert(p.end(),b.begin(),b.end());
-	//output.appendRow(grfmOutput.t,p);
-	opensimrt_msgs::CommonTimed msg;
-	if (false)
-	{
-		std_msgs::Header h;
-		h.frame_id = "subject";
-		h.stamp = ros::Time::now();
-		msg.header = h;
-	} else
-	{
-		msg.header = h; //will this break? it will be publishing messages in the past
-	}
-	msg.time = t;
-	msg.data.insert(msg.data.end(), p.begin(),p.end());
-	return msg;
 }
 
 void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vector qDDot, std_msgs::Header h, opensimrt_msgs::Events e) 

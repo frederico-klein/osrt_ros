@@ -16,7 +16,7 @@ namespace Visualizers
 			void callback(const opensimrt_msgs::DualConstPtr& message);
 			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
 			void after_vis();
-			void after_callback();
+			//void after_callback(); //this doesnt work because we need to pass information for the things after the callback...
 	};
 }
 #endif

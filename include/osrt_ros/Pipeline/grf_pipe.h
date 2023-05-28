@@ -51,7 +51,6 @@ namespace Pipeline
 			OpenSimRT::LowPassSmoothFilter* filter;
 			std::string subjectDir;
 			
-			opensimrt_msgs::CommonTimed get_GRFMs_as_common_msg(OpenSimRT::GRFMNonSmooth::Output grfmOutput, double t, std_msgs::Header h);
 			ros::Publisher sync_output, sync_output_filtered;
 
 			//virtual void detectorFunction();	

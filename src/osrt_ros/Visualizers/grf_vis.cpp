@@ -2,6 +2,7 @@
 #include "experimental/GRFMPrediction.h"
 #include "opensimrt_msgs/Dual.h"
 #include <SimTKcommon/internal/BigMatrix.h>
+#include "osrt_ros/utils.h"
 
 using opensimrt_msgs::DualConstPtr;
 
@@ -23,10 +24,10 @@ void Visualizers::GrfVis::callback(const DualConstPtr &msg) {
 		q[i] = msg->q.data[i];
 	}
 	//get grfs from message
+	OpenSimRT::GRFMPrediction::Output grfmOutput;
 	
 	try {
 		visualizer->update(q);
-		OpenSimRT::GRFMPrediction::Output grfmOutput;
 		// after update q
 		ROS_DEBUG_STREAM("updated visuals ok");
 		rightGRFDecorator->update(grfmOutput.right.point, grfmOutput.right.force);

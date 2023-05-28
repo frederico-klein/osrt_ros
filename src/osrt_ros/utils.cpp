@@ -6,6 +6,20 @@
 #include "ros/ros.h"
 #include "osrt_ros/utils.h"
 #include "opensimrt_msgs/CommonTimed.h"
+
+//TODO; maybe move to msgs. 
+//
+//here we have message converters, not really generic utils. 
+//
+//pattern : i have some opensim object and i pass it to the converter and it will return me the message i need for the publisher like
+//
+// ros_msg_obj = message_converter (opensim_obj A, args* )
+//
+//
+// then opensimrt_msgs will generate a library and have some headers we can load and get the necessary conversions working. 
+//
+
+
 opensimrt_msgs::PosVelAccTimed get_as_ik_filtered_msg(std_msgs::Header h, double t, SimTK::Vector q, SimTK::Vector qDot, SimTK::Vector qDDot)
 {
 	opensimrt_msgs::PosVelAccTimed msg_filtered;
@@ -45,4 +59,32 @@ void update_pose(opensimrt_msgs::CommonTimed& msg, double t, SimTK::Vector q)
 	}
 }
 
+opensimrt_msgs::CommonTimed get_GRFMs_as_common_msg(OpenSimRT::GRFMNonSmooth::Output grfmOutput, double t, std_msgs::Header h)
+{
+	//TODO: NO LABELS FOR ORDER??
+	//
+
+	//OpenSim::TimeSeriesTable output;
+	std::vector<double> p;
+	auto a = grfmOutput.right.toVector() ;
+	auto b = grfmOutput.left.toVector() ;
+
+	p.insert(p.end(),a.begin(),a.end());
+	p.insert(p.end(),b.begin(),b.end());
+	//output.appendRow(grfmOutput.t,p);
+	opensimrt_msgs::CommonTimed msg;
+	if (false)
+	{
+		std_msgs::Header h;
+		h.frame_id = "subject";
+		h.stamp = ros::Time::now();
+		msg.header = h;
+	} else
+	{
+		msg.header = h; //will this break? it will be publishing messages in the past
+	}
+	msg.time = t;
+	msg.data.insert(msg.data.end(), p.begin(),p.end());
+	return msg;
+}
 
