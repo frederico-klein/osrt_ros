@@ -3,6 +3,7 @@
 
 void Visualizers::DualSinkVis::callback(const opensimrt_msgs::DualConstPtr &message)
 {
+	ROS_INFO_STREAM("callback dialvissink reached received message:" << message);
 	//initialize q
 	SimTK::Vector q(message->q.data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (int i=0;i<message->q.data.size(); i++)
@@ -21,6 +22,8 @@ void Visualizers::DualSinkVis::callback(const opensimrt_msgs::DualConstPtr &mess
 }
 void Visualizers::DualSinkVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr &message)
 {
+	ROS_INFO_STREAM("callback dialvissink filtered reached received message:" << message);
+	
 	//initialize q
 	SimTK::Vector q(message->qqq.d0_data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (int i=0;i<message->qqq.d0_data.size(); i++)

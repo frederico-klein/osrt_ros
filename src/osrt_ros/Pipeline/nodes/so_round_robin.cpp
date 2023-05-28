@@ -3,7 +3,7 @@
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "round_robin_hot_mess");
-	ros::NodeHandle n;
+	ros::NodeHandle n("~");
 
 	Pipeline::SoRR l(n,4);
 	l.init();

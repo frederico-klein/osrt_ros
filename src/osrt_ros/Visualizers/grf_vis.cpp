@@ -17,6 +17,7 @@ void Visualizers::GrfVis::after_vis()
 }
 
 void Visualizers::GrfVis::callback(const DualConstPtr &msg) {
+	ROS_ERROR_STREAM("not implemented");
 	//get q from message
 	SimTK::Vector q(msg->q.data.size());
 	for (int i=0;i<msg->q.data.size(); i++)
@@ -37,4 +38,10 @@ void Visualizers::GrfVis::callback(const DualConstPtr &msg) {
 		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" << std::endl
 				<< e.what());
 	}
+}
+
+void Visualizers::GrfVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr & msg)
+{
+	ROS_ERROR_STREAM("not implemented");
+
 }

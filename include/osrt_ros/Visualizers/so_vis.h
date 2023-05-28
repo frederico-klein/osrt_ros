@@ -11,12 +11,24 @@ namespace Visualizers
 	class SoVis:public Visualizers::DualSinkVis
 	{
 		public:
-			SoVis() {}
+			SoVis() {
+				ROS_INFO_STREAM("instatiated SoVis");
+			}
 			~SoVis() {}
 			void callback(const opensimrt_msgs::DualConstPtr& message);
 			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
 
-			void before_vis();
+			/*virtual void before_vis()
+			{
+				ROS_INFO_STREAM("adding subscribers");
+				ros::NodeHandle nh("~");
+				sub = nh.subscribe("dual_input",1, &Visualizers::SoVis::callback, this);
+
+				sub_filtered = nh.subscribe("dual_input_filtered",1, &Visualizers::SoVis::callback_filtered, this);
+				ROS_INFO_STREAM("added subscribers ok.");
+				
+			}*/
+
 			//void after_callback();
 	};
 

@@ -14,6 +14,7 @@
 #include "signal.h"
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/so.h"
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -172,6 +173,9 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 
 	msg_out.events = e;
 	pub.publish(msg_out);
+	
+	opensimrt_msgs::Dual msg_dual = Osb::get_SO_as_Dual(h,t,q,soOutput);
+	sync_output.publish(msg_dual);
 	try {
 
 		visualizer->update(q, soOutput.am);
@@ -180,7 +184,7 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 	{
 		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
-
+	
 	try{
 
 		// log data (use filter time to align with delay)

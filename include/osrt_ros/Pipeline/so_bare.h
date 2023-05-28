@@ -1,6 +1,7 @@
 #ifndef PIPELINE_SO_BARE_HEADER_FBK_26052023
 #define PIPELINE_SO_BARE_HEADER_FBK_26052023
 
+#include "opensimrt_msgs/Dual.h"
 #include "opensimrt_msgs/Events.h"
 #include "SignalProcessing.h"
 #include "Visualization.h"
@@ -21,7 +22,7 @@ namespace Pipeline
 			SoBare();
 			~SoBare();
 			ros::NodeHandle nh{"~"};
-			opensimrt_msgs::CommonTimed run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
+			opensimrt_msgs::Dual run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 
 			void onInit();
 			void finish();
@@ -29,10 +30,7 @@ namespace Pipeline
 			OpenSimRT::MuscleOptimization* so;
 			OpenSimRT::MuscleOptimization::OptimizationParameters optimizationParameters;
 			OpenSim::Model* model;
-			OpenSimRT::BasicModelVisualizer* visualizer;
 			OpenSimRT::MomentArmFunctionT calcMomentArm; 
-			OpenSim::TimeSeriesTable fmLogger;
-			OpenSim::TimeSeriesTable amLogger;
 
 	};
 

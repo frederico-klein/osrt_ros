@@ -25,7 +25,7 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 		pubs_.push_back(node_handle_.advertise<opensimrt_msgs::Dual>(pub_name,1000)); //publishes the input values for each thread
 		pubs_filtered.push_back(node_handle_.advertise<opensimrt_msgs::DualPos>(pub_name+"_filtered",1000)); //publishes the input values for each thread
 	}
-	outcome_pub = node_handle_.advertise<opensimrt_msgs::CommonTimed>("output",1000); //publishes the combined SO values
+	outcome_pub = node_handle_.advertise<opensimrt_msgs::Dual>("output_combined",1000); //publishes the combined SO values
 }
 
 void Pipeline::SoRR::init()
@@ -120,14 +120,10 @@ void Pipeline::SoRR::runRR(const std_msgs::Header h, double t, SimTK::Vector q, 
 	ROS_INFO_STREAM("I heard: [something...] in [" << process << "] [thread=" << boost::this_thread::get_id() << "]");
 	ROS_INFO("This is a long thread and takes long to execute each thing");
 	//I kinda need an output though.
-	opensimrt_msgs::CommonTimed out_msg;
 	//run actual process
-	out_msg = sos[process].run(h,t, q,tau,e);
+	auto out_msg = sos[process].run(h,t, q,tau,e);
 	
-	out_msg.header = h;
-	out_msg.events = e;
-	SimTK::Vector so_am(2);
-	SimTK::Vector so_fm(2);
+	//out_msg.events = e;
 	ROS_INFO_STREAM("Thread " << process << " finished exectution. [thread=" << boost::this_thread::get_id() <<"]"); 
 	//out_msg.data = outcome_of_thread.str();
 

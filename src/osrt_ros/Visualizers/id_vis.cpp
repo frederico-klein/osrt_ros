@@ -7,6 +7,7 @@ using opensimrt_msgs::DualConstPtr;
 
 void Visualizers::IdVis::callback(const DualConstPtr &msg) {
 	//get q from message
+	ROS_ERROR_STREAM("not implemented");
 	SimTK::Vector q;
 	try {
 		visualizer->update(q);
@@ -22,3 +23,7 @@ void Visualizers::IdVis::callback(const DualConstPtr &msg) {
 	}
 }
 
+void Visualizers::IdVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr &msg)
+{
+	ROS_ERROR_STREAM("not implemented");
+}
