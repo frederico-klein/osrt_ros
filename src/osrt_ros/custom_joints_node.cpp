@@ -20,52 +20,6 @@
 
 using namespace std;
 
-//TODO: this whole implementation is a hack. 
-//I would ideally get this from opensim somehow (and hence deal with different models and complex joints that don't exist in an URDF),
-//since opensim is already calculating this for its own visualization
-
-map<string, int> rjoint_to_ojoint 
-{
-	{"hip_r_RX", 6},
-		{"hip_r_RY", 7},
-		{"hip_r_RZ", 8},
-		{"knee_r_RX",15},
-		{"knee_r_RZ",-1},
-		{"knee_r_RY",-1},
-		{"ankle_r",17},
-		{"hip_l_RX",9},
-		{"hip_l_RY",10},
-		{"hip_l_RZ",11},
-		{"knee_l_RX",16},
-		{"knee_l_RZ",-1},
-		{"knee_l_RY",-1},
-		{"ankle_l",18},
-		{"back_RX",12},
-		{"back_RY",13},
-		{"back_RZ",14},
-};
-
-std::vector<std::string> labels = {
-	"base_tilt", 		//0
-	"base_list", 		//1
-	"base_rotation", 	//2
-	"base_tx", 		//3
-	"base_ty", 		//4
-	"base_tz", 		//5
-	"hip_flexion_r", 	//6
-	"hip_adduction_r",	//7
-	"hip_rotation_r",	//8
-	"hip_flexion_l",	//9
-	"hip_adduction_l",	//10
-	"hip_rotation_l",	//11
-	"lumbar_extension",	//12
-	"lumbar_bending",	//13
-	"lumbar_rotation",	//14
-	"knee_angle_r",		//15
-	"knee_angle_l",		//16
-	"ankle_angle_r",	//17
-	"ankle_angle_l"};	//18
-
 std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs::Quaternion q, geometry_msgs::Vector3 t)
 {
 	std::vector<geometry_msgs::TransformStamped>	v;		
@@ -124,15 +78,14 @@ class qJointPublisher: public Ros::CommonNode
 		std::map<std::string, std::string> RJointToOJoint;
 		std::vector<std::string> names;
 		std::map<std::string, int> label_map;
-		//std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
 		tf2_ros::StaticTransformBroadcaster static_broadcaster;
 		void onInit()
 		{
-			CommonNode::onInit();
-			//ROS_INFO_STREAM(labels);
-			for (int i=0;i<labels.size();i++)
+			CommonNode::onInit(1);
+			for (int i=0;i<input_labels.size();i++)
 			{
-				label_map.insert(std::pair<std::string, int>(labels[i],i));
+				ROS_INFO_STREAM(input_labels[i]);
+				label_map.insert(std::pair<std::string, int>(input_labels[i],i));
 			}
 		}
 		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)
@@ -199,8 +152,6 @@ class qJointPublisher: public Ros::CommonNode
 			{
 				double joint_value = 0;
 				int index = label_map[RJointToOJoint[a]];
-				int index2 = rjoint_to_ojoint[a];
-				assert(index = index2);
 				if (index>=0)
 				{
 					joint_value = q[index];
