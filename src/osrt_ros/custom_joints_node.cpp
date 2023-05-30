@@ -16,6 +16,7 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <vector>
 
 using namespace std;
 
@@ -45,12 +46,12 @@ map<string, int> rjoint_to_ojoint
 };
 
 std::vector<std::string> labels = {
-	"pelvis_tilt", 		//0
-	"pelvis_list", 		//1
-	"pelvis_rotation", 	//2
-	"pelvis_tx", 		//3
-	"pelvis_ty", 		//4
-	"pelvis_tz", 		//5
+	"base_tilt", 		//0
+	"base_list", 		//1
+	"base_rotation", 	//2
+	"base_tx", 		//3
+	"base_ty", 		//4
+	"base_tz", 		//5
 	"hip_flexion_r", 	//6
 	"hip_adduction_r",	//7
 	"hip_rotation_r",	//8
@@ -69,17 +70,17 @@ std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs
 {
 	std::vector<geometry_msgs::TransformStamped>	v;		
 	auto time = ros::Time::now();
-	geometry_msgs::TransformStamped pelvisTF_r;
-	pelvisTF_r.header.stamp = time;
-	pelvisTF_r.header.frame_id = "pelvis_t";
-	pelvisTF_r.child_frame_id = "pelvis";
-	pelvisTF_r.transform.rotation = q;
-	v.push_back(pelvisTF_r);
-	//pelvisTF_r.transform.translation = ; default is already zero no need to think about this.
-	geometry_msgs::TransformStamped pelvisTF_t;
-	pelvisTF_t.header.stamp = time;
-	pelvisTF_t.header.frame_id = "subject_opensim";
-	pelvisTF_t.child_frame_id = "pelvis_t";
+	geometry_msgs::TransformStamped baseTF_r;
+	baseTF_r.header.stamp = time;
+	baseTF_r.header.frame_id = "base_t";
+	baseTF_r.child_frame_id = "base";
+	baseTF_r.transform.rotation = q;
+	v.push_back(baseTF_r);
+	//baseTF_r.transform.translation = ; default is already zero no need to think about this.
+	geometry_msgs::TransformStamped baseTF_t;
+	baseTF_t.header.stamp = time;
+	baseTF_t.header.frame_id = "subject_opensim";
+	baseTF_t.child_frame_id = "base_t";
 	geometry_msgs::Quaternion eye_q;
 	eye_q.w = 1;
 	/*geometry_msgs::Quaternion ros_q;
@@ -87,10 +88,10 @@ std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs
 	  ros_q.y = 0.7071;
 	  ros_q.z = 0.7071;
 	  ros_q.w = 0;
-	  pelvisTF_t.transform.rotation = ros_q;*/
-	pelvisTF_t.transform.rotation = eye_q;
-	pelvisTF_t.transform.translation = t;
-	v.push_back(pelvisTF_t);
+	  baseTF_t.transform.rotation = ros_q;*/
+	baseTF_t.transform.rotation = eye_q;
+	baseTF_t.transform.translation = t;
+	v.push_back(baseTF_t);
 	return v;
 }
 
@@ -111,12 +112,30 @@ class qJointPublisher: public Ros::CommonNode
 		ROS_INFO_STREAM("case_translation" << case_translation);
 		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
 		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
+		nh.getParam("joint_mapping", RJointToOJoint);
+		//nh.getParam("ros_joints", names);
+		for (auto el:RJointToOJoint)
+			names.push_back(el.first);
+		for (auto name:names)
+			ROS_INFO_STREAM(name);
 	}
-		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
-		std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
-		tf2_ros::StaticTransformBroadcaster static_broadcaster;
 
-		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 pelvis_translation, geometry_msgs::Quaternion pelvis_rotation)
+		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
+		std::map<std::string, std::string> RJointToOJoint;
+		std::vector<std::string> names;
+		std::map<std::string, int> label_map;
+		//std::vector<std::string> names = {"hip_r_RX","hip_r_RY","hip_r_RZ","knee_r_RX","knee_r_RZ","knee_r_RY","ankle_r","hip_l_RX","hip_l_RY","hip_l_RZ","knee_l_RX","knee_l_RZ","knee_l_RY","ankle_l","back_RX","back_RY","back_RZ"};
+		tf2_ros::StaticTransformBroadcaster static_broadcaster;
+		void onInit()
+		{
+			CommonNode::onInit();
+			//ROS_INFO_STREAM(labels);
+			for (int i=0;i<labels.size();i++)
+			{
+				label_map.insert(std::pair<std::string, int>(labels[i],i));
+			}
+		}
+		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)
 		{
 			//std_msgs::Header h;
 			//h.stamp = ros::Time::now();
@@ -126,19 +145,19 @@ class qJointPublisher: public Ros::CommonNode
 			msg.name = names;
 			msg.position = joint_values;
 			chatter_pub.publish(msg);
-			/// let's publish a tf for the pelvis now!
-			geometry_msgs::TransformStamped pelvisTF;
-			pelvisTF.header.stamp = ros::Time::now();
-			pelvisTF.header.frame_id = parent_base_frame;
-			pelvisTF.child_frame_id = model_base_frame;
+			/// let's publish a tf for the base now!
+			geometry_msgs::TransformStamped baseTF;
+			baseTF.header.stamp = ros::Time::now();
+			baseTF.header.frame_id = parent_base_frame;
+			baseTF.child_frame_id = model_base_frame;
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
-			pelvisTF.transform.translation = pelvis_translation;
-			pelvisTF.transform.rotation = pelvis_rotation;
+			baseTF.transform.translation = base_translation;
+			baseTF.transform.rotation = base_rotation;
 			/*for (auto tf_:rotate_then_translate(r,t))
 			  static_broadcaster.sendTransform(tf_);*/
-			ROS_INFO_STREAM("initial pelvisTF" << pelvisTF);
-			static_broadcaster.sendTransform(pelvisTF);
+			ROS_DEBUG_STREAM("initial baseTF" << baseTF);
+			static_broadcaster.sendTransform(baseTF);
 
 
 		}
@@ -179,7 +198,9 @@ class qJointPublisher: public Ros::CommonNode
 			for (auto a:names)
 			{
 				double joint_value = 0;
-				int index = rjoint_to_ojoint[a];
+				int index = label_map[RJointToOJoint[a]];
+				int index2 = rjoint_to_ojoint[a];
+				assert(index = index2);
 				if (index>=0)
 				{
 					joint_value = q[index];
@@ -187,11 +208,11 @@ class qJointPublisher: public Ros::CommonNode
 				}
 				values.push_back(joint_value);
 			}
-			/// let's publish a tf for the pelvis now!
+			/// let's publish a tf for the base now!
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
 			// In any case, the right way should be to set this transformation globally and always use the same instead of defining it everywhere.
-			geometry_msgs::Quaternion r;// = pelvisTF.transform.rotation;
-			geometry_msgs::Vector3 t;// = pelvisTF.transform.translation;
+			geometry_msgs::Quaternion r;// = baseTF.transform.rotation;
+			geometry_msgs::Vector3 t;// = baseTF.transform.translation;
 
 			switch (case_translation){
 				case 0:

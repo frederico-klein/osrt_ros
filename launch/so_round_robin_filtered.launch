@@ -2,10 +2,12 @@
 <launch>
 	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 	<arg name="get_second_label" default="true"/>
+	<arg name="n_proc" default="64"/>
 
         <node pkg="osrt_ros" type="so_rr" 	name="so_rr_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
+                <param name="n_proc" 			value="$(arg n_proc)" />
 
 		<remap from="/so_rr_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
