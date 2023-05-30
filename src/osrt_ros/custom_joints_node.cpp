@@ -59,19 +59,18 @@ class qJointPublisher: public Ros::CommonNode
 	{
 		ros::NodeHandle nh("~");
 		if (nh.param<int>("case_rotation", case_rotation,2))
-			ROS_INFO_STREAM("has param!");
+			ROS_DEBUG_STREAM("has param!");
 		ROS_INFO_STREAM("case_rotation" << case_rotation);
 		if (nh.param<int>("case_translation",case_translation, 4))
-			ROS_INFO_STREAM("has param!");
+			ROS_DEBUG_STREAM("has param!");
 		ROS_INFO_STREAM("case_translation" << case_translation);
 		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
 		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
 		nh.getParam("joint_mapping", RJointToOJoint);
-		//nh.getParam("ros_joints", names);
 		for (auto el:RJointToOJoint)
 			names.push_back(el.first);
 		for (auto name:names)
-			ROS_INFO_STREAM(name);
+			ROS_DEBUG_STREAM(name);
 	}
 
 		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
@@ -84,16 +83,13 @@ class qJointPublisher: public Ros::CommonNode
 			CommonNode::onInit(1);
 			for (int i=0;i<input_labels.size();i++)
 			{
-				ROS_INFO_STREAM(input_labels[i]);
+				ROS_DEBUG_STREAM(input_labels[i]);
 				label_map.insert(std::pair<std::string, int>(input_labels[i],i));
 			}
 		}
 		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)
 		{
-			//std_msgs::Header h;
-			//h.stamp = ros::Time::now();
 			sensor_msgs::JointState msg;
-			//msg.header = h;
 			msg.header = h;
 			msg.name = names;
 			msg.position = joint_values;
@@ -146,7 +142,6 @@ class qJointPublisher: public Ros::CommonNode
 		}
 		void parse_msg(std_msgs::Header h, std::vector<double> q)
 		{
-			//msg.header = h;
 			std::vector<double> values;
 			for (auto a:names)
 			{
