@@ -87,7 +87,7 @@ class qJointPublisher: public Ros::CommonNode
 			geometry_msgs::Quaternion zero_rot;
 			zero_rot.w = 1;
 			std_msgs::Header h;
-			h.frame_id = "subject";
+			h.frame_id = "map";
 			ros::Rate poll_rate(100);
 			while(chatter_pub.getNumSubscribers() == 0)
 				poll_rate.sleep();
@@ -113,6 +113,7 @@ class qJointPublisher: public Ros::CommonNode
 			std::vector<double> values;
 			for (auto a:names)
 			{
+				ROS_DEBUG_STREAM("setting joint " << a);
 				double joint_value = 0;
 				std::string some_joint = RJointToOJoint[a];
 				if (some_joint == "")
@@ -122,7 +123,7 @@ class qJointPublisher: public Ros::CommonNode
 				else
 				{
 				int index = label_map[RJointToOJoint[a]];
-				ROS_INFO_STREAM("index: "<< index);
+				ROS_DEBUG_STREAM("index: "<< index);
 				joint_value = q[index];
 					//joint_value = msg_ik->data[index]/180*3.14159265;
 				}
@@ -137,12 +138,12 @@ class qJointPublisher: public Ros::CommonNode
 			t.x = q[5]; t.y = q[3]; t.z = q[4];
 			auto R_Base = SimTK::Rotation();
 			R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[1], SimTK::YAxis, q[0], SimTK::XAxis);
-			ROS_INFO_STREAM("radians" << q[0] << " " <<q[1] << " " << q[2]);
-			ROS_INFO_STREAM("degrees" << SimTK::convertRadiansToDegrees(q[0]) << " " <<SimTK::convertRadiansToDegrees(q[1]) << " " << SimTK::convertRadiansToDegrees(q[2]));
-			ROS_WARN_STREAM("base orientation matrix in OpenSim coordinates :\n" << R_Base);
+			ROS_DEBUG_STREAM("radians" << q[0] << " " <<q[1] << " " << q[2]);
+			ROS_DEBUG_STREAM("degrees" << SimTK::convertRadiansToDegrees(q[0]) << " " <<SimTK::convertRadiansToDegrees(q[1]) << " " << SimTK::convertRadiansToDegrees(q[2]));
+			ROS_DEBUG_STREAM("base orientation matrix in OpenSim coordinates :\n" << R_Base);
 			//to quaternion
 			SimTK::Quaternion qz= R_Base.convertRotationToQuaternion();
-			ROS_INFO_STREAM("qz as Quaternion" << qz);
+			ROS_DEBUG_STREAM("qz as Quaternion" << qz);
 			//assign to r
 			r.w = qz[0];
 			r.x = qz[1];
