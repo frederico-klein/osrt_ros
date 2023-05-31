@@ -77,12 +77,6 @@ class qJointPublisher: public Ros::CommonNode
 		qJointPublisher() : Ros::CommonNode(false)
 	{
 		ros::NodeHandle nh("~");
-		if (nh.param<int>("case_rotation", case_rotation,2))
-			ROS_DEBUG_STREAM("has param!");
-		ROS_INFO_STREAM("case_rotation" << case_rotation);
-		if (nh.param<int>("case_translation",case_translation, 4))
-			ROS_DEBUG_STREAM("has param!");
-		ROS_INFO_STREAM("case_translation" << case_translation);
 		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
 		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
 		nh.getParam("joint_mapping", RJointToOJoint);
@@ -180,65 +174,9 @@ class qJointPublisher: public Ros::CommonNode
 			geometry_msgs::Quaternion r;// = baseTF.transform.rotation;
 			geometry_msgs::Vector3 t;// = baseTF.transform.translation;
 
-			switch (case_translation){
-				case 0:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 0");
-					t.x = q[3]; t.y = q[4]; t.z = q[5];
-					break;
-				case 1:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 1");
-					t.x = q[3]; t.y = q[5]; t.z = q[4];
-					break;
-				case 2:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 2");
-					t.x = q[4]; t.y = q[3]; t.z = q[5];
-					break;
-				case 3:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 3");
-					t.x = q[4]; t.y = q[5]; t.z = q[3];
-					break;
-				case 4:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 4");
 					t.x = q[5]; t.y = q[3]; t.z = q[4];
-					break;
-				case 5:
-					ROS_INFO_STREAM_ONCE("CASE TRANSLATION 5");
-					t.x = q[5]; t.y = q[4]; t.z = q[3];
-					break;
-				default:
-					ROS_ERROR_STREAM("unknown case");
-					return;
-			}
 			auto R_Base = SimTK::Rotation();
-			switch (case_rotation){
-				case 0:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 0");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[1], SimTK::YAxis, q[2], SimTK::ZAxis);
-					break;
-				case 1:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 1");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[2], SimTK::ZAxis, q[1], SimTK::YAxis);
-					break;
-				case 2:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 2");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::YAxis, q[0], SimTK::XAxis, q[2], SimTK::ZAxis);
-					break;
-				case 3:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 3");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::YAxis, q[2], SimTK::ZAxis, q[0], SimTK::XAxis);
-					break;
-				case 4:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 4");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[0], SimTK::XAxis, q[1], SimTK::YAxis);
-					break;
-				case 5:
-					ROS_INFO_STREAM_ONCE("CASE ROTATION 5");
 					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[1], SimTK::YAxis, q[0], SimTK::XAxis);
-					break;
-				default:
-					ROS_ERROR_STREAM("unknown case");
-					return;
-			}
 			ROS_INFO_STREAM("radians" << q[0] << " " <<q[1] << " " << q[2]);
 			ROS_INFO_STREAM("degrees" << SimTK::convertRadiansToDegrees(q[0]) << " " <<SimTK::convertRadiansToDegrees(q[1]) << " " << SimTK::convertRadiansToDegrees(q[2]));
 			ROS_WARN_STREAM("base orientation matrix in OpenSim coordinates :\n" << R_Base);
@@ -246,7 +184,6 @@ class qJointPublisher: public Ros::CommonNode
 			SimTK::Quaternion qz= R_Base.convertRotationToQuaternion();
 			ROS_INFO_STREAM("qz as Quaternion" << qz);
 			//assign to r
-			//
 			r.w = qz[0];
 			r.x = qz[1];
 			r.y = qz[2];
