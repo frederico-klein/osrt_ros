@@ -4,7 +4,7 @@
 		<param name="case_rotation"    value="5"/>
 		<param name="case_translation" value="0"/>
 		<param name="model_base_frame" value="pelvis"/>
-		<param name="parent_base_frame" value="subject_opensim"/>
+		<param name="parent_base_frame" value="map"/>
 		<rosparam command="load" file="$(find gait1992_description)/joint_mapping.yaml" />
 		<!--remap from="/custom_joints/input" to="/ik/output"/ -->
 		<remap from="/custom_joints/input_filtered" to="/ik/output_filtered"/>

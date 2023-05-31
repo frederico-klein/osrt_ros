@@ -166,6 +166,7 @@ class qJointPublisher: public Ros::CommonNode
 			{
 				double joint_value = 0;
 				int index = label_map[RJointToOJoint[a]];
+				ROS_INFO_STREAM("index: "<< index);
 				if (index>=0)
 				{
 					joint_value = q[index];
