@@ -22,51 +22,6 @@
 
 using namespace std;
 
-tf2::Quaternion convert_zyx_to_quaternion(double z, double y, double x) {
-	tf2::Quaternion q;
-	double cy = cos(y * 0.5);
-	double sy = sin(y * 0.5);
-	double cz = cos(z * 0.5);
-	double sz = sin(z * 0.5);
-	double cx = cos(x * 0.5);
-	double sx = sin(x * 0.5);
-
-	q.setW( cy * cz * cx + sy * sz * sx);
-	q.setX( cy * sz * cx - sy * cz * sx);
-	q.setY( sy * cz * cx + cy * sz * sx);
-	q.setZ( sy * sz * cx - cy * cz * sx);
-
-	return q;
-}
-
-std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs::Quaternion q, geometry_msgs::Vector3 t)
-{
-	std::vector<geometry_msgs::TransformStamped>	v;		
-	auto time = ros::Time::now();
-	geometry_msgs::TransformStamped baseTF_r;
-	baseTF_r.header.stamp = time;
-	baseTF_r.header.frame_id = "base_t";
-	baseTF_r.child_frame_id = "base";
-	baseTF_r.transform.rotation = q;
-	v.push_back(baseTF_r);
-	//baseTF_r.transform.translation = ; default is already zero no need to think about this.
-	geometry_msgs::TransformStamped baseTF_t;
-	baseTF_t.header.stamp = time;
-	baseTF_t.header.frame_id = "subject_opensim";
-	baseTF_t.child_frame_id = "base_t";
-	geometry_msgs::Quaternion eye_q;
-	eye_q.w = 1;
-	/*geometry_msgs::Quaternion ros_q;
-	  ros_q.x = 0;
-	  ros_q.y = 0.7071;
-	  ros_q.z = 0.7071;
-	  ros_q.w = 0;
-	  baseTF_t.transform.rotation = ros_q;*/
-	baseTF_t.transform.rotation = eye_q;
-	baseTF_t.transform.translation = t;
-	v.push_back(baseTF_t);
-	return v;
-}
 
 class qJointPublisher: public Ros::CommonNode
 {
@@ -159,11 +114,16 @@ class qJointPublisher: public Ros::CommonNode
 			for (auto a:names)
 			{
 				double joint_value = 0;
+				std::string some_joint = RJointToOJoint[a];
+				if (some_joint == "")
+				{
+					joint_value = 0;
+				}
+				else
+				{
 				int index = label_map[RJointToOJoint[a]];
 				ROS_INFO_STREAM("index: "<< index);
-				if (index>=0)
-				{
-					joint_value = q[index];
+				joint_value = q[index];
 					//joint_value = msg_ik->data[index]/180*3.14159265;
 				}
 				values.push_back(joint_value);
@@ -174,9 +134,9 @@ class qJointPublisher: public Ros::CommonNode
 			geometry_msgs::Quaternion r;// = baseTF.transform.rotation;
 			geometry_msgs::Vector3 t;// = baseTF.transform.translation;
 
-					t.x = q[5]; t.y = q[3]; t.z = q[4];
+			t.x = q[5]; t.y = q[3]; t.z = q[4];
 			auto R_Base = SimTK::Rotation();
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[1], SimTK::YAxis, q[0], SimTK::XAxis);
+			R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[1], SimTK::YAxis, q[0], SimTK::XAxis);
 			ROS_INFO_STREAM("radians" << q[0] << " " <<q[1] << " " << q[2]);
 			ROS_INFO_STREAM("degrees" << SimTK::convertRadiansToDegrees(q[0]) << " " <<SimTK::convertRadiansToDegrees(q[1]) << " " << SimTK::convertRadiansToDegrees(q[2]));
 			ROS_WARN_STREAM("base orientation matrix in OpenSim coordinates :\n" << R_Base);
