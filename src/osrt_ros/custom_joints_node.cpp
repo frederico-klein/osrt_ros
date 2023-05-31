@@ -9,6 +9,8 @@
 #include "ros/time.h"
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Header.h"
+#include <SimTKcommon/Orientation.h>
+#include <SimTKcommon/internal/Rotation.h>
 #include <sstream>
 #include "Ros/include/common_node.h"
 #include <map>
@@ -19,6 +21,23 @@
 #include <vector>
 
 using namespace std;
+
+tf2::Quaternion convert_zyx_to_quaternion(double z, double y, double x) {
+	tf2::Quaternion q;
+	double cy = cos(y * 0.5);
+	double sy = sin(y * 0.5);
+	double cz = cos(z * 0.5);
+	double sz = sin(z * 0.5);
+	double cx = cos(x * 0.5);
+	double sx = sin(x * 0.5);
+
+	q.setW( cy * cz * cx + sy * sz * sx);
+	q.setX( cy * sz * cx - sy * cz * sx);
+	q.setY( sy * cz * cx + cy * sz * sx);
+	q.setZ( sy * sz * cx - cy * cz * sx);
+
+	return q;
+}
 
 std::vector<geometry_msgs::TransformStamped> rotate_then_translate(geometry_msgs::Quaternion q, geometry_msgs::Vector3 t)
 {
@@ -189,43 +208,50 @@ class qJointPublisher: public Ros::CommonNode
 					ROS_ERROR_STREAM("unknown case");
 					return;
 			}
-
-			////t.x = q[5]; t.y = q[3]; t.z = q[4];
-			tf2::Quaternion quat;
+			auto R_Base = SimTK::Rotation();
 			switch (case_rotation){
 				case 0:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 0");
-					quat.setEuler(q[0], q[1], q[2]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[1], SimTK::YAxis, q[2], SimTK::ZAxis);
 					break;
 				case 1:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 1");
-					quat.setEuler(q[0], q[2], q[1]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[2], SimTK::YAxis, q[1], SimTK::ZAxis);
 					break;
 				case 2:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 2");
-					quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::XAxis, q[0], SimTK::YAxis, q[2], SimTK::ZAxis);
 					break;
 				case 3:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 3");
-					quat.setEuler(q[1], q[2], q[0]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::XAxis, q[2], SimTK::YAxis, q[0], SimTK::ZAxis);
 					break;
 				case 4:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 4");
-					quat.setEuler(q[2], q[0], q[1]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::XAxis, q[0], SimTK::YAxis, q[1], SimTK::ZAxis);
 					break;
 				case 5:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 5");
-					quat.setEuler(q[2], q[1], q[0]); //TODO: based on visual inspection. Needs confirmation.
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::XAxis, q[1], SimTK::YAxis, q[0], SimTK::ZAxis);
 					break;
 				default:
 					ROS_ERROR_STREAM("unknown case");
 					return;
 			}
-			////quat.setEuler(q[1], q[0], q[2]); //TODO: based on visual inspection. Needs confirmation.
-			r.x = quat.x();
-			r.y = quat.y();
-			r.z = quat.z();
-			r.w = quat.w();
+			ROS_INFO_STREAM("radians" << q[0] << " " <<q[1] << " " << q[2]);
+			ROS_INFO_STREAM("degrees" << SimTK::convertRadiansToDegrees(q[0]) << " " <<SimTK::convertRadiansToDegrees(q[1]) << " " << SimTK::convertRadiansToDegrees(q[2]));
+			ROS_WARN_STREAM("base orientation matrix in OpenSim coordinates :\n" << R_Base);
+			//to quaternion
+			SimTK::Quaternion qz= R_Base.convertRotationToQuaternion();
+			ROS_INFO_STREAM("qz as Quaternion" << qz);
+			//assign to r
+			//
+			r.w = qz[0];
+			r.x = qz[1];
+			r.y = qz[2];
+			r.z = qz[3];
+			////t.x = q[5]; t.y = q[3]; t.z = q[4];
+
 			pub_pose(h, values, t, r);
 		}
 };

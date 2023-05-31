@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
-		<param name="case_rotation"    value="5"/>
+		<param name="case_rotation"    value="0"/>
 		<param name="case_translation" value="0"/>
-		<param name="model_base_frame" value="urdf_pelvis"/>
+		<param name="model_base_frame" value="pelvis"/>
 		<param name="parent_base_frame" value="subject_opensim"/>
 		<rosparam command="load" file="$(find gait1992_description)/joint_mapping.yaml" />
 		<!--remap from="/custom_joints/input" to="/ik/output"/ -->
