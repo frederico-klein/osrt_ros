@@ -11,4 +11,5 @@
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
+	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
 </launch>

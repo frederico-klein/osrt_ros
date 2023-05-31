@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
-	<arg name="freq" default="25" />
+	<arg name="freq" default="100" />
 	<arg name="name" 		default="ximu3" />
 	<arg name="tf_frame_prefix" 	default="imu"/>
 

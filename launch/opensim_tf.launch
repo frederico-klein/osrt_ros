@@ -3,7 +3,7 @@
 	<arg name="freq" default="100"/>
 	<!-- TODO: merge those 2 frames probably -->
 	<!-- This looks like it is the correct transformation for ros to opensim -->
-	<node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject $(arg freq)" />
+	<!--node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject $(arg freq)" /-->
 	<!-- include file="$(find moticon_insoles)/launch/subject_fixer.launch"> 
 		<param name="body" value="subject_opensim" />
 	</include -->

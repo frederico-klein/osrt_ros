@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 
-	<arg name="freq" default="25" />
+	<arg name="freq" default="100" />
 	<arg name="name" 		default="ximu3" />
-	<arg name="tf_frame_prefix" 		default="imu" />
+	<arg name="tf_frame_prefix" 		default="imu/" />
 
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/torso $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)torso $(arg freq)" />
 	<!-- node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/pelvis $(arg freq)" / -->
-	<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/femur_r $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/femur_l $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/tibia_r $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/tibia_l $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/talus_r $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/talus_l $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)femur_r $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link4_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)femur_l $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link5_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)tibia_r $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link6_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)tibia_l $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link7_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)talus_r $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link8_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)talus_l $(arg freq)" />
 
 	<!-- torso pelvis femur_r femur_l tibia_r tibia_l talus_r talus_l -->
 

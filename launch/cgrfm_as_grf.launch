@@ -10,5 +10,4 @@
 		<!-- so this is weird, since it is a standalone service call, it is in the global namespace (or so thinks the node)  -->
 		<remap from="/in_labels" to="/ik/outlabels"/>
         </node>
-	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
 </launch>

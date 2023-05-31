@@ -45,8 +45,6 @@
 		<remap from="/grf_from_file/out_labels" to="/grf_node/out_labels"/>
 
 	</node>
-	<arg name="freq" default="25" />
-	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
 
 
 </launch>
