@@ -216,23 +216,23 @@ class qJointPublisher: public Ros::CommonNode
 					break;
 				case 1:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 1");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[2], SimTK::YAxis, q[1], SimTK::ZAxis);
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[0], SimTK::XAxis, q[2], SimTK::ZAxis, q[1], SimTK::YAxis);
 					break;
 				case 2:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 2");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::XAxis, q[0], SimTK::YAxis, q[2], SimTK::ZAxis);
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::YAxis, q[0], SimTK::XAxis, q[2], SimTK::ZAxis);
 					break;
 				case 3:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 3");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::XAxis, q[2], SimTK::YAxis, q[0], SimTK::ZAxis);
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[1], SimTK::YAxis, q[2], SimTK::ZAxis, q[0], SimTK::XAxis);
 					break;
 				case 4:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 4");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::XAxis, q[0], SimTK::YAxis, q[1], SimTK::ZAxis);
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[0], SimTK::XAxis, q[1], SimTK::YAxis);
 					break;
 				case 5:
 					ROS_INFO_STREAM_ONCE("CASE ROTATION 5");
-					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::XAxis, q[1], SimTK::YAxis, q[0], SimTK::ZAxis);
+					R_Base = SimTK::Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, q[2], SimTK::ZAxis, q[1], SimTK::YAxis, q[0], SimTK::XAxis);
 					break;
 				default:
 					ROS_ERROR_STREAM("unknown case");
