@@ -31,30 +31,6 @@
 		<param name="spline_order" 		value="3" />
 
         </node>
-	
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="torso"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="pelvis"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="femur_r"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="femur_l"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="tibia_r"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="tibia_l"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="talus_r"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
-		<arg name="imu_body" value="talus_l"/>
-	</include>
+	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch"/>
 </launch>
 

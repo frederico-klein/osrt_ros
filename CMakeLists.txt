@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 	sensor_msgs
 	tf
 	tf2
+	tf2_ros
 	)
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
 
@@ -44,6 +45,7 @@ catkin_package(CATKIN_DEPENDS
 	roscpp
 	sensor_msgs
 	tf2
+	tf2_ros
 	)
 
 message(NOTICE "Eigen3")

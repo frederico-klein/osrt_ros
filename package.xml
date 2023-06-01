@@ -27,4 +27,5 @@ See https://github.com/mysablehats/osrt_ros.git
   <depend>message_runtime</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
+  <depend>tf2_ros</depend>
 </package>
