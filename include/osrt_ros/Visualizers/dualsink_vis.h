@@ -5,6 +5,9 @@
 #include "opensimrt_msgs/DualPos.h"
 #include "osrt_ros/Visualizers/visualizer_common.h"
 #include "ros/node_handle.h"
+#include "opensimrt_msgs/MultiMessage.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/time_sequencer.h"
 
 namespace Visualizers
 {
@@ -12,8 +15,11 @@ namespace Visualizers
 	class DualSinkVis:public Visualizers::VisualizerCommon
 	{
 		public:
-			DualSinkVis() {}
+			DualSinkVis(): seq(sub_multi, ros::Duration(0.1), ros::Duration(0.01), 10) {}
 			virtual ~DualSinkVis() {}
+			message_filters::Subscriber<opensimrt_msgs::MultiMessage> sub_multi;
+			message_filters::TimeSequencer<opensimrt_msgs::MultiMessage> seq;
+			virtual void callback_multi(const opensimrt_msgs::MultiMessageConstPtr& message) {};
 			virtual void callback(const opensimrt_msgs::DualConstPtr& message);
 			virtual void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
 
@@ -24,6 +30,8 @@ namespace Visualizers
 				sub = nh.subscribe("dual_input",1, &Visualizers::DualSinkVis::callback, this);
 
 				sub_filtered = nh.subscribe("dual_input_filtered",1, &Visualizers::DualSinkVis::callback_filtered, this);
+				sub_multi.subscribe(nh, "multi_input", 1);
+				seq.registerCallback(&Visualizers::DualSinkVis::callback_multi, this);
 				ROS_INFO_STREAM("added subscribers ok.");
 				
 			}
