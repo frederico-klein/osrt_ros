@@ -3,6 +3,7 @@
 
 #include "opensimrt_msgs/Dual.h"
 #include "opensimrt_msgs/DualPos.h"
+#include "opensimrt_msgs/MultiMessage.h"
 #include "osrt_ros/Visualizers/dualsink_vis.h"
 
 namespace Visualizers
@@ -16,6 +17,7 @@ namespace Visualizers
 			}
 			~SoVis() {}
 			void callback(const opensimrt_msgs::DualConstPtr& message);
+			void callback_multi(const opensimrt_msgs::MultiMessageConstPtr& message);
 			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
 
 			/*virtual void before_vis()

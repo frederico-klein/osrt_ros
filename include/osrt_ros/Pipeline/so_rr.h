@@ -23,7 +23,7 @@ namespace Pipeline
 			std::vector<ros::Publisher> pubs_filtered;
 			//hack
 			std::vector<Pipeline::SoBare> sos;
-			ros::Publisher outcome_pub;
+			ros::Publisher outcome_pub, outcome_multi_pub;
 			int counter = 0;
 			int num_processes_;
 			SoRR(const ros::NodeHandle& node_handle, const int num_processes);

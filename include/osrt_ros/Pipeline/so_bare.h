@@ -2,10 +2,12 @@
 #define PIPELINE_SO_BARE_HEADER_FBK_26052023
 
 #include "opensimrt_msgs/Dual.h"
+#include "opensimrt_msgs/MultiMessage.h"
 #include "opensimrt_msgs/Events.h"
 #include "SignalProcessing.h"
 #include "Visualization.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/MultiMessage.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
 #include <SimTKcommon/internal/BigMatrix.h>
@@ -23,6 +25,7 @@ namespace Pipeline
 			~SoBare();
 			ros::NodeHandle nh{"~"};
 			opensimrt_msgs::Dual run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
+			opensimrt_msgs::MultiMessage run2(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 
 			void onInit();
 			void finish();

@@ -13,6 +13,7 @@
 #include <SimTKcommon/internal/Rotation.h>
 #include <sstream>
 #include "Ros/include/common_node.h"
+#include "tf2_ros/transform_broadcaster.h"
 #include <map>
 
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -45,7 +46,7 @@ class qJointPublisher: public Ros::CommonNode
 		std::map<std::string, std::string> RJointToOJoint;
 		std::vector<std::string> names;
 		std::map<std::string, int> label_map;
-		tf2_ros::StaticTransformBroadcaster static_broadcaster;
+		tf2_ros::TransformBroadcaster tf_broadcaster;
 		void onInit()
 		{
 			CommonNode::onInit(1);
@@ -72,9 +73,9 @@ class qJointPublisher: public Ros::CommonNode
 			baseTF.transform.translation = base_translation;
 			baseTF.transform.rotation = base_rotation;
 			/*for (auto tf_:rotate_then_translate(r,t))
-			  static_broadcaster.sendTransform(tf_);*/
+			  tf_broadcaster.sendTransform(tf_);*/
 			ROS_DEBUG_STREAM("initial baseTF" << baseTF);
-			static_broadcaster.sendTransform(baseTF);
+			tf_broadcaster.sendTransform(baseTF);
 
 
 		}

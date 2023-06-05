@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
+
+        <node pkg="osrt_ros" type="vis_so" 	name="so_visualization" output="screen">
+                <param name="model_file" 		value="$(arg model_file)" />
+		<param name="geometry_path" 		value="/srv/data/geometry_mobl" />
+		<param name="which_model_1_2" 		value="2" />
+
+		<remap from="/so_visualization/multi_input" to="/so_rr_node/output_multi"/>
+		<remap from="/so_visualization/multi_input_filtered" to="/so_rr_node/output_multi_filtered"/>
+		<remap from="/in_labels" to="/so/outlabels_multi"/>
+		
+        </node>
+
+</launch>
