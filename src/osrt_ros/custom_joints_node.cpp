@@ -23,6 +23,35 @@
 
 using namespace std;
 
+class OpenSimBaseTfPublisher
+{
+	public:
+		OpenSimBaseTfPublisher()
+		{
+			ros::NodeHandle nh("~");
+			nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
+			nh.param<std::string>("opensim_frame", opensim_frame, "subject_opensim");
+			opensim_rotation.w = 0.5;
+			opensim_rotation.x = 0.5;
+			opensim_rotation.y = 0.5;
+			opensim_rotation.z = 0.5;
+			t.header.frame_id = parent_base_frame;
+			t.child_frame_id = opensim_frame;
+			t.transform.rotation = opensim_rotation;
+			t.transform.translation = geometry_msgs::Vector3();
+
+		}
+		std::string parent_base_frame, opensim_frame;
+		tf2_ros::StaticTransformBroadcaster tb;
+		geometry_msgs::Quaternion opensim_rotation;
+		geometry_msgs::TransformStamped t;
+		void publish_opensim_base_tf()
+		{
+			t.header.stamp = ros::Time::now();
+			tb.sendTransform(t);
+			ros::spinOnce();
+		}
+};
 
 class qJointPublisher: public Ros::CommonNode
 {
@@ -30,9 +59,12 @@ class qJointPublisher: public Ros::CommonNode
 		ros::NodeHandle n;
 		std::string model_base_frame, parent_base_frame;
 		int case_translation, case_rotation;
+		bool re_stamp_base = false;
+		ros::Publisher chatter_pub;
 		qJointPublisher() : Ros::CommonNode(false)
 	{
 		ros::NodeHandle nh("~");
+		chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
 		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
 		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
 		nh.getParam("joint_mapping", RJointToOJoint);
@@ -42,7 +74,6 @@ class qJointPublisher: public Ros::CommonNode
 			ROS_DEBUG_STREAM(name);
 	}
 
-		ros::Publisher chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
 		std::map<std::string, std::string> RJointToOJoint;
 		std::vector<std::string> names;
 		std::map<std::string, int> label_map;
@@ -62,10 +93,11 @@ class qJointPublisher: public Ros::CommonNode
 			msg.header = h;
 			msg.name = names;
 			msg.position = joint_values;
-			chatter_pub.publish(msg);
 			/// let's publish a tf for the base now!
 			geometry_msgs::TransformStamped baseTF;
-			baseTF.header.stamp = ros::Time::now();
+			baseTF.header = h;
+			if (re_stamp_base)
+				baseTF.header.stamp = ros::Time::now();
 			baseTF.header.frame_id = parent_base_frame;
 			baseTF.child_frame_id = model_base_frame;
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
@@ -76,12 +108,13 @@ class qJointPublisher: public Ros::CommonNode
 			  tf_broadcaster.sendTransform(tf_);*/
 			ROS_DEBUG_STREAM("initial baseTF" << baseTF);
 			tf_broadcaster.sendTransform(baseTF);
+			chatter_pub.publish(msg);
 
 
 		}
 		void pub_zero()
 		{
-			std::vector<double> zero_joints(names.size(),0.1);
+			std::vector<double> zero_joints(names.size(),0.0);
 			//ROS_INFO_STREAM("zero_joints length: " << zero_joints.size() << "vals" );
 			//for (auto a:zero_joints)
 			//	ROS_INFO_STREAM(a);
@@ -90,24 +123,32 @@ class qJointPublisher: public Ros::CommonNode
 			std_msgs::Header h;
 			h.frame_id = "map";
 			ros::Rate poll_rate(100);
-			while(chatter_pub.getNumSubscribers() == 0)
-				poll_rate.sleep();
+			//while(chatter_pub.getNumSubscribers() == 0)
+			//	poll_rate.sleep();
 			for (int i = 0; i<=10; i++)
 			{
 				h.stamp = ros::Time::now();
 				pub_pose(h, zero_joints, geometry_msgs::Vector3(), zero_rot);
+				poll_rate.sleep();
+				ros::spinOnce();
 			}
 
 		}
 		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik");
+			auto a = ros::Time::now();
 			parse_msg(msg_ik->header, msg_ik->data);
+			auto b = ros::Time::now();
+			ROS_INFO_STREAM("loop time" <<a-b);
 		}
 		void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik filtered");
+			auto a = ros::Time::now();
 			parse_msg(msg_ik->header, msg_ik->d0_data);
+			auto b = ros::Time::now();
+			ROS_INFO_STREAM("loop time filtered" <<a-b);
 		}
 		void parse_msg(std_msgs::Header h, std::vector<double> q)
 		{
@@ -123,9 +164,9 @@ class qJointPublisher: public Ros::CommonNode
 				}
 				else
 				{
-				int index = label_map[RJointToOJoint[a]];
-				ROS_DEBUG_STREAM("index: "<< index);
-				joint_value = q[index];
+					int index = label_map[RJointToOJoint[a]];
+					ROS_DEBUG_STREAM("index: "<< index);
+					joint_value = q[index];
 					//joint_value = msg_ik->data[index]/180*3.14159265;
 				}
 				values.push_back(joint_value);
@@ -159,10 +200,14 @@ class qJointPublisher: public Ros::CommonNode
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "human_joint_state_publisher");
+	// publishes the subject_opensim frame of reference
+	OpenSimBaseTfPublisher otf;
+	// starts custom_joints publisher
 	qJointPublisher qJ;
 	qJ.onInit();
 	// publish initial zero pose:
 	qJ.pub_zero();
+	otf.publish_opensim_base_tf();	
 	ros::spin();
 	return 0;
 }
