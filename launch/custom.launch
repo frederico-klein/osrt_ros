@@ -9,5 +9,6 @@
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
-	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
+	<!-- I checked and the only node that wants to see this also wants to see custom joints, so I decided to merge them since static_publisher is a python node and doesnt really publish static tfs -->
+	<!--include file="$(find osrt_ros)/launch/opensim_tf.launch"/-->
 </launch>
