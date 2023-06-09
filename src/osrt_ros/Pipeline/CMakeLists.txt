@@ -50,13 +50,6 @@ add_dependencies(so ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGET
 target_link_libraries(so
 	${DEPENDENCY_LIBS}
 )
-add_executable(id_so_jr nodes/id_combined.cpp)
-
-add_dependencies(id_so_jr ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(id_so_jr
-	${DEPENDENCY_LIBS}
-)
 
 add_executable(id nodes/id_pipeline.cpp)
 
