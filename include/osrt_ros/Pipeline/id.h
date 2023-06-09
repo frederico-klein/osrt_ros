@@ -5,6 +5,7 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
+#include "message_filters/sync_policies/exact_time.h"
 #include "opensimrt_msgs/Events.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
@@ -14,33 +15,28 @@
 #include "ros/message_traits.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
+#include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/VectorBase.h>
 #include "geometry_msgs/WrenchStamped.h"
 #include "tf2_ros/transform_listener.h"
 #include "osrt_ros/events.h"
 #include <message_filters/sync_policies/approximate_time.h>
 
+typedef message_filters::sync_policies::ExactTime<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_exact_wrench_policy;
+typedef message_filters::sync_policies::ExactTime<opensimrt_msgs::PosVelAccTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_exact_wrench_filtered_policy;
+
 typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_approx_wrench_policy;
 typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::PosVelAccTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_approx_wrench_filtered_policy;
 
 namespace Pipeline
 {
-	static const geometry_msgs::Quaternion TO_OPENSIM()
-	{
-		geometry_msgs::Quaternion	q;
-		q.x = -0.5;
-		q.y = -0.5;
-		q.z = -0.5;
-		q.w = 0.5;
-		return q;
-	};
-	
 
 	class Id:public Pipeline::DualSink
 	{
 		public:
 			Id();
 			~Id();
+			std_msgs::Header::_stamp_type last_received_ik_stamp;
 			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;
 			// now since I have 2 sinks I will need message_filters
 			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
@@ -59,10 +55,12 @@ namespace Pipeline
 			virtual void callback_wr(const geometry_msgs::WrenchConstPtr& wr_msg)
 			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
 
-			message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches;
+			message_filters::Synchronizer<grf_exact_wrench_policy> sync_real_wrenches;
+			//message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches;
 			//message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
 			//message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
-			message_filters::Synchronizer<grf_approx_wrench_filtered_policy> sync_filtered_real_wrenches;
+			//message_filters::Synchronizer<grf_approx_wrench_filtered_policy> sync_filtered_real_wrenches;
+			message_filters::Synchronizer<grf_exact_wrench_filtered_policy> sync_filtered_real_wrenches;
 
 			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
@@ -75,30 +73,31 @@ namespace Pipeline
 			// now all the stuff I need to save between inInit and the callbacks
 
 			std::string subjectDir;
-			double sumDelayMS, sumDelayMSCounter;
-			double previousTime, previousTimeDifference;
 			//loggers
 			//
 			OpenSim::TimeSeriesTable* tauLogger;
-			OpenSim::TimeSeriesTable* grfRightLogger; 
-			OpenSim::TimeSeriesTable* grfLeftLogger;
-			OpenSim::TimeSeriesTable* qLogger;
-			OpenSim::TimeSeriesTable* qDotLogger; 
-			OpenSim::TimeSeriesTable* qDDotLogger;
 			
 			//other stuff
 			OpenSimRT::InverseDynamics* id;
 			OpenSimRT::ForceDecorator *rightGRFDecorator,*leftGRFDecorator;
 			OpenSim::Model* model;
 			OpenSimRT::BasicModelVisualizer* visualizer;
-			OpenSimRT::LowPassSmoothFilter* ikfilter, *grfRightFilter, *grfLeftFilter;
+			OpenSimRT::LowPassSmoothFilter* ikfilter;
 			std::vector<std::string> grfRightLabels, grfLeftLabels;
 			
 			boost::array<int,9> grfLeftIndexes, grfRightIndexes;
 
+			ros::Publisher pub_grf_left, pub_grf_right, pub_ik, pub_cop_left, pub_cop_right; //crazy debug going nuts
+
+			opensimrt_msgs::CommonTimed conv_ik_to_msg(std_msgs::Header h, SimTK::Vector ik);
+			opensimrt_msgs::CommonTimed conv_grf_to_msg(std_msgs::Header h, OpenSimRT::ExternalWrench::Input ow);
+	std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame);
+
+	OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame);
+
+
 			//do I need this?
 			bool use_grfm_filter;
-			int counter;
 			int memory, delay, splineOrder;
 			double cutoffFreq;
 

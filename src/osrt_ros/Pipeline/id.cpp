@@ -5,6 +5,7 @@
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
+#include "ros/duration.h"
 #include "ros/exception.h"
 #include "ros/message_traits.h"
 #include "ros/ros.h"
@@ -22,6 +23,8 @@
 #include <Common/TimeSeriesTable.h>
 #include <OpenSim/Common/STOFileAdapter.h>
 #include <OpenSim/Common/CSVFileAdapter.h>
+#include <SimTKcommon/internal/BigMatrix.h>
+#include <SimTKcommon/internal/Vec.h>
 #include <SimTKcommon/internal/Vector_.h>
 #include <exception>
 #include <numeric>
@@ -40,9 +43,11 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
-	sync_real_wrenches(grf_approx_wrench_policy(10),sub,sub_wl,sub_wr), 
+	sync_real_wrenches(grf_exact_wrench_policy(5),sub,sub_wl,sub_wr), 
+	//sync_real_wrenches(grf_approx_wrench_policy(5),sub,sub_wl,sub_wr), 
 	//sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
-	sync_filtered_real_wrenches(grf_approx_wrench_filtered_policy(10),sub_filtered,sub_wl,sub_wr),
+	//sync_filtered_real_wrenches(grf_approx_wrench_filtered_policy(5),sub_filtered,sub_wl,sub_wr),
+	sync_filtered_real_wrenches(grf_exact_wrench_filtered_policy(5),sub_filtered,sub_wl,sub_wr),
 	tfListener(tfBuffer)
 {
 	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
@@ -106,21 +111,11 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
 			grfRightPointIdentifier, grfRightForceIdentifier,
 			grfRightTorqueIdentifier);
-	if (false)
-	{ //very wrong
-		auto grfRightLoggerTemp = ExternalWrench::initializeLogger();
-		grfRightLogger = &grfRightLoggerTemp; 
-	}
 	ExternalWrench::Parameters grfLeftFootPar{
 		grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
 	grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
 			grfLeftPointIdentifier, grfLeftForceIdentifier,
 			grfLeftTorqueIdentifier);
-	if (false)
-	{ //very wrong
-		auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
-		grfLeftLogger = &grfLeftLoggerTemp;
-	}
 	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
 	wrenchParameters.push_back(grfLeftFootPar);
@@ -147,8 +142,6 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	grfFilterParam.cutoffFrequency = cutoffFreq;
 	grfFilterParam.splineOrder = splineOrder;
 	grfFilterParam.calculateDerivatives = false;
-	grfRightFilter = new LowPassSmoothFilter(grfFilterParam);
-	grfLeftFilter = new LowPassSmoothFilter(grfFilterParam);
 
 	// test with state space filter
 	// StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
@@ -162,22 +155,8 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	tauLogger = new TimeSeriesTable();
 	output_labels = tauLoggerTemp.getColumnLabels();
 	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
-	if (false)
-	{ //this is super wrong
-		auto qLoggerTemp = id->initializeLogger();
-		qLogger = &qLoggerTemp;
-		auto qDotLoggerTemp = id->initializeLogger();
-		qDotLogger = &qDotLoggerTemp;
-		auto qDDotLoggerTemp = id->initializeLogger();
-		qDDotLogger = &qDDotLoggerTemp;
-	}
 	ROS_INFO_STREAM("loggers set!");
 
-	// mean delay
-	sumDelayMS = 0;
-	sumDelayMSCounter = 0;
-
-	counter = 0;
 }
 
 Pipeline::Id::~Id()
@@ -200,8 +179,6 @@ void Pipeline::Id::onInit() {
 	//get_second_label = false;
 	Pipeline::DualSink::onInit();
 
-	previousTime = ros::Time::now().toSec();
-	previousTimeDifference = 0;
 	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
 	sub0.registerCallback(&Pipeline::Id::callback0,this);
 	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
@@ -248,6 +225,13 @@ void Pipeline::Id::onInit() {
 		leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
 		visualizer->addDecorationGenerator(leftGRFDecorator);
 	}
+        //CRAZY DEBUG
+
+	pub_grf_left = nh.advertise<opensimrt_msgs::CommonTimed>("debug_grf_left", 1000);
+	pub_grf_right = nh.advertise<opensimrt_msgs::CommonTimed>("debug_grf_right", 1000);
+	pub_ik = nh.advertise<opensimrt_msgs::CommonTimed>("debug_ik", 1000);
+	pub_cop_left = nh.advertise<opensimrt_msgs::CommonTimed>("debug_cop_left", 1000);
+	pub_cop_right = nh.advertise<opensimrt_msgs::CommonTimed>("debug_cop_right", 1000);
 
 }
 
@@ -266,7 +250,6 @@ void Pipeline::Id::callback(const opensimrt_msgs::CommonTimedConstPtr& message_i
 	auto bothEvents = combineEvents(message_ik, message_grf);
 	addEvent("id received ik & grf",bothEvents);
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback."); 
-	counter++;
 	double filtered_t;
 	auto iks = Osb::parse_ik_message(message_ik, &filtered_t, ikfilter);
 	//ROS_DEBUG_STREAM("message_grf\n" << *message_grf);
@@ -284,30 +267,48 @@ void Pipeline::Id::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPt
 	auto bothEvents = combineEvents(message_ik, message_grf);
 	addEvent("id received ik & grf",bothEvents);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop"); 
-	counter++;
 	//cant find the right copy constructor syntax. will for loop it
 	auto iks = Osb::parse_ik_message(message_ik);
 	auto grfs = Osb::get_wrench(message_grf, grfRightIndexes, grfLeftIndexes);
 	run(message_ik->header, message_ik->time, iks,grfs, bothEvents);
 
 }	
+//oh, these exist in Osb already...
+opensimrt_msgs::CommonTimed Pipeline::Id::conv_ik_to_msg(std_msgs::Header h, SimTK::Vector ik)
+{
+	opensimrt_msgs::CommonTimed msg;	
+	msg.header =h;
+	for (auto q:ik)
+		msg.data.push_back(q);
+	return msg;
+
+}
+opensimrt_msgs::CommonTimed Pipeline::Id::conv_grf_to_msg(std_msgs::Header h, ExternalWrench::Input ow)
+{
+	opensimrt_msgs::CommonTimed msg;	
+	msg.header = h;
+	msg.data.push_back(ow.point[0]);
+	msg.data.push_back(ow.point[1]);
+	msg.data.push_back(ow.point[2]);
+	msg.data.push_back(ow.force[0]);
+	msg.data.push_back(ow.force[1]);
+	msg.data.push_back(ow.force[2]);
+	msg.data.push_back(ow.torque[0]);
+	msg.data.push_back(ow.torque[1]);
+	msg.data.push_back(ow.torque[2]);
+	
+
+
+	return msg;
+}
 
 
 void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs, opensimrt_msgs::Events e ) 
 
 {
 	ROS_DEBUG_STREAM("Received run call. Running Id run loop.");	    
-	counter++;
-
-	double timediff = t- previousTime;
-	double ddt = timediff-previousTimeDifference;
-	if (std::abs(ddt) > 1e-5 )
-		ROS_WARN_STREAM("Time difference greater than what our filter can handle: "<< std::setprecision(7) << ddt ); 
-	previousTime = t;
-	previousTimeDifference = timediff;
-	ROS_DEBUG_STREAM("T (msg):"<< std::setprecision (15) << t);
-	ROS_DEBUG_STREAM("DeltaT :"<< std::setprecision (15) << t);
-
+	//ROS_INFO_STREAM("time diff" << h.stamp-last_received_ik_stamp);
+	//ROS_INFO_STREAM("this stamp" << h.stamp << "last_received_ik_stamp" << last_received_ik_stamp);
 	//unpacks wrenches:
 
 	if(grfs.size() == 0)
@@ -317,24 +318,8 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	}
 	auto grfLeftWrench = grfs[0]; 
 	auto grfRightWrench = grfs[1]; 
-	
-	//filter wrench!
-	OpenSimRT::LowPassSmoothFilter::Output grfRightFiltered, grfLeftFiltered;
-	if (use_grfm_filter){
-		grfRightFiltered =
-			grfRightFilter->filter({t, grfRightWrench.toVector()});
-		grfRightWrench.fromVector(grfRightFiltered.x);
-		grfLeftFiltered =
-			grfLeftFilter->filter({t, grfLeftWrench.toVector()});
-		grfLeftWrench.fromVector(grfLeftFiltered.x);
 
-		if (!grfRightFiltered.isValid ||
-				!grfLeftFiltered.isValid) {
-			ROS_WARN_STREAM("GRFS are not valid!");
-			return;
-		}
-	}
-	//unpacks iks:
+	//filter wrench!
 	//TODO
 	if(iks.size() == 0)
 	{
@@ -354,47 +339,22 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 	addEvent("id_normal after id",e);
 
-	
-	chrono::high_resolution_clock::time_point t2;
-	t2 = chrono::high_resolution_clock::now();
-	sumDelayMS +=
-		chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-
-	sumDelayMSCounter++;
-	//TODO: remove!
-	ROS_DEBUG_STREAM("trying to get column labels...");
-	try
-	{
-		std::vector<std::string> how_is_this_set = tauLogger->getColumnLabels();
-		if (how_is_this_set.size() != 0)
-		{
-			std::string out_print;
-			for (int kk= 0;kk < how_is_this_set.size(); kk++)
-				out_print += "," + how_is_this_set[kk];
-			ROS_DEBUG_STREAM("getColumnLabels Response is:" << out_print);
-		}
-		else
-		{
-			ROS_WARN_STREAM("it isn't set.");
-		}
-	}
-	catch (...)
-	{
-		ROS_ERROR_STREAM("tauColumnNames fails...");
-	}
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 
 	// visualization
-	try {
-		visualizer->update(q);
-		rightGRFDecorator->update(grfRightWrench.point,
-				grfRightWrench.force);
-		leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
-		ROS_DEBUG_STREAM("visualizer ran ok.");
-	}
-	catch (std::exception& e)
+	if (false)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		try {
+			visualizer->update(q);
+			rightGRFDecorator->update(grfRightWrench.point,
+					grfRightWrench.force);
+			leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
+			ROS_DEBUG_STREAM("visualizer ran ok.");
+		}
+		catch (std::exception& e)
+		{
+			ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		}
 	}
 	try
 	{
@@ -408,8 +368,12 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 			ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
 			msg.data.push_back(tau_component);
 		}
-		msg.events = e;
-		pub.publish(msg);	
+		//msg.events = e;
+		pub.publish(msg);
+		pub_grf_left.publish(conv_grf_to_msg(h, grfLeftWrench));
+		pub_grf_right.publish(conv_grf_to_msg(h, grfRightWrench));
+		pub_ik.publish(conv_ik_to_msg(h, q));
+		last_received_ik_stamp = msg.header.stamp;
 	}
 	catch (ros::Exception& e)
 	{
@@ -420,18 +384,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 		// log data (use filter time to align with delay)
 		if(recording)
 		{
-			//ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			tauLogger->appendRow(t, ~idOutput.tau);
-			ROS_INFO_STREAM("Tau added data to loggers. "<< counter);
-			/*qLogger->appendRow(t, ~q);
-			qDotLogger->appendRow(t, ~qDot);
-			qDDotLogger->appendRow(t, ~qDDot);
-			ROS_INFO_STREAM("q filtered data added data to loggers. "<< counter);
-			
-			grfRightLogger->appendRow(grfRightFiltered.t, ~grfRightFiltered.x);
-			grfLeftLogger->appendRow(grfLeftFiltered.t, ~grfLeftFiltered.x);
-			ROS_INFO_STREAM("GRFM data added data to loggers. "<< counter);*/
-
 		}}
 	catch (std::exception& e)
 	{
@@ -444,51 +397,10 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 
 void Pipeline::Id::finish() {
 	ROS_ERROR_STREAM("deprecated.");
-	cout << "Mean delay: " << (double) sumDelayMS / sumDelayMSCounter << " ms"
-		<< endl;
-
-	// Compare results with reference tables. Make sure that M, D,
-	// spline order, fc are the same as the test.
-	SimTK_ASSERT_ALWAYS(memory == 35,
-			"ensure that MEMORY = 35 in setup.ini for testing");
-	SimTK_ASSERT_ALWAYS(delay == 14,
-			"ensure that DELAY = 35 setup.ini for testing");
-	SimTK_ASSERT_ALWAYS(cutoffFreq == 6,
-			"ensure that CUTOFF_FREQ = 6 setup.ini for testing");
-	SimTK_ASSERT_ALWAYS(splineOrder == 3,
-			"ensure that SPLINE_ORDER = 3 setup.ini for testing");
-	OpenSimUtils::compareTables(
-			*tauLogger,
-			TimeSeriesTable(subjectDir + "real_time/inverse_dynamics/tau.sto"));
-	OpenSimUtils::compareTables(
-			*grfLeftLogger,
-			TimeSeriesTable(subjectDir +
-				"real_time/inverse_dynamics/wrench_left.sto"));
-	OpenSimUtils::compareTables(
-			*grfRightLogger,
-			TimeSeriesTable(subjectDir +
-				"real_time/inverse_dynamics/wrench_right.sto"));
-	OpenSimUtils::compareTables(
-			*qLogger,
-			TimeSeriesTable(subjectDir +
-				"real_time/inverse_dynamics/q_filtered.sto"));
-	OpenSimUtils::compareTables(
-			*qDotLogger,
-			TimeSeriesTable(subjectDir +
-				"real_time/inverse_dynamics/qDot_filtered.sto"));
-	OpenSimUtils::compareTables(
-			*qDDotLogger,
-			TimeSeriesTable(subjectDir +
-				"real_time/inverse_dynamics/qDDot_filtered.sto"));
 }
 bool Pipeline::Id::see(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-	std::stringstream ss;
-	//vector<string> data = grfRightLogger.getTableMetaData().getKeys();
-	//ss << "Data Retrieved: \n";
-	std::copy(grfRightLogger->getTableMetaData().getKeys().begin(), grfRightLogger->getTableMetaData().getKeys().end(), std::ostream_iterator<string>(ss, " "));
-	ss << std::endl;
-	ROS_INFO_STREAM("grfRightLogger columns:" << ss.str());
+	ROS_ERROR_STREAM("deprecated.");
 	return true;
 }
 void Pipeline::Id::write_() {
@@ -513,19 +425,130 @@ void Pipeline::Id::write_() {
 	saveStos();
 	ROS_INFO_STREAM("i write");
 }
+	ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+	{
+		auto sometime = w->header.stamp -ros::Duration(0.05); //I hate myself.
+		ExternalWrench::Input wO;
+		wO.force[0] = w->wrench.force.x;
+		wO.force[1] = w->wrench.force.y;
+		wO.force[2] = w->wrench.force.z;
+		wO.torque[0] = w->wrench.torque.x;
+		wO.torque[1] = w->wrench.torque.y;
+		wO.torque[2] = w->wrench.torque.z;
+		// now get the translations from the transform
+		// for the untranslated version I just want to get the reference in their own coordinate reference frame
+		wO.point[0] = 0;
+		wO.point[1] = 0;
+		wO.point[2] = 0;
+		geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
+		try
+		{
+			//ATTENTION FUTURE FREDERICO:
+			//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
+			//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
+			ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
+			ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
+			if (false)
+			{
+			size_t found = ref_frame.find("left");
+			if (found!=std::string::npos)
+			{//left
+				//i gotta do 2 lookups. one to the frigging food
+				// "left_filtered " -"calcn_l"
+				//	"calcn_l" - "subject_opensim"
+				auto foot_cop = tfBuffer.lookupTransform(ref_frame, "calcn_l", sometime);
+				auto foot_pos = tfBuffer.lookupTransform("calcn_l", grf_reference_frame, sometime);
+				opensimrt_msgs::CommonTimed msg_cop;
+				msg_cop.header.stamp = ros::Time::now();
+				msg_cop.data.push_back( foot_cop.transform.translation.x);
+				msg_cop.data.push_back( foot_cop.transform.translation.y);
+				msg_cop.data.push_back( foot_cop.transform.translation.z);
+				msg_cop.data.push_back(foot_pos.transform.translation.x);
+				msg_cop.data.push_back(foot_pos.transform.translation.y);
+				msg_cop.data.push_back(foot_pos.transform.translation.z);
+				pub_cop_left.publish(msg_cop);
+			}
+			else
+			{//right
+				//"right_filtered" - "calcn_r"
+				//	"calcn_r" - "subject_opensim"
+				auto foot_cop = tfBuffer.lookupTransform(ref_frame, "calcn_r", sometime);
+				auto foot_pos = tfBuffer.lookupTransform("calcn_r", grf_reference_frame, sometime);
+				opensimrt_msgs::CommonTimed msg_cop;
+				msg_cop.header.stamp = ros::Time::now();
+				msg_cop.data.push_back( foot_cop.transform.translation.x);
+				msg_cop.data.push_back( foot_cop.transform.translation.y);
+				msg_cop.data.push_back( foot_cop.transform.translation.z);
+				msg_cop.data.push_back(foot_pos.transform.translation.x);
+				msg_cop.data.push_back(foot_pos.transform.translation.y);
+				msg_cop.data.push_back(foot_pos.transform.translation.z);
+				pub_cop_right.publish(msg_cop);
+
+			}
+
+			}
+
+			
+			nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, sometime);
+			//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
+			wO.point[0] = nulltransform.transform.translation.x;
+			wO.point[1] = nulltransform.transform.translation.y;
+			wO.point[2] = nulltransform.transform.translation.z;
+			//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
+			//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
+			//ROS_DEBUG_STREAM("null transform::\n" << nulltransform);
+			//ROS_DEBUG_STREAM("actual transform" << actualtransform);
+			//ROS_DEBUG_STREAM("inverse transform" << inv_t);
+			//inv_t converts back to opensim
+
+			//now convert it:
+
+		}
+		catch (tf2::TransformException &ex) {
+			ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
+			//ros::Duration(1.0).sleep();
+			return wO;
+		}
+
+		//ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
+		return wO;
+
+	}
+	std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+
+{
+
+		// TODO: get wrench message!!!!!!!!!!
+		std::vector<ExternalWrench::Input> wrenches;
+		OpenSimRT::ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame);
+		//cout << "left wrench.";
+		ROS_DEBUG_STREAM("rw");
+		ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame);
+		ROS_DEBUG_STREAM("lw");
+		//	return;
+
+		wrenches.push_back(grfLeftWrench);
+		wrenches.push_back(grfRightWrench);
+		return wrenches;
+
+
+}
+
 
 void Pipeline::Id::callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr)
 {
 	auto newEvents1 = addEvent("id received ik & wrenches",message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback_real_wrenches"); 
-	counter++;
 	double filtered_t;
+	addEvent("id: getting iks", newEvents1);
 	auto iks = Osb::parse_ik_message(message_ik, &filtered_t, ikfilter);
-	auto grfs = Osb::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
-	ROS_WARN_STREAM("filtered_t" << filtered_t);
+	addEvent("id: getting real wrenches", newEvents1);
+	auto grfs = Pipeline::Id::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
+	ROS_DEBUG_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
 	//TODO: maybe this will break?
-	
+	addEvent("calling run function of id", newEvents1);
+
 	run(message_ik->header, filtered_t, iks, grfs, newEvents1);	
 }
 
@@ -533,10 +556,12 @@ void Pipeline::Id::callback_real_wrenches_filtered(const opensimrt_msgs::PosVelA
 {
 	auto newEvents1 = addEvent("id received ik filtered & wrenches", message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
-	counter++;
 	//cant find the right copy constructor syntax. will for loop it
+	addEvent("id: getting iks already filtered.", newEvents1);
 	auto iks = Osb::parse_ik_message(message_ik);
-	auto grfs = Osb::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
+	addEvent("id: getting real wrenches", newEvents1);
+	auto grfs = Pipeline::Id::get_wrench(wl,wr, right_foot_tf_name, left_foot_tf_name, tfBuffer, grf_reference_frame);
+	addEvent("calling run function of id", newEvents1);
 	run(message_ik->header,message_ik->time, iks,grfs, newEvents1);
 }
 
