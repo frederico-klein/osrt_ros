@@ -24,6 +24,7 @@ namespace Pipeline
 			SoBare();
 			~SoBare();
 			ros::NodeHandle nh{"~"};
+			[[deprecated]]
 			opensimrt_msgs::Dual run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 			opensimrt_msgs::MultiMessage run2(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 

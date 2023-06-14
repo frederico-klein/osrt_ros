@@ -4,6 +4,8 @@
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/Dual.h"
 #include "opensimrt_msgs/DualPos.h"
+#include "opensimrt_msgs/MultiMessage.h"
+#include "opensimrt_msgs/MultiMessagePosVelAcc.h"
 #include "ros/node_handle.h"
 #include "ros/rate.h"
 #include "opensimrt_msgs/LabelsSrv.h"
@@ -92,6 +94,8 @@ void Pipeline::DualSink::onInit()
 	ROS_WARN_STREAM("Outlabels are not implemented for these outputs, if there is reshuffling, they will not look correct.");
 	sync_output = nh.advertise<opensimrt_msgs::Dual>("output_combined", 1);
 	sync_output_filtered = nh.advertise<opensimrt_msgs::DualPos>("output_combined_filtered", 1);
+	sync_output_multi = nh.advertise<opensimrt_msgs::MultiMessage>("output_multi", 1);
+	sync_output_multi_filtered = nh.advertise<opensimrt_msgs::MultiMessagePosVelAcc>("output_multi_filtered", 1);
 
 	ROS_INFO_STREAM("Finished onInit from DualSink");
 }

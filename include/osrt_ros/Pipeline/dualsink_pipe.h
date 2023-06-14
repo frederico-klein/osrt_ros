@@ -25,7 +25,8 @@ namespace Pipeline
 			message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, opensimrt_msgs::CommonTimed> sync_filtered;
 			std::vector<std::string> input2_labels;
 			void onInit();
-			ros::Publisher sync_output, sync_output_filtered;
+			[[deprecated]] ros::Publisher sync_output, sync_output_filtered;
+			ros::Publisher sync_output_multi, sync_output_multi_filtered;
 			virtual void callback(const opensimrt_msgs::CommonTimedConstPtr& message, const opensimrt_msgs::CommonTimedConstPtr& message2) 
 			{
 				ROS_ERROR_STREAM("dual message callback not implemented!");

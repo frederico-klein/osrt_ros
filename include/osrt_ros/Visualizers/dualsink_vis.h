@@ -15,7 +15,7 @@ namespace Visualizers
 	class DualSinkVis:public Visualizers::VisualizerCommon
 	{
 		public:
-			DualSinkVis(): seq(sub_multi, ros::Duration(0.1), ros::Duration(0.01), 10) {}
+			DualSinkVis(): seq(sub_multi, ros::Duration(0.1), ros::Duration(0.005), 1000) {}
 			virtual ~DualSinkVis() {}
 			message_filters::Subscriber<opensimrt_msgs::MultiMessage> sub_multi;
 			message_filters::TimeSequencer<opensimrt_msgs::MultiMessage> seq;

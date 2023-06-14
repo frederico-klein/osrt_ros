@@ -342,7 +342,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 
 	// visualization
-	if (false)
+	if (true)
 	{
 		try {
 			visualizer->update(q);
@@ -374,6 +374,7 @@ void Pipeline::Id::run(const std_msgs::Header h , double t, std::vector<SimTK::V
 		pub_grf_right.publish(conv_grf_to_msg(h, grfRightWrench));
 		pub_ik.publish(conv_ik_to_msg(h, q));
 		last_received_ik_stamp = msg.header.stamp;
+		sync_output_multi.publish(Osb::get_as_Multi(h,t,q,idOutput.tau));
 	}
 	catch (ros::Exception& e)
 	{

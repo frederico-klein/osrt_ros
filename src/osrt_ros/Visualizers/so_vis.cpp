@@ -31,7 +31,7 @@ void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 }
 void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstPtr &message)
 {
-	ROS_INFO_STREAM("callback sovis reached received message:" << message);
+	ROS_DEBUG_STREAM("callback sovis multi reached received message:" << message);
 	//initialize q
 	SimTK::Vector q(message->ik.data.size()), soOutput_am(message->other[0].data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (int i=0;i<message->ik.data.size(); i++)

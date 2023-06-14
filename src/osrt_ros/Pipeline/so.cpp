@@ -1,3 +1,4 @@
+#include "opensimrt_msgs/MultiMessage.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/Labels.h"
 #include "INIReader.h"
@@ -174,8 +175,8 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 	msg_out.events = e;
 	pub.publish(msg_out);
 	
-	opensimrt_msgs::Dual msg_dual = Osb::get_SO_as_Dual(h,t,q,soOutput);
-	sync_output.publish(msg_dual);
+	opensimrt_msgs::MultiMessage msg_multi = Osb::get_SO_as_Multi(h,t,q,soOutput);
+	sync_output_multi.publish(msg_multi);
 	try {
 
 		visualizer->update(q, soOutput.am);
