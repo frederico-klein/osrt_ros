@@ -35,6 +35,7 @@
 
 #include "osrt_ros/Pipeline/id.h"
 #include "opensimrt_bridge/conversions/message_convs.h"
+#include "tf2/convert.h"
 
 
 using namespace std;
@@ -43,11 +44,11 @@ using namespace SimTK;
 using namespace OpenSimRT;
 
 Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
-	sync_real_wrenches(grf_exact_wrench_policy(5),sub,sub_wl,sub_wr), 
-	//sync_real_wrenches(grf_approx_wrench_policy(5),sub,sub_wl,sub_wr), 
+	sync_real_wrenches_exact(grf_exact_wrench_policy(50),sub,sub_wl,sub_wr), 
+	sync_real_wrenches_aprox(grf_approx_wrench_policy(50),sub,sub_wl,sub_wr), 
 	//sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
-	//sync_filtered_real_wrenches(grf_approx_wrench_filtered_policy(5),sub_filtered,sub_wl,sub_wr),
-	sync_filtered_real_wrenches(grf_exact_wrench_filtered_policy(5),sub_filtered,sub_wl,sub_wr),
+	sync_filtered_real_wrenches_aprox(grf_approx_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr),
+	sync_filtered_real_wrenches_exact(grf_exact_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr),
 	tfListener(tfBuffer)
 {
 	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
@@ -62,6 +63,7 @@ Pipeline::Id::Id(): Pipeline::DualSink::DualSink(false),
 	nh.param<std::string>("left_foot_tf_name", left_foot_tf_name, "left_foot_forceplate");
 	nh.param<std::string>("right_foot_tf_name", right_foot_tf_name, "right_foot_forceplate");
 	nh.param<std::string>("grf_reference_frame", grf_reference_frame, "map");
+	nh.param<bool>("use_exact_sync", use_exact_sync, true);
 	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
 	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 	//TODO:params!!!! copy from bridge
@@ -188,11 +190,25 @@ void Pipeline::Id::onInit() {
 	//the message filters for wrenches	
 	sub_wl.subscribe(nh,"left_wrench",100);
 	sub_wr.subscribe(nh,"right_wrench",100);
-	sync_real_wrenches.connectInput(sub,sub_wl,sub_wr);
-	sync_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches,this, _1,_2,_3));
-	sync_filtered_real_wrenches.connectInput(sub_filtered,sub_wl,sub_wr);
-	sync_filtered_real_wrenches.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
+	if (use_exact_sync)
+	{
+		ROS_WARN_STREAM("Using exact time sync.");
+		sync_real_wrenches_exact.connectInput(sub,sub_wl,sub_wr);
+		sync_real_wrenches_exact.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches,this, _1,_2,_3));
+		sync_filtered_real_wrenches_exact.connectInput(sub_filtered,sub_wl,sub_wr);
+		sync_filtered_real_wrenches_exact.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
+	}
+	else
+	{
+		ROS_WARN_STREAM("Using ApproximateTime sync.");
+		sync_real_wrenches_aprox.connectInput(sub,sub_wl,sub_wr);
+		sync_real_wrenches_aprox.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches,this, _1,_2,_3));
+		sync_filtered_real_wrenches_aprox.connectInput(sub_filtered,sub_wl,sub_wr);
+		sync_filtered_real_wrenches_aprox.registerCallback(boost::bind(&Pipeline::Id::callback_real_wrenches_filtered,this, _1,_2,_3));
 
+
+
+	}
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	// TODO: set the column labels, or it will break when you try to use them!
 	ROS_INFO_STREAM("Attempting to set loggers.");
@@ -225,7 +241,7 @@ void Pipeline::Id::onInit() {
 		leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
 		visualizer->addDecorationGenerator(leftGRFDecorator);
 	}
-        //CRAZY DEBUG
+	//CRAZY DEBUG
 
 	pub_grf_left = nh.advertise<opensimrt_msgs::CommonTimed>("debug_grf_left", 1000);
 	pub_grf_right = nh.advertise<opensimrt_msgs::CommonTimed>("debug_grf_right", 1000);
@@ -296,7 +312,7 @@ opensimrt_msgs::CommonTimed Pipeline::Id::conv_grf_to_msg(std_msgs::Header h, Ex
 	msg.data.push_back(ow.torque[0]);
 	msg.data.push_back(ow.torque[1]);
 	msg.data.push_back(ow.torque[2]);
-	
+
 
 
 	return msg;
@@ -426,37 +442,37 @@ void Pipeline::Id::write_() {
 	saveStos();
 	ROS_INFO_STREAM("i write");
 }
-	ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+{
+	auto sometime = w->header.stamp -ros::Duration(0.05); //I hate myself.
+	//TODO:I actually should read the ref_frame from the wrench like a normal person.
+	ExternalWrench::Input wO;
+	wO.force[0] = w->wrench.force.x;
+	wO.force[1] = w->wrench.force.y;
+	wO.force[2] = w->wrench.force.z;
+	wO.torque[0] = w->wrench.torque.x;
+	wO.torque[1] = w->wrench.torque.y;
+	wO.torque[2] = w->wrench.torque.z;
+	// now get the translations from the transform
+	// for the untranslated version I just want to get the reference in their own coordinate reference frame
+	wO.point[0] = 0;
+	wO.point[1] = 0;
+	wO.point[2] = 0;
+	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
+	try
 	{
-		auto sometime = w->header.stamp -ros::Duration(0.05); //I hate myself.
-		ExternalWrench::Input wO;
-		wO.force[0] = w->wrench.force.x;
-		wO.force[1] = w->wrench.force.y;
-		wO.force[2] = w->wrench.force.z;
-		wO.torque[0] = w->wrench.torque.x;
-		wO.torque[1] = w->wrench.torque.y;
-		wO.torque[2] = w->wrench.torque.z;
-		// now get the translations from the transform
-		// for the untranslated version I just want to get the reference in their own coordinate reference frame
-		wO.point[0] = 0;
-		wO.point[1] = 0;
-		wO.point[2] = 0;
-		geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
-		try
+		//ATTENTION FUTURE FREDERICO:
+		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
+		//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
+		//ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
+		if (false)
 		{
-			//ATTENTION FUTURE FREDERICO:
-			//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
-			//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
-			ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
-			ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
-			if (false)
-			{
 			size_t found = ref_frame.find("left");
 			if (found!=std::string::npos)
 			{//left
-				//i gotta do 2 lookups. one to the frigging food
-				// "left_filtered " -"calcn_l"
-				//	"calcn_l" - "subject_opensim"
+			 //i gotta do 2 lookups. one to the frigging food
+			 // "left_filtered " -"calcn_l"
+			 //	"calcn_l" - "subject_opensim"
 				auto foot_cop = tfBuffer.lookupTransform(ref_frame, "calcn_l", sometime);
 				auto foot_pos = tfBuffer.lookupTransform("calcn_l", grf_reference_frame, sometime);
 				opensimrt_msgs::CommonTimed msg_cop;
@@ -471,8 +487,8 @@ void Pipeline::Id::write_() {
 			}
 			else
 			{//right
-				//"right_filtered" - "calcn_r"
-				//	"calcn_r" - "subject_opensim"
+			 //"right_filtered" - "calcn_r"
+			 //	"calcn_r" - "subject_opensim"
 				auto foot_cop = tfBuffer.lookupTransform(ref_frame, "calcn_r", sometime);
 				auto foot_pos = tfBuffer.lookupTransform("calcn_r", grf_reference_frame, sometime);
 				opensimrt_msgs::CommonTimed msg_cop;
@@ -487,50 +503,58 @@ void Pipeline::Id::write_() {
 
 			}
 
-			}
-
-			
-			nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, sometime);
-			//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
-			wO.point[0] = nulltransform.transform.translation.x;
-			wO.point[1] = nulltransform.transform.translation.y;
-			wO.point[2] = nulltransform.transform.translation.z;
-			//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
-			//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
-			//ROS_DEBUG_STREAM("null transform::\n" << nulltransform);
-			//ROS_DEBUG_STREAM("actual transform" << actualtransform);
-			//ROS_DEBUG_STREAM("inverse transform" << inv_t);
-			//inv_t converts back to opensim
-
-			//now convert it:
-
-		}
-		catch (tf2::TransformException &ex) {
-			ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
-			//ros::Duration(1.0).sleep();
-			return wO;
 		}
 
-		//ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
-		return wO;
+
+		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, sometime);
+		//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
+		wO.point[0] = nulltransform.transform.translation.x;
+		wO.point[1] = nulltransform.transform.translation.y;
+		wO.point[2] = nulltransform.transform.translation.z;
+		//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
+		//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
+		//ROS_DEBUG_STREAM("null transform::\n" << nulltransform);
+		//ROS_DEBUG_STREAM("actual transform" << actualtransform);
+		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
+		//inv_t converts back to opensim
+		tf2::Vector3 v_orig;
+		tf2::fromMsg(w->wrench.force, v_orig);
+		tf2::Quaternion q ;
+		tf2::fromMsg(nulltransform.transform.rotation,q);
+
+		tf2::Vector3 v_new = quatRotate(q, v_orig);
+		wO.force[0] =v_new.x();
+		wO.force[1] =v_new.y();
+		wO.force[2] =v_new.z();
+		//now convert it:
 
 	}
-	std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+	catch (tf2::TransformException &ex) {
+		ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
+		//ros::Duration(1.0).sleep();
+		return wO;
+	}
+
+	//ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
+	return wO;
+
+}
+std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
 
 {
 
-		// TODO: get wrench message!!!!!!!!!!
-		std::vector<ExternalWrench::Input> wrenches;
-		OpenSimRT::ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame);
-		//cout << "left wrench.";
-		ROS_DEBUG_STREAM("rw");
-		ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame);
-		ROS_DEBUG_STREAM("lw");
-		//	return;
+	// TODO: get wrench message!!!!!!!!!!
+	std::vector<ExternalWrench::Input> wrenches;
+	OpenSimRT::ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame);
+	//cout << "left wrench.";
+	ROS_DEBUG_STREAM("rw");
+	ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame);
+	ROS_DEBUG_STREAM("lw");
+	//	return;
 
-		wrenches.push_back(grfLeftWrench);
-		wrenches.push_back(grfRightWrench);
-		return wrenches;
+	wrenches.push_back(grfLeftWrench);
+	wrenches.push_back(grfRightWrench);
+	return wrenches;
 
 
 }

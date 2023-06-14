@@ -7,6 +7,7 @@
 	<arg name="get_second_label" default="true"/>
 	<arg name="left_foot_tf_name" default="left_foot_forceplate" />
 	<arg name="right_foot_tf_name" default="right_foot_forceplate" />
+	<arg name="use_exact_sync"	default="false"/>
 
         <node pkg="osrt_ros" type="id" 	name="id_node" output="screen">
 		<!-- param name="resample_period" 		value="0.01" / -->
@@ -15,6 +16,7 @@
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
 		<param name="grf_reference_frame"        value="subject_opensim"/>
+		<param name="use_exact_sync"		value="$(arg use_exact_sync)"/>
 		<remap from="/id_node/input" to="/ik/output"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>

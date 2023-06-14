@@ -21,6 +21,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "osrt_ros/events.h"
 #include <message_filters/sync_policies/approximate_time.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 typedef message_filters::sync_policies::ExactTime<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_exact_wrench_policy;
 typedef message_filters::sync_policies::ExactTime<opensimrt_msgs::PosVelAccTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped > grf_exact_wrench_filtered_policy;
@@ -55,12 +56,14 @@ namespace Pipeline
 			virtual void callback_wr(const geometry_msgs::WrenchConstPtr& wr_msg)
 			{ ROS_ERROR_STREAM("callback for wr shouldn't be registerd. getting message though.");};
 
-			message_filters::Synchronizer<grf_exact_wrench_policy> sync_real_wrenches;
-			//message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches;
+			//a parameter should set this to either exact or approximate time
+			bool use_exact_sync = true;
+			message_filters::Synchronizer<grf_exact_wrench_policy> sync_real_wrenches_exact;
+			message_filters::Synchronizer<grf_approx_wrench_policy> sync_real_wrenches_aprox;
 			//message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed   , geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_real_wrenches;
 			//message_filters::TimeSynchronizer<opensimrt_msgs::PosVelAccTimed, geometry_msgs::WrenchStamped, geometry_msgs::WrenchStamped> sync_filtered_real_wrenches;
-			//message_filters::Synchronizer<grf_approx_wrench_filtered_policy> sync_filtered_real_wrenches;
-			message_filters::Synchronizer<grf_exact_wrench_filtered_policy> sync_filtered_real_wrenches;
+			message_filters::Synchronizer<grf_approx_wrench_filtered_policy> sync_filtered_real_wrenches_aprox;
+			message_filters::Synchronizer<grf_exact_wrench_filtered_policy> sync_filtered_real_wrenches_exact;
 
 			void callback_real_wrenches(const opensimrt_msgs::CommonTimedConstPtr& message_ik, 		const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
