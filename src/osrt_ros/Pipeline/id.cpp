@@ -1,3 +1,4 @@
+#include "InverseDynamics.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
 #include "geometry_msgs/WrenchStamped.h"
@@ -442,22 +443,16 @@ void Pipeline::Id::write_() {
 	saveStos();
 	ROS_INFO_STREAM("i write");
 }
-ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
+bool Pipeline::Id::parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frame, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame, ExternalWrench::Input* wO )
 {
-	auto sometime = w->header.stamp -ros::Duration(0.05); //I hate myself.
+	ROS_INFO_STREAM("times.. wrench header:"<< w->header << "\nnow: "<<ros::Time::now());
+	auto sometime = w->header.stamp; //I hate myself.
+	//auto sometime = ros::Time(0); //I hate myself.
+	
 	//TODO:I actually should read the ref_frame from the wrench like a normal person.
-	ExternalWrench::Input wO;
-	wO.force[0] = w->wrench.force.x;
-	wO.force[1] = w->wrench.force.y;
-	wO.force[2] = w->wrench.force.z;
-	wO.torque[0] = w->wrench.torque.x;
-	wO.torque[1] = w->wrench.torque.y;
-	wO.torque[2] = w->wrench.torque.z;
+	//NO. we are using this for both the wrenches, so it will use the value for the wrong side if the transform fails!. 
 	// now get the translations from the transform
 	// for the untranslated version I just want to get the reference in their own coordinate reference frame
-	wO.point[0] = 0;
-	wO.point[1] = 0;
-	wO.point[2] = 0;
 	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
 	try
 	{
@@ -505,38 +500,48 @@ ExternalWrench::Input Pipeline::Id::parse_message(const geometry_msgs::WrenchSta
 
 		}
 
+		//ATTENTION FUTURE FREDERICO:
+		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
+		//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
+		//ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
 
 		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, sometime);
 		//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
-		wO.point[0] = nulltransform.transform.translation.x;
-		wO.point[1] = nulltransform.transform.translation.y;
-		wO.point[2] = nulltransform.transform.translation.z;
+		wO->point[0] = nulltransform.transform.translation.x;
+		wO->point[1] = nulltransform.transform.translation.y;
+		wO->point[2] = nulltransform.transform.translation.z;
 		//actualtransform = tfBuffer.lookupTransform("map", ref_frame, ros::Time(0));
 		//inv_t = tfBuffer.lookupTransform(ref_frame,"map", ros::Time(0));
 		//ROS_DEBUG_STREAM("null transform::\n" << nulltransform);
 		//ROS_DEBUG_STREAM("actual transform" << actualtransform);
 		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
 		//inv_t converts back to opensim
-		tf2::Vector3 v_orig;
-		tf2::fromMsg(w->wrench.force, v_orig);
+		
+		//now convert it:
 		tf2::Quaternion q ;
 		tf2::fromMsg(nulltransform.transform.rotation,q);
+		tf2::Vector3 v_force_orig, v_torque_orig;
+		tf2::fromMsg(w->wrench.force, v_force_orig);
+		tf2::fromMsg(w->wrench.torque, v_torque_orig);
 
-		tf2::Vector3 v_new = quatRotate(q, v_orig);
-		wO.force[0] =v_new.x();
-		wO.force[1] =v_new.y();
-		wO.force[2] =v_new.z();
-		//now convert it:
+		tf2::Vector3 v_force_new = quatRotate(q, v_force_orig);
+		wO->force[0] =v_force_new.x();
+		wO->force[1] =v_force_new.y();
+		wO->force[2] =v_force_new.z();
+		tf2::Vector3 v_torque_new = quatRotate(q, v_torque_orig);
+		wO->torque[0] =v_torque_new.x();
+		wO->torque[1] =v_torque_new.y();
+		wO->torque[2] =v_torque_new.z();
 
 	}
 	catch (tf2::TransformException &ex) {
 		ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
 		//ros::Duration(1.0).sleep();
-		return wO;
+		return false;
 	}
 
 	//ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
-	return wO;
+	return true;
 
 }
 std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame)
@@ -545,10 +550,21 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geo
 
 	// TODO: get wrench message!!!!!!!!!!
 	std::vector<ExternalWrench::Input> wrenches;
-	OpenSimRT::ExternalWrench::Input grfRightWrench = parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame);
+	OpenSimRT::ExternalWrench::Input nullWrench;
+	nullWrench.force = Vec3{0,0,0};
+	nullWrench.torque = Vec3{0,0,0};
+	nullWrench.point = Vec3{0,0,0};
+	
+	static OpenSimRT::ExternalWrench::Input grfRightWrench=nullWrench;
+	OpenSimRT::ExternalWrench::Input* gRw; 
+	if(parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame, gRw))
+		grfRightWrench = *gRw;
 	//cout << "left wrench.";
 	ROS_DEBUG_STREAM("rw");
-	ExternalWrench::Input grfLeftWrench = parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame);
+	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
+	OpenSimRT::ExternalWrench::Input* gLw; 
+	if(parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame, gLw))
+		grfLeftWrench = *gLw;
 	ROS_DEBUG_STREAM("lw");
 	//	return;
 

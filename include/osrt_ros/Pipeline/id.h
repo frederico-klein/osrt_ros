@@ -96,7 +96,7 @@ namespace Pipeline
 			opensimrt_msgs::CommonTimed conv_grf_to_msg(std_msgs::Header h, OpenSimRT::ExternalWrench::Input ow);
 	std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr, std::string right_foot_tf_name, std::string left_foot_tf_name, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame);
 
-	OpenSimRT::ExternalWrench::Input parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame);
+			bool parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame, OpenSimRT::ExternalWrench::Input* wO );
 
 
 			//do I need this?
