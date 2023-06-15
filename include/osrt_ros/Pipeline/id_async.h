@@ -64,6 +64,7 @@ namespace Pipeline
 	{
 		public:
 			IdAsync();
+			IdAsync(double delay__);
 			~IdAsync();
 			std_msgs::Header::_stamp_type last_received_ik_stamp;
 			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;

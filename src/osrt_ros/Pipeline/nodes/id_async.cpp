@@ -1,4 +1,5 @@
 
+#include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "ros/service_server.h"
 #include "signal.h"
@@ -14,7 +15,10 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "id_show");
 	ROS_INFO_STREAM("called node InverseDynamics.");
     try {
-	Pipeline::IdAsync perenial;
+	ros::NodeHandle nh("~");
+	double delay;
+	nh.param("ik_delay", delay, 1.5);
+	Pipeline::IdAsync perenial(delay);
 
 	//	signal(SIGINT, mySigintHandler);
 	perenial.onInit();		

@@ -55,16 +55,22 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 	//////////////////////////////////////////////////////////////////
 const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_buffer(const std_msgs::Header::_stamp_type timestamp)
 {
-	for (auto w:wrenchBuffer)
+	if (!wrenchBuffer.empty())
 	{
-		//ROS_DEBUG_STREAM("wrenenrenrenrne" << w);
-		if (w.header.stamp > timestamp)
-			{
-				ROS_DEBUG_STREAM("I found something" << w) ;
-			return w;
-			}
+		for (auto w:wrenchBuffer)
+		{
+			//ROS_DEBUG_STREAM("wrenenrenrenrne" << w);
+			if (w.header.stamp > timestamp)
+				{
+					ROS_DEBUG_STREAM("I found something" << w) ;
+				return w;
+				}
+		}
+		ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header);
+		ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header);
+		ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
+		ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
 	}
-	ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast!");
 	return geometry_msgs::WrenchStamped();
 }
 bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type timestamp, ExternalWrench::Input* wO )
@@ -187,7 +193,13 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 
 Pipeline::IdAsync::IdAsync(): wsL("left", "calcn_l"), wsR("right", "calcn_r"), seq__(sub__, ros::Duration(0.3),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(0.01),1000)
 {
+	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay????????????????????????????????????????????????????????????????????????????????????");
 
+}
+
+Pipeline::IdAsync::IdAsync(double delay__): wsL("left", "calcn_l"), wsR("right", "calcn_r"), seq__(sub__, ros::Duration(delay__),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(0.01),1000)
+{
+	ROS_INFO_STREAM("subscribing with a delay of: "<<delay__<<"s.");
 }
 
 Pipeline::IdAsync::~IdAsync()
@@ -227,7 +239,7 @@ void Pipeline::IdAsync::onInit() {
 
 	pub_ik = nh.advertise<opensimrt_msgs::CommonTimed>("debug_ik", 1000);
 	//i need the labels and other stuff maybe
-	Ros::CommonNode::onInit();
+	//Ros::CommonNode::onInit();
 	sub.unsubscribe();
 	sub_filtered.unsubscribe();
 	sub__.subscribe(nh, "input", 1000);
