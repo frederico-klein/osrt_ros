@@ -58,4 +58,11 @@ add_dependencies(id ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGET
 target_link_libraries(id
 	${DEPENDENCY_LIBS}
 )
+add_executable(id_async nodes/id_async.cpp)
+
+add_dependencies(id_async ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(id_async
+	${DEPENDENCY_LIBS}
+)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
