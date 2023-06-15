@@ -1,44 +1,4 @@
-#include "InverseDynamics.h"
-#include "Ros/include/common_node.h"
-#include "geometry_msgs/TransformStamped.h"
-#include "geometry_msgs/Wrench.h"
-#include "geometry_msgs/WrenchStamped.h"
-#include "opensimrt_msgs/Events.h"
-#include "opensimrt_msgs/PosVelAccTimed.h"
-#include "osrt_ros/Pipeline/dualsink_pipe.h"
-#include "message_filters/time_synchronizer.h"
-#include "ros/duration.h"
-#include "ros/exception.h"
-#include "ros/message_traits.h"
-#include "ros/ros.h"
-#include "opensimrt_msgs/CommonTimed.h"
-#include "opensimrt_msgs/Labels.h"
-#include "experimental/AccelerationBasedPhaseDetector.h"
-#include "experimental/GRFMPrediction.h"
-#include "INIReader.h"
-#include "OpenSimUtils.h"
-//#include "Settings.h"
-#include "SignalProcessing.h"
-#include "Utils.h"
-#include "Visualization.h"
-#include <Actuators/Thelen2003Muscle.h>
-#include <Common/TimeSeriesTable.h>
-#include <OpenSim/Common/STOFileAdapter.h>
-#include <OpenSim/Common/CSVFileAdapter.h>
-#include <SimTKcommon/internal/BigMatrix.h>
-#include <SimTKcommon/internal/Vec.h>
-#include <SimTKcommon/internal/Vector_.h>
-#include <exception>
-#include <numeric>
-#include <utility>
-#include "ros/service_server.h"
-#include "signal.h"
-#include "std_srvs/Empty.h"
-
 #include "osrt_ros/Pipeline/id_async.h"
-#include "opensimrt_bridge/conversions/message_convs.h"
-#include "tf2/convert.h"
-
 
 using namespace std;
 using namespace OpenSim;
@@ -56,7 +16,9 @@ void Pipeline::WrenchSubscriber::onInit()
 
 {
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
+	nh.param<int>("max_buffer_length", max_buffer_length, 1000);
 	sub.subscribe(nh,wrench_name_prefix+"/wrench",100);
+
 	pub_grf = nh.advertise<opensimrt_msgs::CommonTimed>(wrench_name_prefix+"/debug_grf", 1000);
 	pub_cop = nh.advertise<opensimrt_msgs::CommonTimed>(wrench_name_prefix+"/debug_cop", 1000);
 	nh.param<std::string>(wrench_name_prefix+"_foot_tf_name", foot_tf_name, wrench_name_prefix+"_foot_forceplate");
@@ -69,6 +31,11 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 {
 	//places the wrench in the buffer
 	wrenchBuffer.push_back(msg);
+	while (wrenchBuffer.size()>max_buffer_length)
+	{
+		wrenchBuffer.pop_front();
+	}
+
 }
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
@@ -80,6 +47,11 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 	//////////////////////////////////////////////////////////////////
 const geometry_msgs::WrenchStampedConstPtr Pipeline::WrenchSubscriber::find_wrench_in_buffer(const std_msgs::Header::_stamp_type timestamp)
 {
+	for (auto w:wrenchBuffer)
+	{
+		if (w->header.stamp > timestamp)
+			return w;
+	}
 	ROS_FATAL_STREAM("not implemented");
 	return geometry_msgs::WrenchStampedConstPtr();
 }
@@ -219,16 +191,18 @@ void Pipeline::IdAsync::onInit() {
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//TODO::::: HEre I want to subscribe with a timeSequencer!!!!!!!!!!!!
-	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
-	sub0.registerCallback(&Pipeline::IdAsync::callback0,this);
+	//message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;
+	//sub0.registerCallback(&Pipeline::IdAsync::callback0,this);
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
-	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
-	sub1.registerCallback(&Pipeline::IdAsync::callback1,this);
+	
+	//this is also wrong because it will get destroyed after this is finished...
+	//message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub1;
+	//sub1.registerCallback(&Pipeline::IdAsync::callback1,this);
 
 	//I will start all the wrenches now:
 	wsL.onInit();

@@ -20,6 +20,7 @@
 #include "osrt_ros/events.h"
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "opensimrt_bridge/conversions/message_convs.h"
 
 namespace Pipeline
 {
@@ -39,7 +40,8 @@ namespace Pipeline
 			int memory, delay, splineOrder;
 			double cutoffFreq;
 
-			std::vector<geometry_msgs::WrenchStampedConstPtr> wrenchBuffer;
+			int max_buffer_length = 1000;
+			std::deque<geometry_msgs::WrenchStampedConstPtr> wrenchBuffer;
 
 			message_filters::Subscriber<geometry_msgs::WrenchStamped> sub; 
 			virtual void callback(const geometry_msgs::WrenchStampedConstPtr& msg);
