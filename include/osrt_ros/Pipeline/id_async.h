@@ -37,7 +37,7 @@ namespace Pipeline
 			tf2_ros::TransformListener tfListener;
 			ros::NodeHandle nh{"~"};
 
-			std::string grf_reference_frame, ref_frame, calcn_frame, foot_tf_name;
+			std::string grf_reference_frame, calcn_frame, foot_tf_name;
 
 			std::string wrench_name_prefix;
 			//do I need this?

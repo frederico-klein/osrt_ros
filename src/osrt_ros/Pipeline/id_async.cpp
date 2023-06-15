@@ -29,7 +29,6 @@ void Pipeline::WrenchSubscriber::onInit()
 	nh.param<std::string>(wrench_name_prefix+"_foot_tf_name", foot_tf_name, wrench_name_prefix+"_foot_forceplate");
 	nh.param<std::string>("grf_reference_frame", grf_reference_frame, "map");
 
-	ref_frame = "";//something
 }
 
 void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedConstPtr& msg)
@@ -97,7 +96,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 			 //i gotta do 2 lookups. one to the frigging food
 			 // "left_filtered " -"calcn_l"
 			 //	"calcn_l" - "subject_opensim"
-				auto foot_cop = tfBuffer.lookupTransform(ref_frame, calcn_frame, sometime);
+				auto foot_cop = tfBuffer.lookupTransform(foot_tf_name, calcn_frame, sometime);
 				auto foot_pos = tfBuffer.lookupTransform(calcn_frame, grf_reference_frame, sometime);
 				opensimrt_msgs::CommonTimed msg_cop;
 				msg_cop.header.stamp = ros::Time::now();
@@ -110,13 +109,13 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 				pub_cop.publish(msg_cop);
 
 		}
-
 		//ATTENTION FUTURE FREDERICO:
 		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
 		//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
 		//ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
 
-		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, ref_frame, sometime);
+		nulltransform = tfBuffer.lookupTransform(grf_reference_frame, foot_tf_name, sometime);
+		
 		//nulltransform = tfBuffer.lookupTransform("subject_opensim", ref_frame, ros::Time(0));
 		wO->point[0] = nulltransform.transform.translation.x;
 		wO->point[1] = nulltransform.transform.translation.y;
@@ -143,14 +142,14 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		wO->torque[0] =v_torque_new.x();
 		wO->torque[1] =v_torque_new.y();
 		wO->torque[2] =v_torque_new.z();
-
+		
 	}
 	catch (tf2::TransformException &ex) {
 		ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
 		//ros::Duration(1.0).sleep();
 		return false;
 	}
-
+	ROS_INFO_STREAM("I got some wrench. so far so good.");
 	//ROS_WARN_STREAM("TFs in wrench parsing of geometry_wrench messages not implemented! Rotated frames will fail!");
 	return true;
 
@@ -167,13 +166,13 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	nullWrench.point = Vec3{0,0,0};
 	
 	static OpenSimRT::ExternalWrench::Input grfRightWrench=nullWrench;
-	OpenSimRT::ExternalWrench::Input* gRw; 
+	OpenSimRT::ExternalWrench::Input* gRw(&grfRightWrench); 
 	if(wsR.get_wrench(timestamp, gRw))
 		grfRightWrench = *gRw;
 	//cout << "left wrench.";
 	ROS_INFO_STREAM("rw");
 	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
-	OpenSimRT::ExternalWrench::Input* gLw; 
+	OpenSimRT::ExternalWrench::Input* gLw(&grfLeftWrench); 
 	if(wsL.get_wrench(timestamp, gLw))
 		grfLeftWrench = *gLw;
 	ROS_DEBUG_STREAM("lw");
