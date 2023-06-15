@@ -1,25 +1,15 @@
 #ifndef PIPELINE_ID_HEADER_FBK_27072022
 #define PIPELINE_ID_HEADER_FBK_27072022
 
-#include "InverseDynamics.h"
+#include "osrt_ros/Pipeline/id_common.h"
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
 #include "message_filters/sync_policies/exact_time.h"
-#include "opensimrt_msgs/Events.h"
-#include "opensimrt_msgs/PosVelAccTimed.h"
-#include "osrt_ros/Pipeline/dualsink_pipe.h"
-#include "SignalProcessing.h"
-#include "Visualization.h"
-#include "opensimrt_msgs/CommonTimed.h"
 #include "ros/message_traits.h"
 #include "std_srvs/Empty.h"
-#include <Common/TimeSeriesTable.h>
-#include <SimTKcommon/internal/BigMatrix.h>
-#include <SimTKcommon/internal/VectorBase.h>
-#include "geometry_msgs/WrenchStamped.h"
 #include "tf2_ros/transform_listener.h"
-#include "osrt_ros/events.h"
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
@@ -32,7 +22,7 @@ typedef message_filters::sync_policies::ApproximateTime<opensimrt_msgs::PosVelAc
 namespace Pipeline
 {
 
-	class Id:public Pipeline::DualSink
+	class Id:public Pipeline::IdCommon::IdCommon
 	{
 		public:
 			Id();
@@ -40,10 +30,6 @@ namespace Pipeline
 			std_msgs::Header::_stamp_type last_received_ik_stamp;
 			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;
 			// now since I have 2 sinks I will need message_filters
-			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
-			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
-			void callback(const opensimrt_msgs::CommonTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
-			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_grf); //ik, grf are received at the same time
 			
 			//NOW get real ros wrenches:
 			tf2_ros::Buffer tfBuffer;
@@ -69,26 +55,10 @@ namespace Pipeline
 			
 			void callback_real_wrenches_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, 	const geometry_msgs::WrenchStampedConstPtr& wl, const geometry_msgs::WrenchStampedConstPtr& wr);
 			
-			virtual void run(const std_msgs::Header h, double t, std::vector<SimTK::Vector> iks, std::vector<OpenSimRT::ExternalWrench::Input> ,  opensimrt_msgs::Events e);
-
 			void onInit();
 
 			// now all the stuff I need to save between inInit and the callbacks
 
-			std::string subjectDir;
-			//loggers
-			//
-			OpenSim::TimeSeriesTable* tauLogger;
-			
-			//other stuff
-			OpenSimRT::InverseDynamics* id;
-			OpenSimRT::ForceDecorator *rightGRFDecorator,*leftGRFDecorator;
-			OpenSim::Model* model;
-			OpenSimRT::BasicModelVisualizer* visualizer;
-			OpenSimRT::LowPassSmoothFilter* ikfilter;
-			std::vector<std::string> grfRightLabels, grfLeftLabels;
-			
-			boost::array<int,9> grfLeftIndexes, grfRightIndexes;
 
 			ros::Publisher pub_grf_left, pub_grf_right, pub_ik, pub_cop_left, pub_cop_right; //crazy debug going nuts
 
@@ -99,18 +69,6 @@ namespace Pipeline
 			bool parse_message(const geometry_msgs::WrenchStampedConstPtr& w, std::string ref_frme, tf2_ros::Buffer& tfBuffer, std::string grf_reference_frame, OpenSimRT::ExternalWrench::Input* wO );
 
 
-			//do I need this?
-			bool use_grfm_filter;
-			int memory, delay, splineOrder;
-			double cutoffFreq;
-
-			void finish();
-			bool see(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
-
-			void write_();
-			virtual bool usesVisualizarFromId() { return true;}
-
-			void print_vec(std::vector<std::string> vs);
 	};
 
 }
