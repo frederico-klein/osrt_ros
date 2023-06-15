@@ -20,8 +20,8 @@
 		<remap from="/id_node/input2" 	to="/grf_node/output"/>
 		<remap from="/in_labels2" 	to="/grf_node/out_labels"/>
 		
-		<remap from="/id_node/left_wrench" 	to="/grf_left/wrench"/>
-		<remap from="/id_node/right_wrench" 	to="/grf_right/wrench"/>
+		<remap from="/id_node/left/wrench" 	to="/grf_left/wrench"/>
+		<remap from="/id_node/right/wrench" 	to="/grf_right/wrench"/>
         </node>
 
 </launch>

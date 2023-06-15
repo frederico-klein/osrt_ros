@@ -1,4 +1,8 @@
 #include "osrt_ros/Pipeline/id_async.h"
+#include "geometry_msgs/WrenchStamped.h"
+#include "opensimrt_msgs/CommonTimed.h"
+#include "ros/duration.h"
+#include <memory>
 
 using namespace std;
 using namespace OpenSim;
@@ -15,9 +19,10 @@ Pipeline::WrenchSubscriber::WrenchSubscriber(std::string wrench_name_prefix_, st
 void Pipeline::WrenchSubscriber::onInit()
 
 {
+	ROS_DEBUG_STREAM("called WrenchSubscriber onInit");
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
 	nh.param<int>("max_buffer_length", max_buffer_length, 1000);
-	sub.subscribe(nh,wrench_name_prefix+"/wrench",100);
+	sub = nh.subscribe(wrench_name_prefix+"/wrench",100, &WrenchSubscriber::callback, this);
 
 	pub_grf = nh.advertise<opensimrt_msgs::CommonTimed>(wrench_name_prefix+"/debug_grf", 1000);
 	pub_cop = nh.advertise<opensimrt_msgs::CommonTimed>(wrench_name_prefix+"/debug_cop", 1000);
@@ -29,8 +34,12 @@ void Pipeline::WrenchSubscriber::onInit()
 
 void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedConstPtr& msg)
 {
+	ROS_INFO_STREAM("reached a wrench subscriber!");
 	//places the wrench in the buffer
-	wrenchBuffer.push_back(msg);
+	geometry_msgs::WrenchStamped my_wrench = *msg.get();
+	wrenchBuffer.push_back(my_wrench);
+	ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
+	ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
 	while (wrenchBuffer.size()>max_buffer_length)
 	{
 		wrenchBuffer.pop_front();
@@ -45,22 +54,31 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
-const geometry_msgs::WrenchStampedConstPtr Pipeline::WrenchSubscriber::find_wrench_in_buffer(const std_msgs::Header::_stamp_type timestamp)
+const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_buffer(const std_msgs::Header::_stamp_type timestamp)
 {
 	for (auto w:wrenchBuffer)
 	{
-		if (w->header.stamp > timestamp)
+		//ROS_DEBUG_STREAM("wrenenrenrenrne" << w);
+		if (w.header.stamp > timestamp)
+			{
+				ROS_DEBUG_STREAM("I found something" << w) ;
 			return w;
+			}
 	}
-	ROS_FATAL_STREAM("not implemented");
-	return geometry_msgs::WrenchStampedConstPtr();
+	ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast!");
+	return geometry_msgs::WrenchStamped();
 }
 bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type timestamp, ExternalWrench::Input* wO )
 {
 	//find the actual wrench I need based on timestamp
-	auto w = find_wrench_in_buffer(timestamp);	
-	ROS_INFO_STREAM("times.. wrench header:"<< w->header << "\nnow: "<<ros::Time::now());
-	auto sometime = w->header.stamp; //I hate myself.
+	auto w = find_wrench_in_buffer(timestamp);
+	if (w.header.frame_id == "")
+	{
+		ROS_WARN_STREAM("header frame_id is empty!!!");
+		return false;
+	}
+		ROS_INFO_STREAM("times.. wrench header:"<< w.header << "\nnow: "<<ros::Time::now());
+	auto sometime = w.header.stamp; //I hate myself.
 	//auto sometime = ros::Time(0); //I hate myself.
 	
 	//TODO:I actually should read the ref_frame from the wrench like a normal person.
@@ -114,8 +132,8 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		tf2::Quaternion q ;
 		tf2::fromMsg(nulltransform.transform.rotation,q);
 		tf2::Vector3 v_force_orig, v_torque_orig;
-		tf2::fromMsg(w->wrench.force, v_force_orig);
-		tf2::fromMsg(w->wrench.torque, v_torque_orig);
+		tf2::fromMsg(w.wrench.force, v_force_orig);
+		tf2::fromMsg(w.wrench.torque, v_torque_orig);
 
 		tf2::Vector3 v_force_new = quatRotate(q, v_force_orig);
 		wO->force[0] =v_force_new.x();
@@ -153,7 +171,7 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	if(wsR.get_wrench(timestamp, gRw))
 		grfRightWrench = *gRw;
 	//cout << "left wrench.";
-	ROS_DEBUG_STREAM("rw");
+	ROS_INFO_STREAM("rw");
 	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
 	OpenSimRT::ExternalWrench::Input* gLw; 
 	if(wsL.get_wrench(timestamp, gLw))
@@ -168,7 +186,7 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 
 }
 
-Pipeline::IdAsync::IdAsync(): wsL("left", "calcn_l"), wsR("right", "calcn_r")
+Pipeline::IdAsync::IdAsync(): wsL("left", "calcn_l"), wsR("right", "calcn_r"), seq__(sub__, ros::Duration(0.3),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(0.01),1000)
 {
 
 }
@@ -182,8 +200,7 @@ Pipeline::IdAsync::~IdAsync()
 void Pipeline::IdAsync::onInit() {
 	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case
 	//get_second_label = false;
-	Ros::CommonNode::onInit();
-
+	Pipeline::IdCommon::onInit();
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////
@@ -210,6 +227,15 @@ void Pipeline::IdAsync::onInit() {
 
 
 	pub_ik = nh.advertise<opensimrt_msgs::CommonTimed>("debug_ik", 1000);
+	//i need the labels and other stuff maybe
+	Ros::CommonNode::onInit();
+	sub.unsubscribe();
+	sub_filtered.unsubscribe();
+	sub__.subscribe(nh, "input", 1000);
+	seq__.registerCallback(&Pipeline::IdAsync::callback0, this);	
+	sub_filtered__.subscribe(nh, "input_filtered", 1000);
+	seq_filtered__.registerCallback(&Pipeline::IdAsync::callback_filtered, this);
+	//I need a slow IK with a ton of delay.
 
 }
 
@@ -238,7 +264,9 @@ void Pipeline::IdAsync::callback0(const opensimrt_msgs::CommonTimedConstPtr& mes
 }
 
 void Pipeline::IdAsync::callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik) 
+
 {
+	ROS_INFO_STREAM("reached ik filtered subscriber. good news");
 	auto newEvents1 = addEvent("id received ik filtered & wrenches", message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
 	//cant find the right copy constructor syntax. will for loop it
@@ -248,6 +276,7 @@ void Pipeline::IdAsync::callback_filtered(const opensimrt_msgs::PosVelAccTimedCo
 	auto timestamp =message_ik->header.stamp;
 	auto grfs = Pipeline::IdAsync::get_wrench(timestamp);
 	addEvent("calling run function of id", newEvents1);
+	ROS_INFO_STREAM("calling run function");
 	run(message_ik->header,message_ik->time, iks,grfs, newEvents1);
 }
 
