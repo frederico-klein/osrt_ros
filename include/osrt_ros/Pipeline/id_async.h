@@ -40,6 +40,8 @@ namespace Pipeline
 			std::string grf_reference_frame, calcn_frame, foot_tf_name;
 
 			std::string wrench_name_prefix;
+
+			//double add_additional_wrench_delay;//TODO:This should be done at wrench creation or republishing, I think, to make more sense
 			//do I need this?
 			bool use_grfm_filter;
 			int memory, delay, splineOrder;

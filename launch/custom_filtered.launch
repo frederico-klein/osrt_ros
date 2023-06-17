@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
+		<param name="model_base_frame" value="pelvis"/>
+		<param name="parent_base_frame" value="map"/>
+		<rosparam command="load" file="$(find gait1992_description)/joint_mapping.yaml" />
+		<!-- remap from="/custom_joints/input" to="/ik/output"/ -->
+		<!-- If I use the normal unfiltered output here, I gain some milliseconds to calculate the TFs, so I need less delay on the rest of the pipeline -->
+		<remap from="/custom_joints/input_filtered" to="/ik/output_filtered"/>
+		<remap from="/in_labels" to="/ik/outlabels"/>
+		<remap from="/joint_states" to="/model_generic/joint_states" />
+	</node>
+	<!-- I checked and the only node that wants to see this also wants to see custom joints, so I decided to merge them since static_publisher is a python node and doesnt really publish static tfs -->
+	<!--include file="$(find osrt_ros)/launch/opensim_tf.launch"/-->
+</launch>

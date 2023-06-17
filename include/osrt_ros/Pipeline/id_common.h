@@ -60,8 +60,8 @@ namespace Pipeline
 			virtual bool usesVisualizarFromIdCommon() { return true;}
 
 			void print_vec(std::vector<std::string> vs);
-			void publish_additional_topics(std_msgs::Header h, SimTK::Vector q, std::vector<OpenSimRT::ExternalWrench::Input> wV)
-			{ ROS_ERROR_STREAM("not implemented");}
+			virtual void publish_additional_topics(std_msgs::Header h, SimTK::Vector q, std::vector<OpenSimRT::ExternalWrench::Input> wV)
+			{ ROS_ERROR_STREAM("publish additional topics not implemented");}
 	};
 
 }

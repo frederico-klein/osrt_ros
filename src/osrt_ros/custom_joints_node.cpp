@@ -140,7 +140,7 @@ class qJointPublisher: public Ros::CommonNode
 			auto a = ros::Time::now();
 			parse_msg(msg_ik->header, msg_ik->data);
 			auto b = ros::Time::now();
-			ROS_INFO_STREAM("loop time" <<a-b);
+			//ROS_INFO_STREAM("loop time" <<a-b);
 		}
 		void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& msg_ik)
 		{
@@ -148,7 +148,7 @@ class qJointPublisher: public Ros::CommonNode
 			auto a = ros::Time::now();
 			parse_msg(msg_ik->header, msg_ik->d0_data);
 			auto b = ros::Time::now();
-			ROS_INFO_STREAM("loop time filtered" <<a-b);
+			//ROS_INFO_STREAM("loop time filtered" <<a-b);
 		}
 		void parse_msg(std_msgs::Header h, std::vector<double> q)
 		{
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
 	qJointPublisher qJ;
 	qJ.onInit();
 	// publish initial zero pose:
-	qJ.pub_zero();
+	//qJ.pub_zero();
 	otf.publish_opensim_base_tf();	
 	ros::spin();
 	return 0;

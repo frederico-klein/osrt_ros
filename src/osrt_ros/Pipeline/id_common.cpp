@@ -314,10 +314,10 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		//I need the header!!!
 		opensimrt_msgs::CommonTimed msg;
 		msg.header = h;
-		ROS_DEBUG_STREAM("attempting to print tau!");
+		//ROS_DEBUG_STREAM("attempting to print tau!");
 		for (double tau_component:idOutput.tau)
 		{
-			ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
+			//ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
 			msg.data.push_back(tau_component);
 		}
 		//msg.events = e;
