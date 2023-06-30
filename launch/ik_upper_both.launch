@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<include file="$(find osrt_ros)/launch/ik_upper.launch" ns="ar" >
+		<arg name="tf_frame_prefix" value="ar" />
+		<arg name="rotation_y"      value="0"/>
+	</include>
+	<include file="$(find osrt_ros)/launch/ik_upper.launch" ns="imu" >
+		<arg name="tf_frame_prefix" value="imu" />
+	</include>
+
+</launch>
+

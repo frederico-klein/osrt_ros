@@ -1,5 +1,11 @@
 # osrt\_ros
 
+## This is terribly outdated. 
+
+
+
+
+
 Ros wrapper interface for the [OpenSimRT](https://github.com/mitkof6/OpenSimRT) project. 
 
 This is the ros nodes that should be able to run with vanilla OpenSimRT at some point. This was done to allow more easily for updates on OpenSimRT to be used in the ros wrapper version. 
