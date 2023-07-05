@@ -15,7 +15,7 @@ namespace Visualizers
 	class DualSinkVis:public Visualizers::VisualizerCommon
 	{
 		public:
-			DualSinkVis(): seq(sub_multi, ros::Duration(0.1), ros::Duration(0.005), 1000) {}
+			DualSinkVis(): seq(sub_multi, ros::Duration(2.0), ros::Duration(0.01), 1000) {}
 			virtual ~DualSinkVis() {}
 			message_filters::Subscriber<opensimrt_msgs::MultiMessage> sub_multi;
 			message_filters::TimeSequencer<opensimrt_msgs::MultiMessage> seq;
@@ -30,7 +30,7 @@ namespace Visualizers
 				sub = nh.subscribe("dual_input",1, &Visualizers::DualSinkVis::callback, this);
 
 				sub_filtered = nh.subscribe("dual_input_filtered",1, &Visualizers::DualSinkVis::callback_filtered, this);
-				sub_multi.subscribe(nh, "multi_input", 1);
+				sub_multi.subscribe(nh, "multi_input", 100);
 				seq.registerCallback(&Visualizers::DualSinkVis::callback_multi, this);
 				ROS_INFO_STREAM("added subscribers ok.");
 				
