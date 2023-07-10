@@ -34,7 +34,6 @@ namespace Pipeline
 			void finish();
 			//SO portion:
 			OpenSimRT::MuscleOptimization* so;
-			OpenSimRT::MuscleOptimization::OptimizationParameters optimizationParameters;
 			OpenSim::Model* model;
 			OpenSimRT::BasicModelVisualizer* visualizer;
 			OpenSimRT::MomentArmFunctionT calcMomentArm; 

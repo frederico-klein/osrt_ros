@@ -17,6 +17,7 @@
 #include "signal.h"
 #include "std_srvs/Empty.h"
 #include "osrt_ros/Pipeline/so_bare.h"
+#include "osrt_ros/parameters.h"
 
 using namespace std;
 using namespace OpenSim;
@@ -28,23 +29,12 @@ Pipeline::SoBare::SoBare()
 	ROS_DEBUG_STREAM("constructor of SoBare");
 
 	// subject data
-	INIReader ini(INI_FILE);
-	auto section = "TEST_SO_FROM_FILE";
-	auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	std::string modelFile = "";
 	nh.param<std::string>("model_file",modelFile,"");
 	
-	auto momentArmLibraryPath =
-		LIBRARY_OUTPUT_PATH + "/" +
-		ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+	string momentArmLibraryPath; 
+	nh.getParam("moment_arm_library_path", momentArmLibraryPath);
 	ROS_DEBUG_STREAM("momentArmLibraryPath:" << momentArmLibraryPath);
-
-	auto convergenceTolerance =
-		ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
-	auto memoryHistory = ini.getReal(section, "MEMORY_HISTORY", 0);
-	auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
-	auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
 
 	Object::RegisterType(Thelen2003Muscle());
 	model = new Model(modelFile);
@@ -60,10 +50,7 @@ Pipeline::SoBare::SoBare()
 
 	ROS_DEBUG_STREAM("initialized MomentArm from dynamic library ok.");
 	
-	optimizationParameters.convergenceTolerance = convergenceTolerance;
-	optimizationParameters.memoryHistory = memoryHistory;
-	optimizationParameters.maximumIterations = maximumIterations;
-	optimizationParameters.objectiveExponent = objectiveExponent;
+	OpenSimRT::MuscleOptimization::OptimizationParameters optimizationParameters = pars::getparamSO(nh);
 	ROS_DEBUG_STREAM("set parameter for optimizer okay.");
 	// auto tauResLogger = so.initializeResidualLogger();
 	// mean delay

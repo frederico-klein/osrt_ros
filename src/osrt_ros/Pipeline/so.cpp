@@ -1,4 +1,5 @@
 #include "opensimrt_msgs/MultiMessage.h"
+#include "osrt_ros/parameters.h"
 #include "ros/ros.h"
 #include "opensimrt_msgs/Labels.h"
 #include "INIReader.h"
@@ -33,41 +34,12 @@ Pipeline::So::So(): Pipeline::DualSink::DualSink(false)
 		<< endl;
 
 	// subject data
-	INIReader ini(INI_FILE);
-	auto section = "TEST_SO_FROM_FILE";
-	auto subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	std::string modelFile = "";
 	nh.param<std::string>("model_file",modelFile,"");
-	
 
-	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
-	//auto idFile = subjectDir + ini.getString(section, "ID_FILE", "");
-
-	// Windows places executables in different folders. When ctest is
-	// called on a Linux machine it runs the test from different
-	// folders and thus the dynamic library might not be found
-	// properly.
-	//#ifndef WIN32
-	auto momentArmLibraryPath =
-		LIBRARY_OUTPUT_PATH + "/" +
-		ini.getString(section, "MOMENT_ARM_LIBRARY", "");
+	string momentArmLibraryPath; 
+	nh.getParam("moment_arm_library_path", momentArmLibraryPath);
 	ROS_DEBUG_STREAM("momentArmLibraryPath:" << momentArmLibraryPath);
-	/*#else
-	  auto momentArmLibraryPath =
-	  ini.getString(section, "MOMENT_ARM_LIBRARY", "");
-#endif*/
-
-	//auto memory = ini.getInteger(section, "MEMORY", 0);
-	//auto cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
-	//auto delay = ini.getInteger(section, "DELAY", 0);
-	//auto splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
-
-	auto convergenceTolerance =
-		ini.getReal(section, "CONVERGENCE_TOLERANCE", 0);
-	auto memoryHistory = ini.getReal(section, "MEMORY_HISTORY", 0);
-	auto maximumIterations = ini.getInteger(section, "MAXIMUM_ITERATIONS", 0);
-	auto objectiveExponent = ini.getInteger(section, "OBJECTIVE_EXPONENT", 0);
 
 	Object::RegisterType(Thelen2003Muscle());
 	model = new Model(modelFile);
@@ -82,26 +54,9 @@ Pipeline::So::So(): Pipeline::DualSink::DualSink(false)
 	calcMomentArm = calcMomentArmTemp;
 
 	ROS_DEBUG_STREAM("initialized MomentArm from dynamic library ok.");
-	// get kinematics as a table with ordered coordinates
-	//auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
-	//        model, ikFile, 0.01);
-
-	// read external forces
-	//auto tauTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
-	//        model, idFile, 0.01);
-
-	/*if (tauTable.getNumRows() != qTable.getNumRows()) {
-	  THROW_EXCEPTION("ik and id storages of different size " +
-	  toString(qTable.getNumRows()) +
-	  " != " + toString(tauTable.getNumRows()));
-	  }*/
 
 	// initialize so
-	//    MuscleOptimization::OptimizationParameters optimizationParameters;
-	optimizationParameters.convergenceTolerance = convergenceTolerance;
-	optimizationParameters.memoryHistory = memoryHistory;
-	optimizationParameters.maximumIterations = maximumIterations;
-	optimizationParameters.objectiveExponent = objectiveExponent;
+	OpenSimRT::MuscleOptimization::OptimizationParameters optimizationParameters = pars::getparamSO(nh);
 	ROS_DEBUG_STREAM("set parameter for optimizer okay.");
 	// auto tauResLogger = so.initializeResidualLogger();
 	// mean delay
@@ -109,7 +64,6 @@ Pipeline::So::So(): Pipeline::DualSink::DualSink(false)
 
 	so = new MuscleOptimization(*model, optimizationParameters, calcMomentArm);
 	ROS_DEBUG_STREAM("initialized MuscleOptimization okay.");
-	//so = &so_temp;
 	ROS_DEBUG_STREAM("SO fake constructor ran ok.");
 }
 Pipeline::So::~So()
@@ -120,7 +74,6 @@ Pipeline::So::~So()
 
 void Pipeline::So::onInit() {
 	nh.getParam("get_second_label", get_second_label);
-	//get_second_label = false;
 	Pipeline::DualSink::onInit();
 
 	message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub0;

@@ -79,7 +79,7 @@ include_directories(
 
 ##PIPELINE ############################################################
 
-file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp")
+file (GLOB Pipeline_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/Pipeline/*.cpp" "src/osrt_ros/events.cpp" "src/osrt_ros/parameters.cpp")
 file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
 set(target osrtRosPipeline)
@@ -146,14 +146,4 @@ add_dependencies(external_average_quaternion_node ${${PROJECT_NAME}_EXPORTED_TAR
 target_link_libraries(external_average_quaternion_node
   ${catkin_LIBRARIES}
 )
-
-#add_executable(contact_force_based_phase_detector src/ContactForceBasedPhaseDetector.cpp src/grfm_ros.cpp)
-
-#add_dependencies(contact_force_based_phase_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-#target_link_libraries(contact_force_based_phase_detector
-#  ${catkin_LIBRARIES}
-#  ${OpenSim_LIBRARIES}
-#  ${opensimrt_LIBRARIES}
-#)
 

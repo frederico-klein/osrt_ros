@@ -7,6 +7,12 @@
                 <param name="model_file" 		value="$(arg model_file)" />
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
 
+		<param name="convergence_tolerance" 	value="" />
+		<param name="memory_history" 		value="" />
+		<param name="maximum_iterations" 	value="" />
+		<param name="objective_exponent" 	value="" />
+		<param name="moment_arm_library_path"	value="" />
+
 		<remap from="/so_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/so_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>

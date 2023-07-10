@@ -6,6 +6,7 @@
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
+#include "osrt_ros/parameters.h"
 #include "ros/duration.h"
 #include "ros/exception.h"
 #include "ros/message_traits.h"
@@ -48,46 +49,10 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 {
 	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
 	// subject data
-	INIReader ini(INI_FILE);
-	auto section = "TEST_ID_FROM_FILE";
-	subjectDir = DATA_DIR + ini.getString(section, "SUBJECT_DIR", "");
-	//auto modelFile = subjectDir + ini.getString(section, "MODEL_FILE", "");
 	std::string modelFile = "";
 	nh.param<std::string>("model_file",modelFile,"");
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
-	//auto grfMotFile = subjectDir + ini.getString(section, "GRF_MOT_FILE", "");
-	//auto ikFile = subjectDir + ini.getString(section, "IK_FILE", "");
 	//TODO:params!!!! copy from bridge
-	auto grfRightApplyBody =
-		ini.getString(section, "GRF_RIGHT_APPLY_TO_BODY", "");
-	auto grfRightForceExpressed =
-		ini.getString(section, "GRF_RIGHT_FORCE_EXPRESSED_IN_BODY", "");
-	auto grfRightPointExpressed =
-		ini.getString(section, "GRF_RIGHT_POINT_EXPRESSED_IN_BODY", "");
-	auto grfRightPointIdentifier =
-		ini.getString(section, "GRF_RIGHT_POINT_IDENTIFIER", "");
-	auto grfRightForceIdentifier =
-		ini.getString(section, "GRF_RIGHT_FORCE_IDENTIFIER", "");
-	auto grfRightTorqueIdentifier =
-		ini.getString(section, "GRF_RIGHT_TORQUE_IDENTIFIER", "");
-
-	auto grfLeftApplyBody =
-		ini.getString(section, "GRF_LEFT_APPLY_TO_BODY", "");
-	auto grfLeftForceExpressed =
-		ini.getString(section, "GRF_LEFT_FORCE_EXPRESSED_IN_BODY", "");
-	auto grfLeftPointExpressed =
-		ini.getString(section, "GRF_LEFT_POINT_EXPRESSED_IN_BODY", "");
-	auto grfLeftPointIdentifier =
-		ini.getString(section, "GRF_LEFT_POINT_IDENTIFIER", "");
-	auto grfLeftForceIdentifier =
-		ini.getString(section, "GRF_LEFT_FORCE_IDENTIFIER", "");
-	auto grfLeftTorqueIdentifier =
-		ini.getString(section, "GRF_LEFT_TORQUE_IDENTIFIER", "");
-
-	memory = ini.getInteger(section, "MEMORY", 0);
-	cutoffFreq = ini.getReal(section, "CUTOFF_FREQ", 0);
-	delay = ini.getInteger(section, "DELAY", 0);
-	splineOrder = ini.getInteger(section, "SPLINE_ORDER", 0);
 
 	// setup model
 	Object::RegisterType(Thelen2003Muscle());
@@ -99,43 +64,23 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	// setup external forces
 	//Storage grfMotion(grfMotFile);
 
-	ExternalWrench::Parameters grfRightFootPar{
-		grfRightApplyBody, grfRightForceExpressed, grfRightPointExpressed};
-	grfRightLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-			grfRightPointIdentifier, grfRightForceIdentifier,
-			grfRightTorqueIdentifier);
-	ExternalWrench::Parameters grfLeftFootPar{
-		grfLeftApplyBody, grfLeftForceExpressed, grfLeftPointExpressed};
-	grfLeftLabels = ExternalWrench::createGRFLabelsFromIdentifiers(
-			grfLeftPointIdentifier, grfLeftForceIdentifier,
-			grfLeftTorqueIdentifier);
+	ExternalWrench::Parameters grfRightFootPar = pars::getparamWrench(nh, "grf_right");
+	auto grfRightLabels = pars::getparamGRFMLabels(nh, "grf_right");
+
+	ExternalWrench::Parameters grfLeftFootPar = pars::getparamWrench(nh, "grf_left");
+	auto grfLeftLabels = pars::getparamGRFMLabels(nh, "grf_left");
+	
 	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
 	wrenchParameters.push_back(grfLeftFootPar);
 
-	// get kinematics as a table with ordered coordinates
-	/*auto qTable = OpenSimUtils::getMultibodyTreeOrderedCoordinatesFromStorage(
-	  model, ikFile, 0.01);
-	  */
-
 	// setup filters
-	LowPassSmoothFilter::Parameters ikFilterParam;
-	ikFilterParam.numSignals = model->getNumCoordinates();
-	ikFilterParam.memory = memory;
-	ikFilterParam.delay = delay;
-	ikFilterParam.cutoffFrequency = cutoffFreq;
-	ikFilterParam.splineOrder = splineOrder;
-	ikFilterParam.calculateDerivatives = true;
+	LowPassSmoothFilter::Parameters ikFilterParam = pars::getparamFilterIK(nh, model->getNumCoordinates());
 	ikfilter = new LowPassSmoothFilter(ikFilterParam);
 
-	LowPassSmoothFilter::Parameters grfFilterParam;
-	grfFilterParam.numSignals = 9;
-	grfFilterParam.memory = memory;
-	grfFilterParam.delay = delay;
-	grfFilterParam.cutoffFrequency = cutoffFreq;
-	grfFilterParam.splineOrder = splineOrder;
-	grfFilterParam.calculateDerivatives = false;
+	LowPassSmoothFilter::Parameters grfFilterParam = pars::getparamFilterGRFM(nh);
 
+	//grffilter = new LowPassSmoothFilter(grfFilterParam);
 	// test with state space filter
 	// StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
 	// StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,

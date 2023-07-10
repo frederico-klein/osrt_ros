@@ -87,21 +87,15 @@ class UIMUnode: Ros::CommonNode
 		{
 			ros::NodeHandle nh("~");
 			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-			//auto section = "UPPER_LIMB_NGIMU";
 			// imu calibration settings
 
 			nh.param<std::string>("imu_direction_axis", imuDirectionAxis, "");
 
-			//    imuDirectionAxis = ini.getString(section, "IMU_DIRECTION_AXIS", "");
 			nh.param<std::string>("imu_base_body", imuBaseBody, "");
 
-			//    imuBaseBody = ini.getString(section, "IMU_BASE_BODY", "");
 			nh.param<double>("imu_ground_rotation_x", xGroundRotDeg, 0.0);
-			//   xGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_X", 0.0);
 			nh.param<double>("imu_ground_rotation_y", yGroundRotDeg, 0.0);
-			//    yGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Y", 0.0);
 			nh.param<double>("imu_ground_rotation_z", zGroundRotDeg, 0.0);
-			//    zGroundRotDeg = ini.getReal(section, "IMU_GROUND_ROTATION_Z", 0.0);
 			nh.getParam("imu_observation_order", imuObservationOrder);
 			if (imuObservationOrder.size() == 0)
 			{
@@ -112,13 +106,10 @@ class UIMUnode: Ros::CommonNode
 			{
 				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
 			}
-			//    imuObservationOrder =
-			//	    ini.getVector(section, "IMU_BODIES", vector<string>());
 
 			// driver send rate
 			nh.param<double>("rate", rate, 0.0);
 			r = new ros::Rate(rate);
-			//    rate = ini.getInteger(section, "DRIVER_SEND_RATE", 0);
 			nh.param<bool>("visualise", visualiseIt, true);
 			// subject data
 			nh.param<std::string>("model_file", modelFile, "");
