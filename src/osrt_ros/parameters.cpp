@@ -82,7 +82,11 @@ std::vector<std::string> pars::getparamGRFMLabels(ros::NodeHandle nh, std::strin
 	nh.param<std::string>(grf_name_prefix + "_force_identifier", grfForceIdentifier, "");
 	std::string grfTorqueIdentifier;
 	nh.param<std::string>(grf_name_prefix + "_torque_identifier", grfTorqueIdentifier, "");
-	return OpenSimRT::ExternalWrench::createGRFLabelsFromIdentifiers(grfPointIdentifier, grfForceIdentifier,grfTorqueIdentifier);
+	ROS_DEBUG_STREAM(grfPointIdentifier << " " << grfForceIdentifier << " " << grfTorqueIdentifier);
+	auto res =OpenSimRT::ExternalWrench::createGRFLabelsFromIdentifiers(grfPointIdentifier, grfForceIdentifier,grfTorqueIdentifier);
+	for (auto rr: res)
+		ROS_DEBUG_STREAM(rr <<"; ");
+	return res;
 }
 OpenSimRT::ExternalWrench::Parameters pars::getparamWrench(ros::NodeHandle nh, std::string grf_name_prefix)
 {
@@ -99,38 +103,36 @@ OpenSimRT::ExternalWrench::Parameters pars::getparamWrench(ros::NodeHandle nh, s
 }
 
 OpenSimRT::AccelerationBasedPhaseDetector::Parameters pars::getparamAccPhaseDetector(ros::NodeHandle nh) { 
-	//TODO: write down all the get param statements here
-	//TODO: replace wherever this appears
 	// acceleration-based event detector
-	/*
-	   AccelerationBasedPhaseDetector::Parameters detectorParameters;
-	   detectorParameters.heelAccThreshold = heelAccThreshold;
-	   detectorParameters.toeAccThreshold = toeAccThreshold;
-	   detectorParameters.windowSize = windowSize;
-	   detectorParameters.rFootBodyName = rFootBodyName;
-	   detectorParameters.lFootBodyName = lFootBodyName;
-	   detectorParameters.rHeelLocationInFoot = rHeelLocation;
-	   detectorParameters.lHeelLocationInFoot = lHeelLocation;
-	   detectorParameters.rToeLocationInFoot = rToeLocation;
-	   detectorParameters.lToeLocationInFoot = lToeLocation;
-	   detectorParameters.samplingFrequency = 1 / 0.01;
-	   detectorParameters.accLPFilterFreq = accLPFilterFreq;
-	   detectorParameters.velLPFilterFreq = velLPFilterFreq;
-	   detectorParameters.posLPFilterFreq = posLPFilterFreq;
-	   detectorParameters.accLPFilterOrder = accLPFilterOrder;
-	   detectorParameters.velLPFilterOrder = velLPFilterOrder;
-	   detectorParameters.posLPFilterOrder = posLPFilterOrder;
-	   detectorParameters.posDiffOrder = posDiffOrder;
-	   detectorParameters.velDiffOrder = velDiffOrder;
-	   */
-	return OpenSimRT::AccelerationBasedPhaseDetector::Parameters();
+	
+	   OpenSimRT::AccelerationBasedPhaseDetector::Parameters detectorParameters;
+	   detectorParameters.heelAccThreshold 		= nh.param<double>	("heel_acc_threshold"	,0.); //heelAccThreshold;
+	   detectorParameters.toeAccThreshold 		= nh.param<double>	("toe_acc_threshold"	,0.); //oeAccThreshold;
+	   detectorParameters.windowSize 		= nh.param<int>		("window_size"	,0); //indowSize;
+	   detectorParameters.rFootBodyName 		= nh.param<std::string>	("right_foot_body_name"	,""); //FootBodyName;
+	   detectorParameters.lFootBodyName 		= nh.param<std::string>	("left_foot_body_name"	,""); //FootBodyName;
+	   detectorParameters.rHeelLocationInFoot 	= getSimtkVec(nh, 	 "right_heel_location_in_foot"	); //HeelLocation;
+	   detectorParameters.lHeelLocationInFoot 	= getSimtkVec(nh, 	 "left_heel_location_in_foot"	); //HeelLocation;
+	   detectorParameters.rToeLocationInFoot 	= getSimtkVec(nh, 	 "right_toe_location_in_foot"	); //ToeLocation;
+	   detectorParameters.lToeLocationInFoot 	= getSimtkVec(nh, 	 "left_toe_location_in_foot"	); //ToeLocation;
+	   detectorParameters.samplingFrequency 	= nh.param<double>	("sampling_frequency"	,0.); // / 0.01;
+	   detectorParameters.accLPFilterFreq 		= nh.param<double>	("acc_lp_filter_freq"	,0.); //ccLPFilterFreq;
+	   detectorParameters.velLPFilterFreq 		= nh.param<double>	("vel_lp_filter_freq"	,0.); //elLPFilterFreq;
+	   detectorParameters.posLPFilterFreq 		= nh.param<double>	("pos_lp_filter_freq"	,0.); //osLPFilterFreq;
+	   detectorParameters.accLPFilterOrder 		= nh.param<int>		("acc_lp_filter_order"	,0); //ccLPFilterOrder;
+	   detectorParameters.velLPFilterOrder 		= nh.param<int>		("vel_lp_filter_order"	,0); //elLPFilterOrder;
+	   detectorParameters.posLPFilterOrder 		= nh.param<int>		("pos_lp_filter_order"	,0); //osLPFilterOrder;
+	   detectorParameters.posDiffOrder 		= nh.param<int>		("pos_diff_order"	,0); //osDiffOrder;
+	   detectorParameters.velDiffOrder 		= nh.param<int>		("vel_diff_order"	,0); //elDiffOrder;
+	   
+	return detectorParameters;
 };
 
 OpenSimRT::ContactForceBasedPhaseDetector::Parameters pars::getparamConPhaseDetector(ros::NodeHandle nh) {
 	//TODO:: implement!
-	/*
-	   ContactForceBasedPhaseDetector::Parameters detectorParameters;
-	   detectorParameters.threshold = threshold;
+	
+	OpenSimRT::ContactForceBasedPhaseDetector::Parameters detectorParameters;
+	/*   detectorParameters.threshold = threshold;
 	   detectorParameters.windowSize = windowSize;
 	   detectorParameters.plane_origin = Vec3(0.0, platform_offset, 0.0);
 	   detectorParameters.rHeelSphereLocation = rHeelSphereLocation;
@@ -142,7 +144,7 @@ OpenSimRT::ContactForceBasedPhaseDetector::Parameters pars::getparamConPhaseDete
 	   detectorParameters.lFootBodyName = lFootBodyName;
 	 * 
 	 */
-	return OpenSimRT::ContactForceBasedPhaseDetector::Parameters();
+	return detectorParameters;
 
 }
 
@@ -157,6 +159,11 @@ void pars::getSimtkVec(ros::NodeHandle nh, std::string name, SimTK::Vec3 &vec){
 	vec[2] = tempVec[2];
 }
 
+SimTK::Vec3  pars::getSimtkVec(ros::NodeHandle nh, std::string name ){
+	SimTK::Vec3 vec(0);
+	pars::getSimtkVec(nh, name, vec);
+	return vec;
+}
 OpenSimRT::GRFMPrediction::Parameters pars::getparamGRFM(ros::NodeHandle nh)
 {
 

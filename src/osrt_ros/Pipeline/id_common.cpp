@@ -65,10 +65,10 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	//Storage grfMotion(grfMotFile);
 
 	ExternalWrench::Parameters grfRightFootPar = pars::getparamWrench(nh, "grf_right");
-	auto grfRightLabels = pars::getparamGRFMLabels(nh, "grf_right");
+	grfRightLabels = pars::getparamGRFMLabels(nh, "grf_right");
 
 	ExternalWrench::Parameters grfLeftFootPar = pars::getparamWrench(nh, "grf_left");
-	auto grfLeftLabels = pars::getparamGRFMLabels(nh, "grf_left");
+	grfLeftLabels = pars::getparamGRFMLabels(nh, "grf_left");
 	
 	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
@@ -141,6 +141,12 @@ void Pipeline::IdCommon::onInit() {
 	{
 		//TODO:: this looks like a reimplementation of the Reshuffler idea. check and fix!
 		ROS_INFO_STREAM("left");
+		/*for (auto l:grfLeftLabels)
+			ROS_DEBUG_STREAM(l <<";");
+		ROS_DEBUG_STREAM("input2_labels");
+		for (auto il:input2_labels)
+			ROS_DEBUG_STREAM(il << ";");
+		*/
 		grfLeftIndexes = Osb::generateIndexes(grfLeftLabels,input2_labels);
 		ROS_INFO_STREAM("right");
 		grfRightIndexes = Osb::generateIndexes(grfRightLabels, input2_labels);

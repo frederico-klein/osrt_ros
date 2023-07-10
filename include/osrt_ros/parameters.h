@@ -30,6 +30,7 @@ namespace pars
 	OpenSimRT::GRFMPrediction::Parameters 			getparamGRFM		(ros::NodeHandle nh);
 
 	void getSimtkVec(ros::NodeHandle nh, std::string name, SimTK::Vec3 &vec);
+	SimTK::Vec3 getSimtkVec(ros::NodeHandle nh, std::string name);
 
 
 
