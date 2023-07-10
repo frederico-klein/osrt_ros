@@ -21,8 +21,8 @@
 
                 <param name="method" 					value="Newton-Euler" />
                 <param name="pelvis_body_name" 				value="pelvis" />
-                <param name="r_foot_body_name" 				value="calcn_l" />
-                <param name="l_foot_body_name" 				value="calcn_r" />
+                <param name="r_foot_body_name" 				value="calcn_r" />
+                <param name="l_foot_body_name" 				value="calcn_l" />
                 <rosparam param="r_heel_cop_location">[0.014,-0.0168,-0.0055]</rosparam>
                 <rosparam param="l_heel_cop_location">[0.014,-0.0168,0.0055]</rosparam>
                 <rosparam param="r_toe_cop_location">[0.24,-0.0168,-0.00117]</rosparam>

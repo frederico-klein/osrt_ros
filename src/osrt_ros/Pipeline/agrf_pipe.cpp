@@ -43,7 +43,7 @@ void Pipeline::Acc::get_params()
 	// subject data
 	//TODO: make it real params
 	INIReader ini(INI_FILE);
-
+	auto section = "TEST_ACCELERATION_GRFM_PREDICTION_FROM_FILE";
 	grfOrigin = ini.getSimtkVec(section, "GRF_ORIGIN", Vec3(0));
 
 	// acceleration-based detector parameters
