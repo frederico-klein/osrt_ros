@@ -9,6 +9,13 @@
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
                 <param name="n_proc" 			value="$(arg n_proc)" />
 
+		<param name="convergence_tolerance" 	value="1.5e-0" />
+		<param name="memory_history" 		value="10" />
+		<param name="maximum_iterations" 	value="50" />
+		<param name="objective_exponent" 	value="2" />
+		<!-- there were some nice env variables defined to locate this, but now we have to specify explicitly -->
+		<param name="moment_arm_library_path"	value="/catkin_opensim/devel/lib/Gait1992MomentArm" />
+		
 		<remap from="/so_rr_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
 		<!--remap from="/so_rr_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>
