@@ -22,6 +22,7 @@ namespace pars
 	OpenSimRT::MuscleOptimization::OptimizationParameters getparamSO(ros::NodeHandle nh);
 
 	OpenSimRT::LowPassSmoothFilter::Parameters 		getparamFilterIK	(ros::NodeHandle nh, int num_signals);
+	bool 							getparamFilterIK	(ros::NodeHandle nh, int num_signals, OpenSimRT::LowPassSmoothFilter::Parameters &par);
 	OpenSimRT::LowPassSmoothFilter::Parameters 		getparamFilterGRFM	(ros::NodeHandle nh);
 	std::vector<std::string> 				getparamGRFMLabels	(ros::NodeHandle nh, std::string grf_name_prefix);
 	OpenSimRT::ExternalWrench::Parameters 			getparamWrench		(ros::NodeHandle nh, std::string grf_name_prefix);

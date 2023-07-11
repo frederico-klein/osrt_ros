@@ -92,8 +92,11 @@ void Pipeline::Fc::get_params()
 	wrenchParameters.push_back(grfLeftFootPar);
 
 	// setup filters
-	LowPassSmoothFilter::Parameters filterParam = pars::getparamFilterIK(nh, model.getNumCoordinates());
-	filter = new LowPassSmoothFilter(filterParam);
+	LowPassSmoothFilter::Parameters filterParam;
+	if (pars::getparamFilterIK(nh, model.getNumCoordinates(), filterParam))
+		filter = new LowPassSmoothFilter(filterParam);
+	else
+		ROS_WARN_STREAM("IK Filter not created, if used this will crash.");
 
 	// contact force based event detection
 	ContactForceBasedPhaseDetector::Parameters detectorParameters;

@@ -30,6 +30,12 @@ OpenSimRT::MuscleOptimization::OptimizationParameters pars::getparamSO(ros::Node
 //TODO: consider using the same filter ger param for the IK filter or the GRFM or 2 functions
 OpenSimRT::LowPassSmoothFilter::Parameters pars::getparamFilterIK(ros::NodeHandle nh, int num_signals)
 {
+	OpenSimRT::LowPassSmoothFilter::Parameters ikFilterParam;
+	getparamFilterIK(nh, num_signals, ikFilterParam);
+	return ikFilterParam;
+};
+bool pars::getparamFilterIK(ros::NodeHandle nh, int num_signals, OpenSimRT::LowPassSmoothFilter::Parameters &ikFilterParam)
+{
 	int memory;
 	nh.param<int>("memory", memory, 0);
 	double cutoffFreq; 
@@ -38,7 +44,6 @@ OpenSimRT::LowPassSmoothFilter::Parameters pars::getparamFilterIK(ros::NodeHandl
 	nh.param<int>("delay", delay, 0);
 	int splineOrder;
 	nh.param<int>("spline_order", splineOrder, 0);
-	OpenSimRT::LowPassSmoothFilter::Parameters ikFilterParam;
 
 	ROS_INFO_STREAM("FILTER PARAMS:\nmemory: " << memory << "cutoffFreq: " << cutoffFreq << "delay: " << delay << "splineOrder: " << splineOrder);
 	//ikFilterParam.numSignals = model.getNumCoordinates();
@@ -48,7 +53,12 @@ OpenSimRT::LowPassSmoothFilter::Parameters pars::getparamFilterIK(ros::NodeHandl
 	ikFilterParam.cutoffFrequency = cutoffFreq;
 	ikFilterParam.splineOrder = splineOrder;
 	ikFilterParam.calculateDerivatives = true;
-	return ikFilterParam;
+	if (memory == 0)
+	{
+		ROS_WARN_STREAM("A filter with memory 0 will not work. There are other requirements for the filter, make sure those make sense, or this will not work.");
+		return false;
+	}
+	return true;
 };
 OpenSimRT::LowPassSmoothFilter::Parameters pars::getparamFilterGRFM(ros::NodeHandle nh)
 {

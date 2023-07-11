@@ -76,10 +76,12 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 
 	// setup filters
 	ROS_DEBUG_STREAM("setting up filters");
-	ROS_ERROR_STREAM("TODO: since base class is called first and that requires the filters, it will not work if we don't set valid parameters for filter input even though it may not be used. This logic is incorrect and needs to be fixed. HEre we should pass this as reference and get a logic result from getparamFilterIK and only if that works we should set the filter. if it doesnt we should also de-register the unfiltered input, because it will fail if we connect to it. ");
-	LowPassSmoothFilter::Parameters ikFilterParam = pars::getparamFilterIK(nh, model->getNumCoordinates());
-	ikfilter = new LowPassSmoothFilter(ikFilterParam);
-
+	LowPassSmoothFilter::Parameters filterParam;
+	if (pars::getparamFilterIK(nh, model->getNumCoordinates(), filterParam))
+		ikfilter = new LowPassSmoothFilter(filterParam);
+	else
+		ROS_WARN_STREAM("IK Filter not created, if used this will crash.");
+	
 	LowPassSmoothFilter::Parameters grfFilterParam = pars::getparamFilterGRFM(nh);
 
 	//grffilter = new LowPassSmoothFilter(grfFilterParam);
