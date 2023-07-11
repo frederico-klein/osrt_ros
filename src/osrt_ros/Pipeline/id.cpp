@@ -40,6 +40,9 @@ Pipeline::Id::Id(): sync_real_wrenches_exact(grf_exact_wrench_policy(50),sub,sub
 	sync_filtered_real_wrenches_exact(grf_exact_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr),
 	tfListener(tfBuffer)
 {
+	ROS_INFO_STREAM("called Id constructor.");
+	//cout << "this is being called out of order." << endl;
+
 	nh.param<std::string>("left_foot_tf_name", left_foot_tf_name, "left_foot_forceplate");
 	nh.param<std::string>("right_foot_tf_name", right_foot_tf_name, "right_foot_forceplate");
 	nh.param<std::string>("grf_reference_frame", grf_reference_frame, "map");
@@ -57,6 +60,7 @@ Pipeline::Id::~Id()
 
 
 void Pipeline::Id::onInit() {
+	ROS_DEBUG_STREAM("called Id onInit");
 	Pipeline::IdCommon::onInit();
 
 	//the message filters for wrenches	

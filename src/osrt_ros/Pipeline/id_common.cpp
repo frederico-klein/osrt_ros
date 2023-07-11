@@ -48,7 +48,7 @@ using namespace OpenSimRT;
 Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 {
 	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
-	// subject data
+	ROS_DEBUG_STREAM("Called IdCommon constructor.");
 	std::string modelFile = "";
 	nh.param<std::string>("model_file",modelFile,"");
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
@@ -75,6 +75,8 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	wrenchParameters.push_back(grfLeftFootPar);
 
 	// setup filters
+	ROS_DEBUG_STREAM("setting up filters");
+	ROS_ERROR_STREAM("TODO: since base class is called first and that requires the filters, it will not work if we don't set valid parameters for filter input even though it may not be used. This logic is incorrect and needs to be fixed. HEre we should pass this as reference and get a logic result from getparamFilterIK and only if that works we should set the filter. if it doesnt we should also de-register the unfiltered input, because it will fail if we connect to it. ");
 	LowPassSmoothFilter::Parameters ikFilterParam = pars::getparamFilterIK(nh, model->getNumCoordinates());
 	ikfilter = new LowPassSmoothFilter(ikFilterParam);
 
@@ -85,6 +87,7 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	// StateSpaceFilter ikFilter({model.getNumCoordinates(), cutoffFreq});
 	// StateSpaceFilter grfRightFilter({9, cutoffFreq}), grfLeftFilter({9,
 	// cutoffFreq});
+	ROS_DEBUG_STREAM("filters set up ok.");
 
 	// initialize id and logger
 	id = new InverseDynamics(*model, wrenchParameters);

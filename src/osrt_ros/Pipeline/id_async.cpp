@@ -13,7 +13,7 @@ using namespace OpenSimRT;
 Pipeline::WrenchSubscriber::WrenchSubscriber(std::string wrench_name_prefix_, std::string calcn_frame_):
 	tfListener(tfBuffer), wrench_name_prefix(wrench_name_prefix_), calcn_frame(calcn_frame_)
 {
-
+	ROS_DEBUG_STREAM("called WrenchSubscriber constructor with params.");
 
 }
 
