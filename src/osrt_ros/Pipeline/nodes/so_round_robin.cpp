@@ -6,6 +6,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle n("~");
 	int num_processes;
 	n.param<int>("n_proc", num_processes, 4);
+	ROS_WARN_STREAM("num_processes::::" << num_processes);
 	Pipeline::SoRR l(n,num_processes);
 	l.init();
 	/**

@@ -24,9 +24,9 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::SoBare::SoBare()  
+Pipeline::SoBare::SoBare(int proc_num_): proc_num(proc_num_)
 {
-	ROS_DEBUG_STREAM("constructor of SoBare");
+	ROS_DEBUG_STREAM("constructor of SoBare[" << proc_num<< "]");
 
 	// subject data
 	std::string modelFile = "";
@@ -63,7 +63,7 @@ Pipeline::SoBare::SoBare()
 Pipeline::SoBare::~SoBare()
 {
 
-	ROS_INFO_STREAM("Shutting down SoBare");
+	ROS_INFO_STREAM("Shutting down SoBare[" << proc_num<<"]");
 }
 
 void Pipeline::SoBare::onInit() {

@@ -44,6 +44,10 @@ void Pipeline::DualSink::onInit()
 	sub.subscribe(nh, "input",INPUT_LENGTH);
 	sub_filtered.subscribe(nh, "input_filtered",INPUT_LENGTH);
 
+	//bypasses all of this if a receiving from an upstream node that did the synchronization already. I still need to know the labels, so there is that.
+	sync_input_sub = nh.subscribe("sync_input", INPUT_LENGTH, &DualSink::sync_callback, this);
+	sync_input_filtered_sub = nh.subscribe("sync_filtered_input", INPUT_LENGTH, &DualSink::sync_callback_filtered, this);
+
 	ros::Rate r(1);
 	opensimrt_msgs::LabelsSrv l;
 	//while(!ros::service::call("in_labels", l))

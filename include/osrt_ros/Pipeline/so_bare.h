@@ -21,13 +21,13 @@ namespace Pipeline
 	class SoBare
 	{
 		public:
-			SoBare();
+			SoBare(int proc_num_);
 			~SoBare();
 			ros::NodeHandle nh{"~"};
 			[[deprecated]]
 			opensimrt_msgs::Dual run(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
 			opensimrt_msgs::MultiMessage run2(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e );
-
+			int proc_num = -1;
 			void onInit();
 			void finish();
 			//SO portion:

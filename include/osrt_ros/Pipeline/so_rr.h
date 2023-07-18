@@ -3,6 +3,7 @@
 
 #include "opensimrt_msgs/Dual.h"
 #include "opensimrt_msgs/DualPos.h"
+#include "opensimrt_msgs/MultiMessagePosVelAcc.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "ros/ros.h"
@@ -31,6 +32,9 @@ namespace Pipeline
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik, const opensimrt_msgs::CommonTimedConstPtr& message_tau) ;
 			void so_rrCallback(const opensimrt_msgs::DualConstPtr& d, int process);
 			void so_rr_filteredCallback(const opensimrt_msgs::DualPosConstPtr& d, int process);
+			void sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message);
+			void sync_callback_filtered(const opensimrt_msgs::MultiMessagePosVelAccConstPtr &message);
+
 			void init();
 			
 			//the normal callbacks will be replaced by the roundrobin callback

@@ -19,14 +19,16 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 		ros::console::notifyLoggerLevelsChanged();
 	}
 	//main_subs_ = node_handle_.subscribe("chatter",1000, &SoRR::roundRobin, this);
+	ROS_WARN_STREAM("Creating process vector and internal publishers");
+	sos.reserve(num_processes_);
 	for (int i=0; i<num_processes_; i++)
 	{
 		std::string pub_name = "so_rr"+std::to_string(i);
-		Pipeline::SoBare aso;
-		sos.push_back(aso);
+		sos.emplace_back(i);
 		pubs_.push_back(node_handle_.advertise<opensimrt_msgs::Dual>(pub_name,1000)); //publishes the input values for each thread
 		pubs_filtered.push_back(node_handle_.advertise<opensimrt_msgs::DualPos>(pub_name+"_filtered",1000)); //publishes the input values for each thread
 	}
+	ROS_WARN_STREAM("finished creating process vector and publishers.");
 	outcome_pub = node_handle_.advertise<opensimrt_msgs::Dual>("output_combined",1000); //publishes the combined SO values
 	outcome_multi_pub = node_handle_.advertise<opensimrt_msgs::MultiMessage>("output_multi",1000); //publishes the combined SO values
 }
@@ -81,6 +83,27 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 	pubs_filtered[counter%num_processes_].publish(msg);
 	counter++;
 
+
+}
+void Pipeline::SoRR::sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message)
+{
+	opensimrt_msgs::DualPos msg;
+	msg.qqq.d0_data = message->ik.data;
+	msg.qqq.header = message->header;
+	msg.tau.data = message->other[0].data;
+	msg.tau.header = message->header;
+	pubs_filtered[counter%num_processes_].publish(msg);
+	counter++;
+}
+void Pipeline::SoRR::sync_callback_filtered(const opensimrt_msgs::MultiMessagePosVelAccConstPtr &message)
+{
+	opensimrt_msgs::DualPos msg;
+	msg.qqq.d0_data = message->d0_data.data; //arg, this is horrible, the same name different content 
+	msg.qqq.header = message->header;
+	msg.tau.data = message->other[0].data;
+	msg.tau.header = message->header;
+	pubs_filtered[counter%num_processes_].publish(msg);
+	counter++;
 
 }
 
