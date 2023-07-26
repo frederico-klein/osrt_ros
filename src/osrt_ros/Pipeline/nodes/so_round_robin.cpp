@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 	n.param<int>("n_proc", num_processes, 4);
 	ROS_WARN_STREAM("num_processes::::" << num_processes);
 	Pipeline::SoRR l(n,num_processes);
-	l.init();
+	l.onInit();
 	/**
 	 * The MultiThreadedSpinner object allows you to specify a number of threads to use
 	 * to call callbacks.  If no explicit # is specified, it will use the # of hardware

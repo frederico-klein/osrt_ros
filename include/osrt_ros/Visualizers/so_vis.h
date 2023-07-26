@@ -5,6 +5,7 @@
 #include "opensimrt_msgs/DualPos.h"
 #include "opensimrt_msgs/MultiMessage.h"
 #include "osrt_ros/Visualizers/dualsink_vis.h"
+#include <Common/TimeSeriesTable.h>
 
 namespace Visualizers
 {
@@ -14,12 +15,16 @@ namespace Visualizers
 		public:
 			SoVis() {
 				ROS_INFO_STREAM("instatiated SoVis");
+				soLogger = new OpenSim::TimeSeriesTable;
 			}
 			~SoVis() {}
 			void callback(const opensimrt_msgs::DualConstPtr& message);
 			void callback_multi(const opensimrt_msgs::MultiMessageConstPtr& message);
 			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
 
+			//here it has to be ordered!
+			OpenSim::TimeSeriesTable * soLogger;
+			void before_vis();
 			/*virtual void before_vis()
 			{
 				ROS_INFO_STREAM("adding subscribers");

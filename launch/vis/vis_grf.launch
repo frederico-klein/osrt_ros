@@ -9,7 +9,7 @@
 
 		<!-- remap from="/grf_visualization/dual_input" to="/grf_node/output_combined"/ -->
 		<remap from="/grf_visualization/dual_input_filtered" to="/grf_node/output_combined_filtered"/>
-		<remap from="/in_labels" to="/grf_node/outlabels_combined"/>
+		<remap from="/in_labels" to="/grf_node/out_labels"/>
 		
         </node>
 

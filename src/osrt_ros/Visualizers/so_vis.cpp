@@ -1,12 +1,16 @@
 #include "osrt_ros/Visualizers/so_vis.h"
 #include "opensimrt_msgs/MultiMessage.h"
 #include <SimTKcommon/internal/BigMatrix.h>
-/*void Visualizers::SoVis::before_vis()
+
+void Visualizers::SoVis::before_vis()
 {
-	//TODO:
-	ROS_ERROR_STREAM("not implemented");
+	ROS_INFO_STREAM("before_vis, kinda like onInit...");
+	soLogger->setColumnLabels(input.labels);
+	initializeLoggers("so", soLogger);
+	DualSinkVis::before_vis(); // otherwise we wont subscribe to anything.
 }
-*/
+
+
 void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 {
 	ROS_INFO_STREAM("callback sovis reached received message:" << message);
@@ -21,7 +25,8 @@ void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 		soOutput_am[i] = message->tau.data[i];
 	}
 	try {
-
+		if(recording)
+			soLogger->appendRow(message->q.time, soOutput_am.begin(), soOutput_am.end());
 		visualizer->update(q, soOutput_am);
 	}
 	catch (std::exception& e)
@@ -43,7 +48,8 @@ void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 		soOutput_am[i] = message->other[0].data[i];
 	}
 	try {
-
+		if(recording) 
+			soLogger->appendRow(message->time, soOutput_am.begin(), soOutput_am.end());
 		visualizer->update(q, soOutput_am);
 	}
 	catch (std::exception& e)
@@ -65,6 +71,8 @@ void Visualizers::SoVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr
 		soOutput_am[i] = message->tau.data[i];
 	}
 	try {
+		if(recording)
+			soLogger->appendRow(message->qqq.time, soOutput_am.begin(), soOutput_am.end());
 
 		visualizer->update(q, soOutput_am);
 	}

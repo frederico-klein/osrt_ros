@@ -8,7 +8,7 @@
 		<param name="which_model_1_2" 		value="2" />
 
 		<remap from="/so_visualization/input_filtered" to="/so/output_combined"/>
-		<remap from="/in_labels" to="/so/outlabels_combined"/>
+		<remap from="/in_labels" to="/so/out_labels"/>
 		
         </node>
 

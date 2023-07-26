@@ -9,7 +9,7 @@
 
 		<remap from="/so_visualization/multi_input" to="/so_rr_node/output_multi"/>
 		<remap from="/so_visualization/multi_input_filtered" to="/so_rr_node/output_multi_filtered"/>
-		<remap from="/in_labels" to="/so/outlabels_multi"/>
+		<remap from="/in_labels" to="/so_rr_node/out_labels"/>
 		
         </node>
 

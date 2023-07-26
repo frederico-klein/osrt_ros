@@ -9,7 +9,7 @@
 
 		<remap from="/so_visualization/dual_input" to="/so_rr_node/output_combined"/>
 		<remap from="/so_visualization/dual_input_filtered" to="/so_rr_node/output_combined_filtered"/>
-		<remap from="/in_labels" to="/so/outlabels_combined"/>
+		<remap from="/in_labels" to="/so_rr_node/out_labels"/>
 		
         </node>
 

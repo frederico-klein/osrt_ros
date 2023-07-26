@@ -45,7 +45,7 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 	{
 		auto thisMuscleName = muscleNames.get(i).getName(); 
 		ROS_WARN_STREAM("muscle ["<<i<<"] is:" << thisMuscleName);
-		output_labels.push_back(thisMuscleName);	
+		output.labels.push_back(thisMuscleName);	
 	}
 
 }
@@ -78,7 +78,7 @@ void Pipeline::SoRR::onInit()
 	//set the logger. 
 	//
 	soLogger = new OpenSim::TimeSeriesTable;
-	soLogger->setColumnLabels(output_labels);
+	soLogger->setColumnLabels(output.labels);
 	initializeLoggers("so", soLogger);
 }
 
