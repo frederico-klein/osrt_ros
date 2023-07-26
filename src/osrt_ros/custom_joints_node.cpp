@@ -1,7 +1,10 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/Vector3.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/MultiMessage.h"
+#include "opensimrt_msgs/MultiMessagePosVelAcc.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
+#include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "ros/init.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
@@ -87,12 +90,13 @@ class qJointPublisher: public Ros::CommonNode
 				label_map.insert(std::pair<std::string, int>(input_labels[i],i));
 			}
 		}
-		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)
+		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, std::vector<double> joint_efforts, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)
 		{
 			sensor_msgs::JointState msg;
 			msg.header = h;
 			msg.name = names;
 			msg.position = joint_values;
+			msg.effort = joint_efforts;
 			/// let's publish a tf for the base now!
 			geometry_msgs::TransformStamped baseTF;
 			baseTF.header = h;
@@ -128,35 +132,46 @@ class qJointPublisher: public Ros::CommonNode
 			for (int i = 0; i<=10; i++)
 			{
 				h.stamp = ros::Time::now();
-				pub_pose(h, zero_joints, geometry_msgs::Vector3(), zero_rot);
+				pub_pose(h, zero_joints, zero_joints, geometry_msgs::Vector3(), zero_rot);
 				poll_rate.sleep();
 				ros::spinOnce();
 			}
 
 		}
+		void sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message)
+		{
+			ROS_DEBUG_STREAM("Received msg_multi");
+			parse_msg(message->header,message->ik.data, message->other[0].data);	
+		}
+		void sync_callback_filtered(const opensimrt_msgs::MultiMessagePosVelAccConstPtr &message)
+		{
+			ROS_DEBUG_STREAM("Received msg_multifiltered");
+			parse_msg(message->header,message->d0_data.data, message->other[0].data);	
+		}
 		void callback(const opensimrt_msgs::CommonTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik");
-			auto a = ros::Time::now();
-			parse_msg(msg_ik->header, msg_ik->data);
-			auto b = ros::Time::now();
+			//auto a = ros::Time::now();
+			parse_msg(msg_ik->header, msg_ik->data, std::vector<double>(msg_ik->data.size() ,0.0));
+			//auto b = ros::Time::now();
 			//ROS_INFO_STREAM("loop time" <<a-b);
 		}
 		void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& msg_ik)
 		{
 			ROS_DEBUG_STREAM("Received msg_ik filtered");
-			auto a = ros::Time::now();
-			parse_msg(msg_ik->header, msg_ik->d0_data);
-			auto b = ros::Time::now();
+			//auto a = ros::Time::now();
+			parse_msg(msg_ik->header, msg_ik->d0_data, std::vector<double>(msg_ik->d0_data.size() ,0.0));
+			//auto b = ros::Time::now();
 			//ROS_INFO_STREAM("loop time filtered" <<a-b);
 		}
-		void parse_msg(std_msgs::Header h, std::vector<double> q)
+		void parse_msg(std_msgs::Header h, std::vector<double> q, std::vector<double> id)
 		{
-			std::vector<double> values;
+			std::vector<double> values, id_values_reshuffled;
 			for (auto a:names)
 			{
 				ROS_DEBUG_STREAM("setting joint " << a);
 				double joint_value = 0;
+				double joint_effort = 0;
 				std::string some_joint = RJointToOJoint[a];
 				if (some_joint == "")
 				{
@@ -167,9 +182,11 @@ class qJointPublisher: public Ros::CommonNode
 					int index = label_map[RJointToOJoint[a]];
 					ROS_DEBUG_STREAM("index: "<< index);
 					joint_value = q[index];
+					joint_effort = id[index] + 100; 
 					//joint_value = msg_ik->data[index]/180*3.14159265;
 				}
 				values.push_back(joint_value);
+				id_values_reshuffled.push_back(joint_effort);
 			}
 			/// let's publish a tf for the base now!
 			// ATTENTION: x,y,z are different between OSIM and ROS, so this is possibly incorrect. 
@@ -193,7 +210,7 @@ class qJointPublisher: public Ros::CommonNode
 			r.z = qz[3];
 			////t.x = q[5]; t.y = q[3]; t.z = q[4];
 
-			pub_pose(h, values, t, r);
+			pub_pose(h, values, id_values_reshuffled, t, r);
 		}
 };
 
@@ -205,6 +222,11 @@ int main(int argc, char **argv)
 	// starts custom_joints publisher
 	qJointPublisher qJ;
 	qJ.onInit();
+	//everything is custom and different from each other. 
+	ros::NodeHandle nh("~");
+	ros::Subscriber sync_input_sub = nh.subscribe("sync_input", 10, &qJointPublisher::sync_callback, &qJ);
+	ros::Subscriber sync_input_filtered_sub = nh.subscribe("sync_filtered_input", 10, &qJointPublisher::sync_callback_filtered, &qJ);
+
 	// publish initial zero pose:
 	//qJ.pub_zero();
 	otf.publish_opensim_base_tf();	
