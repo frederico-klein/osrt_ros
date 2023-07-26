@@ -96,7 +96,7 @@ namespace Visualizers
 				try { // main loop
 				      // unroll
 					SimTK::Vector q(msg_ik->data.size());
-					for (int i=0;i<msg_ik->data.size();i++)
+					for (size_t i=0;i<msg_ik->data.size();i++)
 					{
 						q[i] = msg_ik->data[i];
 					}
@@ -110,7 +110,7 @@ namespace Visualizers
 				try { // main loop filtered
 				      // unroll
 					SimTK::Vector q(msg_ik->d0_data.size());
-					for (int i=0;i<msg_ik->d0_data.size();i++)
+					for (size_t i=0;i<msg_ik->d0_data.size();i++)
 					{
 						q[i] = msg_ik->d0_data[i];
 					}
