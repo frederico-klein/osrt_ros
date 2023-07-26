@@ -72,6 +72,7 @@ void Pipeline::SoBare::onInit() {
 
 opensimrt_msgs::Dual Pipeline::SoBare::run(const std_msgs::Header h, double t, SimTK::Vector q, std::vector<double> Rtau, opensimrt_msgs::Events e )
 {
+	addEvent("SoBare run reached.",e);
 	ROS_DEBUG_STREAM("Received run call. Running SoBare loop"); 
 	//unpacking tau
  	SimTK::Vector tau(Rtau.size());
@@ -91,19 +92,19 @@ opensimrt_msgs::Dual Pipeline::SoBare::run(const std_msgs::Header h, double t, S
 	ROS_DEBUG_STREAM("attempting to run SO.");
 	//ROS_DEBUG_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << tau << "]");
 	auto soOutput = so->solve({t, q, tau});
-	addEvent("id_combined after so",e);
+	addEvent("SoBare after so",e);
 	chrono::high_resolution_clock::time_point t2;
 	t2 = chrono::high_resolution_clock::now();
 
 	//TODO: actually capture return params from soOutput!!!
-	//msg_out.events = e;
 	opensimrt_msgs::Dual msg_out = Osb::get_SO_as_Dual(h,t,q,soOutput);
-	//pub.publish(msg_out);
+	msg_out.q.events = e;
 	return msg_out;
 }
 
 opensimrt_msgs::MultiMessage Pipeline::SoBare::run2(const std_msgs::Header h, double t, SimTK::Vector q, std::vector<double> Rtau, opensimrt_msgs::Events e )
 {
+	addEvent("SoBare run reached.",e);
 	ROS_DEBUG_STREAM("Received run call. Running SoBare loop"); 
 	//unpacking tau
  	SimTK::Vector tau(Rtau.size());
@@ -123,14 +124,13 @@ opensimrt_msgs::MultiMessage Pipeline::SoBare::run2(const std_msgs::Header h, do
 	ROS_DEBUG_STREAM("attempting to run SO.");
 	//ROS_DEBUG_STREAM("t: ["<< t << "] q: [" << q << "] tau: [" << tau << "]");
 	auto soOutput = so->solve({t, q, tau});
-	addEvent("id_combined after so",e);
+	addEvent("SoBare after so",e);
 	chrono::high_resolution_clock::time_point t2;
 	t2 = chrono::high_resolution_clock::now();
 
 	//TODO: actually capture return params from soOutput!!!
-	//msg_out.events = e;
 	opensimrt_msgs::MultiMessage msg_out = Osb::get_SO_as_Multi(h,t,q,soOutput);
-	//pub.publish(msg_out);
+	msg_out.events = e;
 	return msg_out;
 }
 

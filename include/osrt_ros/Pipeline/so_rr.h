@@ -8,6 +8,7 @@
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "ros/ros.h"
 #include "so.h"
+#include <Common/TimeSeriesTable.h>
 #include <boost/thread.hpp>
 #include "osrt_ros/Pipeline/so_bare.h"
 
@@ -42,6 +43,9 @@ namespace Pipeline
 			
 			void runRR(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e , int process);
 
+			// I need a logger for this guy. 
+			//
+			OpenSim::TimeSeriesTable * soLogger;
 	};
 
 }
