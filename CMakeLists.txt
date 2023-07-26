@@ -3,11 +3,11 @@ project(osrt_ros)
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-add_compile_options(-std=c++17 -O3 -g)
+add_compile_options(-std=c++17 -O3 -g -Wall -pedantic -Wno-undef)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -g")
 
 find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"
-	#	Simbody
+		simbody
 	)
 
 find_package(Eigen3 3.3 REQUIRED)
@@ -58,9 +58,9 @@ message(STATUS
 	${OpenSim_INCLUDE_DIRS}
 
 	)
-message(NOTICE "Simbody")
+message(NOTICE "simbody")
 message(STATUS
-	${Simbody_INCLUDE_DIRS}
+	${simbody_INCLUDE_DIRS}
 
 	)
 
@@ -84,9 +84,9 @@ file (GLOB Pipeline_HEADERS CONFIGURE_DEPENDS "include/Pipeline/*.h")
 
 set(target osrtRosPipeline)
 
-include_directories("/opt/dependencies/opensim-core/include/OpenSim/"
-	"/opt/dependencies/opensim-core/include/simbody/"
-	)
+#include_directories("/opt/dependencies/opensim-core/include/OpenSim/"
+#	"/opt/dependencies/opensim-core/include/simbody/"
+#	)
 
 add_library(osrtRosPipeline ${Pipeline_HEADERS} ${Pipeline_SOURCES} )
 
