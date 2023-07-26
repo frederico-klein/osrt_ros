@@ -33,12 +33,13 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::Id::Id(): sync_real_wrenches_exact(grf_exact_wrench_policy(50),sub,sub_wl,sub_wr), 
+Pipeline::Id::Id(): 
+	tfListener(tfBuffer),
+	sync_real_wrenches_exact(grf_exact_wrench_policy(50),sub,sub_wl,sub_wr), 
 	sync_real_wrenches_aprox(grf_approx_wrench_policy(50),sub,sub_wl,sub_wr), 
 	//sync_filtered_real_wrenches(sub_filtered,sub_wl,sub_wr,10),
 	sync_filtered_real_wrenches_aprox(grf_approx_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr),
-	sync_filtered_real_wrenches_exact(grf_exact_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr),
-	tfListener(tfBuffer)
+	sync_filtered_real_wrenches_exact(grf_exact_wrench_filtered_policy(50),sub_filtered,sub_wl,sub_wr)
 {
 	ROS_INFO_STREAM("called Id constructor.");
 	//cout << "this is being called out of order." << endl;
@@ -241,13 +242,13 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::Id::get_wrench(const geo
 	nullWrench.point = Vec3{0,0,0};
 	
 	static OpenSimRT::ExternalWrench::Input grfRightWrench=nullWrench;
-	OpenSimRT::ExternalWrench::Input* gRw; 
+	OpenSimRT::ExternalWrench::Input* gRw = new OpenSimRT::ExternalWrench::Input; 
 	if(parse_message(wr, right_foot_tf_name, tfBuffer, grf_reference_frame, gRw))
 		grfRightWrench = *gRw;
 	//cout << "left wrench.";
 	ROS_DEBUG_STREAM("rw");
 	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
-	OpenSimRT::ExternalWrench::Input* gLw; 
+	OpenSimRT::ExternalWrench::Input* gLw = new OpenSimRT::ExternalWrench::Input; 
 	if(parse_message(wl, left_foot_tf_name, tfBuffer, grf_reference_frame, gLw))
 		grfLeftWrench = *gLw;
 	ROS_DEBUG_STREAM("lw");

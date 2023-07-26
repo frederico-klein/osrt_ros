@@ -59,7 +59,7 @@ bool pars::getparamFilterIK(ros::NodeHandle nh, int num_signals, OpenSimRT::LowP
 		return false;
 	}
 	return true;
-};
+}
 OpenSimRT::LowPassSmoothFilter::Parameters pars::getparamFilterGRFM(ros::NodeHandle nh)
 {
 	//Params for GFRM filter
@@ -136,7 +136,7 @@ OpenSimRT::AccelerationBasedPhaseDetector::Parameters pars::getparamAccPhaseDete
 	   detectorParameters.velDiffOrder 		= nh.param<int>		("vel_diff_order"	,0); //elDiffOrder;
 	   
 	return detectorParameters;
-};
+}
 
 OpenSimRT::ContactForceBasedPhaseDetector::Parameters pars::getparamConPhaseDetector(ros::NodeHandle nh) {
 	//TODO:: implement!

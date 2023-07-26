@@ -20,7 +20,7 @@ void Visualizers::GrfVis::callback(const DualConstPtr &msg) {
 	ROS_ERROR_STREAM("not implemented");
 	//get q from message
 	SimTK::Vector q(msg->q.data.size());
-	for (int i=0;i<msg->q.data.size(); i++)
+	for (size_t i=0;i<msg->q.data.size(); i++)
 	{
 		q[i] = msg->q.data[i];
 	}
