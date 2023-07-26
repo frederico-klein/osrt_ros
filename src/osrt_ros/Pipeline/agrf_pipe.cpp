@@ -85,8 +85,8 @@ void Pipeline::Acc::get_params()
 	auto grfLeftLoggerTemp = ExternalWrench::initializeLogger();
 	grfLeftLogger = &grfLeftLoggerTemp;
 
-	output_labels.insert(output_labels.end(),grfRightLabels.begin(),grfRightLabels.end());
-	output_labels.insert(output_labels.end(),grfLeftLabels.begin(),grfLeftLabels.end());
+	output.labels.insert(output.labels.end(),grfRightLabels.begin(),grfRightLabels.end());
+	output.labels.insert(output.labels.end(),grfLeftLabels.begin(),grfLeftLabels.end());
 
 
 	vector<ExternalWrench::Parameters> wrenchParameters;

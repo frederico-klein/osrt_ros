@@ -1,6 +1,8 @@
 #ifndef VISUALIZER_COMMON_HEADER_FBK_27052023
 #define VISUALIZER_COMMON_HEADER_FBK_27052023
 
+#include "Ros/include/common_node.h"
+#include "Ros/include/saver_node.h"
 #include "Settings.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
@@ -20,7 +22,7 @@
 //
 namespace Visualizers
 {
-	class VisualizerCommon
+	class VisualizerCommon:public Ros::SaverNode
 	{
 		public:
 			VisualizerCommon()
@@ -32,6 +34,7 @@ namespace Visualizers
 			OpenSim::Model model;	
 			int m; // 1 is upper 2 is under...
 			ros::Subscriber sub, sub_filtered;
+			Ros::Reshuffler input;
 			void get_params()
 			{
 				// subject data
@@ -48,7 +51,10 @@ namespace Visualizers
 			void onInit() 
 			{
 				get_params();
+				
+				Ros::SaverNode::onInit();
 				// setup model
+				input.get_labels(nh);
 				ROS_DEBUG_STREAM("Setting up model.");
 
 				OpenSim::Object* muscleModel;

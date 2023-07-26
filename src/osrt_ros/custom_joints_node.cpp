@@ -84,10 +84,10 @@ class qJointPublisher: public Ros::CommonNode
 		void onInit()
 		{
 			CommonNode::onInit(1);
-			for (int i=0;i<input_labels.size();i++)
+			for (int i=0;i<input.labels.size();i++)
 			{
-				ROS_DEBUG_STREAM(input_labels[i]);
-				label_map.insert(std::pair<std::string, int>(input_labels[i],i));
+				ROS_DEBUG_STREAM(input.labels[i]);
+				label_map.insert(std::pair<std::string, int>(input.labels[i],i));
 			}
 		}
 		void pub_pose(std_msgs::Header h, std::vector<double> joint_values, std::vector<double> joint_efforts, geometry_msgs::Vector3 base_translation, geometry_msgs::Quaternion base_rotation)

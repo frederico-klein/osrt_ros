@@ -33,7 +33,7 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 	outcome_multi_pub = node_handle_.advertise<opensimrt_msgs::MultiMessage>("output_multi",1000); //publishes the combined SO values
 }
 
-void Pipeline::SoRR::init()
+void Pipeline::SoRR::onInit()
 {
 	ROS_DEBUG_STREAM("onInitSoRR");
 	nh.getParam("get_second_label", get_second_label);

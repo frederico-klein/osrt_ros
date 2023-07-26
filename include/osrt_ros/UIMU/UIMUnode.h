@@ -195,7 +195,7 @@ class UIMUnode: Ros::CommonNode
 			initializeLoggers(loggerFileNameIK,&qRawLogger);
 
 			//TODO: publish correct ROS topics
-			output_labels = qRawLogger.getColumnLabels();
+			output.labels = qRawLogger.getColumnLabels();
 			ROS_INFO_STREAM("done with start_ik");
 		}
 
@@ -279,7 +279,7 @@ class UIMUnode: Ros::CommonNode
 			string all_labels;
 			ros::NodeHandle nh("~");
 			ROS_INFO_STREAM("setting plottable_outputs");
-			for (auto l:output_labels)
+			for (auto l:output.labels)
 			{
 
 				plottable_outputs.push_back(nh.advertise<std_msgs::Float64>("ik/joints/"+l,1));

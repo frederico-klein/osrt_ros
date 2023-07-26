@@ -96,7 +96,7 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	ROS_INFO_STREAM("Setting loggers,");
 	OpenSim::TimeSeriesTable tauLoggerTemp = id->initializeLogger();
 	tauLogger = new TimeSeriesTable();
-	output_labels = tauLoggerTemp.getColumnLabels();
+	output.labels = tauLoggerTemp.getColumnLabels();
 	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
 	ROS_INFO_STREAM("loggers set!");
 

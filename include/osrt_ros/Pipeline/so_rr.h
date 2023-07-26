@@ -35,7 +35,7 @@ namespace Pipeline
 			void sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message);
 			void sync_callback_filtered(const opensimrt_msgs::MultiMessagePosVelAccConstPtr &message);
 
-			void init();
+			void onInit();
 			
 			//the normal callbacks will be replaced by the roundrobin callback
 			//void roundRobin(const std_msgs::String::ConstPtr& msg);
