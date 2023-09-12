@@ -30,6 +30,7 @@
 #include <SimTKcommon/internal/Vector_.h>
 #include <exception>
 #include <numeric>
+#include <stdexcept>
 #include <utility>
 #include "ros/service_server.h"
 #include "signal.h"
@@ -98,7 +99,11 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
 	tauLogger = new TimeSeriesTable();
 	output.labels = tauLoggerTemp.getColumnLabels();
 	tauLogger->setColumnLabels(tauLoggerTemp.getColumnLabels());
-	ROS_INFO_STREAM("loggers set!");
+	// now the loggers for IK and grfms:
+	ikLogger = new TimeSeriesTable();
+	grfmRightLogger = new TimeSeriesTable();
+	grfmLeftLogger = new TimeSeriesTable();
+	ROS_INFO_STREAM("loggers created!");
 
 }
 
@@ -130,13 +135,6 @@ void Pipeline::IdCommon::onInit() {
 
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	// TODO: set the column labels, or it will break when you try to use them!
-	ROS_INFO_STREAM("Attempting to set loggers.");
-	//initializeLoggers("grfRight",grfRightLogger);
-	//initializeLoggers("grfLeft", grfLeftLogger);
-
-	print_vec(tauLogger->getColumnLabels());
-
-	initializeLoggers("tau",tauLogger);
 	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
 	sync.registerCallback(std::bind(&Pipeline::IdCommon::callback, this, std::placeholders::_1, std::placeholders::_2));
 	sync.registerCallback(&Pipeline::IdCommon::callback, this);
@@ -167,6 +165,40 @@ void Pipeline::IdCommon::onInit() {
 		visualizer->addDecorationGenerator(leftGRFDecorator);
 	}
 	//CRAZY DEBUG
+	if (input.labels.size() == 0)
+	{
+		ROS_FATAL_STREAM("cannot set ik logger! input labels is empty!!!!");
+		throw std::runtime_error("input labels not set. cannot initiate ikLogger");
+	}
+	ikLogger->setColumnLabels(input.labels);
+	if (input2_labels.size() == 0)
+	{
+		//ROS_FATAL_STREAM("cannot set grmflogger! input2_labels is empty");
+		//throw std::runtime_error("input2_labels not set. cannot start grfm loggers");
+		//but I have the identifiers right?
+		//actually this is the easy version, the other type I will need to think 	
+		grfmRightLogger->setColumnLabels(grfRightLabels);
+		grfmLeftLogger->setColumnLabels(grfLeftLabels);
+	}
+	else
+	{
+
+	ROS_WARN_STREAM("NOT YET IMPLEMENTED: if I reach this, then I need to use not the version from params, but instead figure out from custom labels from the service call. Doesnt sound very hard, probably just cut it in half and put one on one side and the other in the other side, but sides can change and maybe what I want to do with this is use multiple GRFM inputs, say with multiple force plates. In this case none if this will work. grmf input labels::");
+	for (auto a_label:input2_labels)
+	{
+		ROS_WARN_STREAM("input2_labels:"<<a_label);
+	}
+	ROS_WARN_STREAM("end of input2_labels.");
+	}
+
+	ROS_INFO_STREAM("Attempting to set loggers.");
+	//I put the prefix here which tells me it is from ID, so I wont get confused where it comes from. 
+	initializeLoggers("grfRight",grfmRightLogger);
+	initializeLoggers("grfLeft", grfmLeftLogger);
+	initializeLoggers("ik",ikLogger);
+	print_vec(tauLogger->getColumnLabels());
+
+	initializeLoggers("tau",tauLogger);
 
 
 }
@@ -300,6 +332,9 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		if(recording)
 		{
 			tauLogger->appendRow(t, ~idOutput.tau);
+			ikLogger->appendRow(t,~q);
+			grfmLeftLogger->appendRow(t,~grfLeftWrench.toVector());
+			grfmRightLogger->appendRow(t,~grfRightWrench.toVector());
 		}}
 	catch (std::exception& e)
 	{

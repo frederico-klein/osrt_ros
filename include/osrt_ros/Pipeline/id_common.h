@@ -37,7 +37,7 @@ namespace Pipeline
 			std::string subjectDir;
 			//loggers
 			//
-			OpenSim::TimeSeriesTable* tauLogger;
+			OpenSim::TimeSeriesTable *tauLogger, *ikLogger, *grfmRightLogger, *grfmLeftLogger;
 			
 			//other stuff
 			OpenSimRT::InverseDynamics* id;

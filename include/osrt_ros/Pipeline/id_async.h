@@ -77,10 +77,11 @@ namespace Pipeline
 			message_filters::TimeSequencer<opensimrt_msgs::CommonTimed> seq__;
 			message_filters::Subscriber<opensimrt_msgs::PosVelAccTimed> sub_filtered__;
 			message_filters::TimeSequencer<opensimrt_msgs::PosVelAccTimed> seq_filtered__;
-			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik);
+			//TODO: we get the grfs from the buffer in this version of the id, so the call is actually correct to have only IK. I think maybe I should just change the name of this function call.
+			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik) override;
 
-			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik); //ik, grf are received at the same time
-			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf); // thi is the standard grf message which may have many grfs.
+			void callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik) override; //ik, grf are received at the same time
+			void callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf) override; // thi is the standard grf message which may have many grfs.
 												//
 			//for the normal grf message we will have a buffer of size 1 and assume we dont have a lot of delay?
 			//actually this will not work, not sure if it is worth implementing at all

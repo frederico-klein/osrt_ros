@@ -3,6 +3,8 @@
 	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 	<arg name="get_second_label" default="true"/>
 	<arg name="n_proc" default="8"/>
+	<arg name="moment_arm_library_path"	default="/catkin_opensim/devel/lib/Gait1992MomentArm" />
+	<!--arg name="moment_arm_library_path"	value="/catkin_ws/devel/lib/Gait19xxMomentArm" / -->
 
         <node pkg="osrt_ros" type="so_rr" 	name="so_rr_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
@@ -14,7 +16,7 @@
 		<param name="maximum_iterations" 	value="50" />
 		<param name="objective_exponent" 	value="2" />
 		<!-- there were some nice env variables defined to locate this, but now we have to specify explicitly -->
-		<param name="moment_arm_library_path"	value="/catkin_opensim/devel/lib/Gait1992MomentArm" />
+		<param name="moment_arm_library_path"	value="$(arg moment_arm_library_path)" />
 		
 		<remap from="/so_rr_node/sync_input" to="/id_node/output_multi"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>

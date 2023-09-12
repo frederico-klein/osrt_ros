@@ -200,13 +200,13 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 
 }
 
-Pipeline::IdAsync::IdAsync(): wsL("left", "calcn_l"), wsR("right", "calcn_r"), seq__(sub__, ros::Duration(0.3),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(0.01),1000)
+Pipeline::IdAsync::IdAsync(): seq__(sub__, ros::Duration(0.3),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(0.01),1000), wsL("left", "calcn_l"), wsR("right", "calcn_r")
 {
 	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay????????????????????????????????????????????????????????????????????????????????????");
 
 }
 
-Pipeline::IdAsync::IdAsync(double delay__): wsL("left", "calcn_l"), wsR("right", "calcn_r"), seq__(sub__, ros::Duration(delay__),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(0.01),1000)
+Pipeline::IdAsync::IdAsync(double delay__): seq__(sub__, ros::Duration(delay__),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(0.01),1000), wsL("left", "calcn_l"), wsR("right", "calcn_r")
 {
 	ROS_INFO_STREAM("subscribing with a delay of: "<<delay__<<"s.");
 }
