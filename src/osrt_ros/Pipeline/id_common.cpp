@@ -46,7 +46,7 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
-Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(true)
+Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(false)
 {
 	//TODO: this needs to be abstracted. I have this copied over and over again. maybe that should be done before standardizing
 	ROS_DEBUG_STREAM("Called IdCommon constructor.");

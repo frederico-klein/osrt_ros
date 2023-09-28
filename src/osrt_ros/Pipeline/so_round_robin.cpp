@@ -24,10 +24,10 @@ Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes
 	sos.reserve(num_processes_);
 	for (int i=0; i<num_processes_; i++)
 	{
-		std::string pub_name = "so_rr"+std::to_string(i);
+		std::string pub_name = "so_rr/proc_"+std::to_string(i);
 		sos.emplace_back(i);
-		pubs_.push_back(node_handle_.advertise<opensimrt_msgs::Dual>(pub_name,1000)); //publishes the input values for each thread
-		pubs_filtered.push_back(node_handle_.advertise<opensimrt_msgs::DualPos>(pub_name+"_filtered",1000)); //publishes the input values for each thread
+		pubs_.push_back(node_handle_.advertise<opensimrt_msgs::Dual>(pub_name+"/raw",1000)); //publishes the input values for each thread
+		pubs_filtered.push_back(node_handle_.advertise<opensimrt_msgs::DualPos>(pub_name+"/filtered",1000)); //publishes the input values for each thread
 	}
 	ROS_WARN_STREAM("finished creating process vector and publishers.");
 	outcome_pub = node_handle_.advertise<opensimrt_msgs::Dual>("output_combined",1000); //publishes the combined SO values
@@ -70,9 +70,9 @@ void Pipeline::SoRR::onInit()
 	//these need to be shared with the rest:
 	for (int i=0; i<num_processes_; i++)
 	{
-		std::string sub_name= "so_rr"+std::to_string(i);
-		subs_.push_back(node_handle_.subscribe<opensimrt_msgs::Dual>(sub_name, 1000, boost::bind(&Pipeline::SoRR::so_rrCallback, this, boost::placeholders::_1, i)));
-		subs_filtered.push_back(node_handle_.subscribe<opensimrt_msgs::DualPos>(sub_name+"_filtered", 1000, boost::bind(&Pipeline::SoRR::so_rr_filteredCallback, this, boost::placeholders::_1, i)));
+		std::string sub_name= "so_rr/proc_"+std::to_string(i);
+		subs_.push_back(node_handle_.subscribe<opensimrt_msgs::Dual>(sub_name+"/raw", 1000, boost::bind(&Pipeline::SoRR::so_rrCallback, this, boost::placeholders::_1, i)));
+		subs_filtered.push_back(node_handle_.subscribe<opensimrt_msgs::DualPos>(sub_name+"/filtered", 1000, boost::bind(&Pipeline::SoRR::so_rr_filteredCallback, this, boost::placeholders::_1, i)));
 	}
 
 	//set the logger. 
@@ -87,7 +87,7 @@ void Pipeline::SoRR::callback(const opensimrt_msgs::CommonTimedConstPtr& message
 	//		void Pipeline::SoRR::roundRobin(const std_msgs::String::ConstPtr& msg)
 {
 	//generates from 2 messages only one message
-	ROS_INFO_STREAM("callback called ik, tau");
+	ROS_DEBUG_STREAM("callback called ik, tau");
 	opensimrt_msgs::Dual msg;
 	msg.q = *message_ik;
 	msg.tau = *message_tau;
@@ -101,7 +101,7 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 	//		void Pipeline::SoRR::roundRobin(const std_msgs::String::ConstPtr& msg)
 {
 	//generates from 2 messages only one message
-	ROS_INFO_STREAM("callback called ik_filtered, tau");
+	ROS_DEBUG_STREAM("callback called ik_filtered, tau");
 	opensimrt_msgs::DualPos msg;
 	msg.qqq = *message_ik;
 	msg.tau = *message_tau;
@@ -112,7 +112,7 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 }
 void Pipeline::SoRR::sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message)
 {
-	ROS_INFO_STREAM("callback called sync_multi");
+	ROS_DEBUG_STREAM("callback called sync_multi");
 	opensimrt_msgs::DualPos msg;
 	msg.qqq.d0_data = message->ik.data;
 	msg.qqq.header = message->header;
@@ -124,7 +124,7 @@ void Pipeline::SoRR::sync_callback(const opensimrt_msgs::MultiMessageConstPtr &m
 }
 void Pipeline::SoRR::sync_callback_filtered(const opensimrt_msgs::MultiMessagePosVelAccConstPtr &message)
 {
-	ROS_INFO_STREAM("callback called sync_multi_filtered");
+	ROS_DEBUG_STREAM("callback called sync_multi_filtered");
 	opensimrt_msgs::DualPos msg;
 	msg.qqq.d0_data = message->d0_data.data; //arg, this is horrible, the same name different content 
 	//msg.qqq.d1_data = message->d1_data.data;
@@ -141,7 +141,7 @@ void Pipeline::SoRR::sync_callback_filtered(const opensimrt_msgs::MultiMessagePo
 void Pipeline::SoRR::so_rrCallback(const opensimrt_msgs::DualConstPtr& d, int process)
 {
 	//This is super weird and maybe wrong. the simplest thing was to have each sos have its own callback and bind it to that, but I bound it to a common function and then I distribute it again using runRR...
-	ROS_INFO_STREAM("so_rrCallback called dual ["<< process << "] [thread=" << boost::this_thread::get_id() << "] time:" <<std::fixed << std::setprecision(6)<< d->q.time);
+	ROS_DEBUG_STREAM("so_rrCallback called dual ["<< process << "] [thread=" << boost::this_thread::get_id() << "] time:" <<std::fixed << std::setprecision(6)<< d->q.time);
 
 	
 	// I need to generate the things to call SoRR here
@@ -160,7 +160,7 @@ void Pipeline::SoRR::so_rrCallback(const opensimrt_msgs::DualConstPtr& d, int pr
 }
 void Pipeline::SoRR::so_rr_filteredCallback(const opensimrt_msgs::DualPosConstPtr& d, int process)
 {
-	ROS_INFO_STREAM("so_rrCallback called dual_filtered ["<< process << "] [thread=" << boost::this_thread::get_id() << "]time:"<<std::fixed << std::setprecision(6) << d->qqq.time);
+	ROS_DEBUG_STREAM("so_rrCallback called dual_filtered ["<< process << "] [thread=" << boost::this_thread::get_id() << "]time:"<<std::fixed << std::setprecision(6) << d->qqq.time);
 	// I need to generate the things to call SoRR here
 	//TODO: I can register this event as well \--/
 	SimTK::Vector q(d->qqq.d0_data.size());	
@@ -179,22 +179,23 @@ void Pipeline::SoRR::so_rr_filteredCallback(const opensimrt_msgs::DualPosConstPt
 //this is now runRR and it will call run from SO
 void Pipeline::SoRR::runRR(const std_msgs::Header h, double t, SimTK::Vector q, const std::vector<double> tau, opensimrt_msgs::Events e , int process)
 {
-	ROS_INFO_STREAM("I heard: [something...] in [" << process << "] [thread=" << boost::this_thread::get_id() << "]");
-	ROS_INFO("This is a long thread and takes long to execute each thing");
+	ROS_DEBUG_STREAM("I heard: [something...] in [" << process << "] [thread=" << boost::this_thread::get_id() << "]");
+	//ROS_DEBUG_STREAM("This is a long thread and takes long to execute each thing");
+	
 	//I kinda need an output though.
 	//run actual process
 	//auto out_msg = sos[process].run(h,t, q,tau,e);
 	opensimrt_msgs::MultiMessage out_msg = sos[process].run2(h,t, q,tau,e);
 	
 	//out_msg.events = e;
-	ROS_INFO_STREAM("Thread " << process << " finished execution. [thread=" << boost::this_thread::get_id() <<"]"); 
+	ROS_DEBUG_STREAM("Thread " << process << " finished execution. [thread=" << boost::this_thread::get_id() <<"]"); 
 	//out_msg.data = outcome_of_thread.str();
 
 	//outcome_pub.publish(out_msg);
 	//
 	//add the output to the logger so it can be saved. 
 	//
-	ROS_WARN_STREAM("t: " << t);
+	ROS_DEBUG_STREAM("t: " << t);
 	
 
 	//this does not work because while tableseries can handle unevenly spaced data, it cannot handle out of order data

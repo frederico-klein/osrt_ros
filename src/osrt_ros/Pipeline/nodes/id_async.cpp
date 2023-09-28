@@ -13,11 +13,11 @@ void mySigintHandler(int sig)
 }
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "id_show");
-	ROS_INFO_STREAM("called node InverseDynamics.");
+	ROS_INFO_STREAM("called node IdAsync: InverseDynamics.");
     try {
 	ros::NodeHandle nh("~");
 	double delay;
-	nh.param("ik_delay", delay, 1.5);
+	nh.param("ik_delay", delay, 0.5);
 	Pipeline::IdAsync perenial(delay);
 
 	//	signal(SIGINT, mySigintHandler);

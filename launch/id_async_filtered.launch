@@ -5,13 +5,16 @@
 	<arg name="left_foot_tf_name" 	default="left_foot_forceplate" />
 	<arg name="right_foot_tf_name" 	default="right_foot_forceplate" />
 	<arg name="use_exact_sync"	default="false"/>
+	<arg name="max_buffer_length"	default="100"/>
 
         <node pkg="osrt_ros" type="id_async" 	name="id_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
-		<param name="grf_reference_frame"        value="subject_opensim"/>
+		<!-- each grfm may have its own frame of reference! -->
+		<param name="left_reference_frame"        value="subject_opensim"/>
+		<param name="right_reference_frame"        value="subject_opensim"/>
 		<param name="use_exact_sync"		value="$(arg use_exact_sync)"/>
 		<remap from="/id_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>
@@ -41,6 +44,9 @@
 		<param name="cutoff_freq" 		value="6" />
 		<param name="delay" 			value="14" />
 		<param name="spline_order" 		value="3" />
+
+		<param name="ik_delay"			value="0.4" />
+		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
         </node>
 
 </launch>

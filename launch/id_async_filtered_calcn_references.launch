@@ -11,7 +11,18 @@
                 <param name="get_second_label" 		value="$(arg get_second_label)" />
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
-		<param name="grf_reference_frame"        value="subject_opensim"/>
+		
+		<!-- each grfm may have its own frame of reference! TODO: this is not working btw-->
+		<!-- some insight in what is not working: the force decorator is expecting the point to be in global coordinates, that is no longer the case-->
+		<!-- another problem is the difference in coordinate systems from opensim and ros, which shows them in the wrong frame-->
+
+		<param name="left_reference_frame"        value="calcn_l"/>
+		<param name="right_reference_frame"        value="calcn_r"/>
+		
+		<param name="left_apply_tf"        value="false"/>
+		<param name="right_apply_tf"        value="false"/>
+		
+		
 		<param name="use_exact_sync"		value="$(arg use_exact_sync)"/>
 		<remap from="/id_node/input_filtered" to="/ik/output_filtered"/>
 		<remap from="/in_labels" to="/ik/outlabels"/>

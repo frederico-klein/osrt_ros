@@ -13,7 +13,7 @@
 
 		<param name="convergence_tolerance" 	value="1.5e-0" />
 		<param name="memory_history" 		value="10" />
-		<param name="maximum_iterations" 	value="50" />
+		<param name="maximum_iterations" 	value="100" />
 		<param name="objective_exponent" 	value="2" />
 		<!-- there were some nice env variables defined to locate this, but now we have to specify explicitly -->
 		<param name="moment_arm_library_path"	value="$(arg moment_arm_library_path)" />

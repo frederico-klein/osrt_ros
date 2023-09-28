@@ -44,6 +44,7 @@ namespace Pipeline
 			//double add_additional_wrench_delay;//TODO:This should be done at wrench creation or republishing, I think, to make more sense
 			//do I need this?
 			bool use_grfm_filter;
+			bool apply_tf, no_rotation;
 			int memory, delay, splineOrder;
 			double cutoffFreq;
 
@@ -93,6 +94,10 @@ namespace Pipeline
 			void onInit();
 
 			// now all the stuff I need to save between inInit and the callbacks
+			void publish_additional_topics(std_msgs::Header h, SimTK::Vector q, std::vector<OpenSimRT::ExternalWrench::Input> wV) override
+			{ 
+				//the idea here is to create like a list of named commontimed messages that we can publish, i think, not sure if it is worth implementing now
+				ROS_DEBUG_STREAM("publish additional topics not implemented");}
 
 			
 			ros::Publisher pub_ik;
