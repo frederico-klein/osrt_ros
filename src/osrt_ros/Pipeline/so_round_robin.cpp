@@ -16,8 +16,12 @@
 Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes)
 	: node_handle_(node_handle), num_processes_(num_processes)
 {
-	if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
-		ros::console::notifyLoggerLevelsChanged();
+	if (false)
+	{
+		if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) 
+		{
+			ros::console::notifyLoggerLevelsChanged();
+		}
 	}
 	//main_subs_ = node_handle_.subscribe("chatter",1000, &SoRR::roundRobin, this);
 	ROS_WARN_STREAM("Creating process vector and internal publishers");
