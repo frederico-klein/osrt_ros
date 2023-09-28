@@ -4,6 +4,7 @@
 #include "opensimrt_msgs/MultiMessage.h"
 #include "opensimrt_msgs/MultiMessagePosVelAcc.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
+#include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "osrt_ros/Pipeline/so.h"
 #include "osrt_ros/Pipeline/so_bare.h"
 #include "osrt_ros/Pipeline/so_rr.h"
@@ -14,7 +15,7 @@
 
 
 Pipeline::SoRR::SoRR(const ros::NodeHandle& node_handle, const int num_processes)
-	: node_handle_(node_handle), num_processes_(num_processes)
+	: Pipeline::DualSink::DualSink(false), node_handle_(node_handle), num_processes_(num_processes)
 {
 	if (false)
 	{
