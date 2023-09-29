@@ -308,7 +308,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 			//ROS_DEBUG_STREAM("some_tau_component: " << tau_component);
 			msg.data.push_back(tau_component);
 		}
-		//msg.events = e;
+		msg.events = e;
 		pub.publish(msg);
 		std::vector<OpenSimRT::ExternalWrench::Input> wV;
 		wV.push_back(grfLeftWrench);

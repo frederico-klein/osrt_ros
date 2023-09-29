@@ -3,7 +3,9 @@
 #include "opensimrt_msgs/CommonTimed.h"
 #include "ros/duration.h"
 #include "ros/time.h"
+#include <exception>
 #include <memory>
+#include <stdexcept>
 
 using namespace std;
 using namespace OpenSim;
@@ -14,11 +16,9 @@ Pipeline::WrenchSubscriber::WrenchSubscriber(std::string wrench_name_prefix_, st
 	tfListener(tfBuffer), calcn_frame(calcn_frame_), wrench_name_prefix(wrench_name_prefix_)
 {
 	ROS_DEBUG_STREAM("called WrenchSubscriber constructor with params.");
-
 }
 
 void Pipeline::WrenchSubscriber::onInit()
-
 {
 	ROS_DEBUG_STREAM("called WrenchSubscriber onInit");
 	nh.param<bool>("use_grfm_filter", use_grfm_filter, false);
@@ -29,33 +29,29 @@ void Pipeline::WrenchSubscriber::onInit()
 	pub_cop = nh.advertise<opensimrt_msgs::CommonTimed>(wrench_name_prefix+"/debug_cop", 10);
 	nh.param<std::string>(wrench_name_prefix+"_foot_tf_name", foot_tf_name, wrench_name_prefix+"_foot_forceplate");
 	nh.param<std::string>(wrench_name_prefix+"_reference_frame", grf_reference_frame, "map");
-	nh.param<bool>(wrench_name_prefix+"_apply_tf", apply_tf, true);
 	nh.param<bool>(wrench_name_prefix+"_no_rotation", no_rotation, false);
+	if(no_rotation)
+		ROS_ERROR_STREAM("no_rotation to be applied to: "<< wrench_name_prefix);
+	else
+		ROS_INFO_STREAM("Applying rotation to" << wrench_name_prefix);
 
+	//throw (std::runtime_error("bye"));
 }
 
 void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedConstPtr& msg)
 {
-	ROS_DEBUG_STREAM("reached a wrench subscriber!");
+	//ROS_DEBUG_STREAM("reached a wrench subscriber!");
 	//places the wrench in the buffer
 	geometry_msgs::WrenchStamped my_wrench = *msg.get();
 	wrenchBuffer.push_back(my_wrench);
-	ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
-	ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
+	//ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
+	//ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
 	while (wrenchBuffer.size()>max_buffer_length)
 	{
 		wrenchBuffer.pop_front();
 	}
 
 }
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-////HERE I ALREADY HAVE THE WRENCH FROM THE RIGHT TIME
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
 const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_buffer(const std_msgs::Header::_stamp_type timestamp)
 {
 	auto best_wrench = geometry_msgs::WrenchStamped();
@@ -63,30 +59,31 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 	double this_wrench_time = 3000;
 	if (!wrenchBuffer.empty())
 	{
-		for (auto w:wrenchBuffer)
+		for (auto &w:wrenchBuffer)
 		{
 			this_wrench_time = fabs((w.header.stamp - timestamp).toSec());
-
-			//ROS_DEBUG_STREAM("wrenenrenrenrne" << w);
 			if (this_wrench_time<old_best_wrench_time_offset)
 			{
 				old_best_wrench_time_offset = this_wrench_time;
-				//ROS_DEBUG_STREAM("I found something" << w) ;
-				//ROS_DEBUG_STREAM("the wrench just before it was: "<< best_wrench.header.stamp );
+				//ROS_DEBUG_STREAM("I found a better wrench:\n" << w) ;
+				//ROS_DEBUG_STREAM("The wrench just before it was: "<< best_wrench.header.stamp );
 				best_wrench = w;
 			}
 		}
-		ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
-		ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
-		ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
+		//ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
+		//ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
+		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
 		if (wrenchBuffer.front().header.stamp >timestamp || wrenchBuffer.back().header.stamp < timestamp)
 			ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
+	}
+	else
+	{
+		ROS_FATAL_STREAM("Wrench Buffer is empty!");
 	}
 	return best_wrench;
 }
 bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type timestamp, ExternalWrench::Input* wO )
 {
-	
 	//find the actual wrench I need based on timestamp
 	auto w = find_wrench_in_buffer(timestamp);
 	auto now = ros::Time::now();
@@ -148,8 +145,6 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
 		//inv_t converts back to opensim
 		
-		if (apply_tf)
-			actualtransform = nulltransform;
 		if (no_rotation)
 			actualtransform.transform.rotation = nulltransform.transform.rotation;
 		//now convert it:
@@ -170,7 +165,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 
 	}
 	catch (tf2::TransformException &ex) {
-		ROS_ERROR("tutu-loo: message_convs.cpp parse_message transform exception: %s",ex.what());
+		ROS_ERROR("Could not find a transform: parse_message transform exception: %s",ex.what());
 		//ros::Duration(1.0).sleep();
 		return false;
 	}

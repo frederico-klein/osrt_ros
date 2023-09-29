@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-	<arg name="model_file" 		default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
-	<arg name="get_second_label" 	default="true"/>
-	<arg name="left_foot_tf_name" 	default="left_foot_forceplate" />
-	<arg name="right_foot_tf_name" 	default="right_foot_forceplate" />
-	<arg name="use_exact_sync"	default="false"/>
-	<arg name="max_buffer_length"	default="100"/>
+	<arg name="model_file" 			default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
+	<arg name="get_second_label" 		default="true"/>
+	<arg name="left_foot_tf_name" 		default="left_foot_forceplate" />
+	<arg name="right_foot_tf_name" 		default="right_foot_forceplate" />
+	<arg name="use_exact_sync"		default="false"/>
+	<arg name="max_buffer_length"		default="100"/>
+
+	<!-- If no_rotation is true then I will neglect the reference rotation transformation -->
+	<arg name="grf_no_rotation"		default="true"/>
 
         <node pkg="osrt_ros" type="id_async" 	name="id_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />
@@ -47,6 +50,11 @@
 
 		<param name="ik_delay"			value="0.4" />
 		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
+
+		<!-- TODO: if I really want to generalize the number of wrenches i also need to change how async gets called-->
+		<param name="left_no_rotation"			value="$(arg grf_no_rotation)"/>
+		
+		<param name="right_no_rotation"			value="$(arg grf_no_rotation)"/>
         </node>
 
 </launch>
