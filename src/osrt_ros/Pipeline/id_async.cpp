@@ -59,6 +59,7 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 	double this_wrench_time = 3000;
 	if (!wrenchBuffer.empty())
 	{
+		int i = -1;
 		for (auto &w:wrenchBuffer)
 		{
 			this_wrench_time = fabs((w.header.stamp - timestamp).toSec());
@@ -68,8 +69,10 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 				//ROS_DEBUG_STREAM("I found a better wrench:\n" << w) ;
 				//ROS_DEBUG_STREAM("The wrench just before it was: "<< best_wrench.header.stamp );
 				best_wrench = w;
+				i++;
 			}
 		}
+		ROS_INFO_STREAM("wrench I got was in position: [" << i << "] of the buffer of length: [" << max_buffer_length << "] at " << 100.0*float(i)/max_buffer_length << "%");
 		//ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
 		//ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
 		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
@@ -209,13 +212,24 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 
 }
 
-Pipeline::IdAsync::IdAsync(): seq__(sub__, ros::Duration(0.3),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(0.01),1000), wsL("left", "calcn_l"), wsR("right", "calcn_r")
+#define BUFFER_LENGTH 1000
+#define READING_TIMEOUT 0.001
+
+Pipeline::IdAsync::IdAsync(): 
+	seq__(sub__, ros::Duration(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	wsL("left", "calcn_l"), 
+	wsR("right", "calcn_r")
 {
 	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay????????????????????????????????????????????????????????????????????????????????????");
 
 }
 
-Pipeline::IdAsync::IdAsync(double delay__): seq__(sub__, ros::Duration(delay__),ros::Duration(0.01),1000), seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(0.01),1000), wsL("left", "calcn_l"), wsR("right", "calcn_r")
+Pipeline::IdAsync::IdAsync(double delay__): 
+	seq__(sub__, ros::Duration(delay__), ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	wsL("left", "calcn_l"), 
+	wsR("right", "calcn_r")
 {
 	ROS_INFO_STREAM("subscribing with a delay of: "<<delay__<<"s.");
 }
