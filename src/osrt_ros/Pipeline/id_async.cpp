@@ -59,7 +59,7 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 	double this_wrench_time = 3000;
 	if (!wrenchBuffer.empty())
 	{
-		int i = -1;
+		//int i = -1;
 		for (auto &w:wrenchBuffer)
 		{
 			this_wrench_time = fabs((w.header.stamp - timestamp).toSec());
@@ -69,10 +69,11 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 				//ROS_DEBUG_STREAM("I found a better wrench:\n" << w) ;
 				//ROS_DEBUG_STREAM("The wrench just before it was: "<< best_wrench.header.stamp );
 				best_wrench = w;
-				i++;
+				//i++;
 			}
 		}
-		ROS_INFO_STREAM("wrench I got was in position: [" << i << "] of the buffer of length: [" << max_buffer_length << "] at " << 100.0*float(i)/max_buffer_length << "%");
+		//ROS_INFO_STREAM("\nwrench i got has the timestamp: " << best_wrench.header.stamp << "\ndesired stamp was:" << timestamp <<"\ntime difference: "<< best_wrench.header.stamp - timestamp);
+		//ROS_INFO_STREAM("wrench I got was in position: [" << i << "/" << max_buffer_length << "] at " << 100.0*float(i)/max_buffer_length << "%");
 		//ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
 		//ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
 		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
@@ -213,7 +214,7 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 }
 
 #define BUFFER_LENGTH 1000
-#define READING_TIMEOUT 0.001
+#define READING_TIMEOUT 0.002
 
 Pipeline::IdAsync::IdAsync(): 
 	seq__(sub__, ros::Duration(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 

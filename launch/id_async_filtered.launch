@@ -16,11 +16,12 @@
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
 		<!-- each grfm may have its own frame of reference! -->
+		<!-- ground :== subject_opensim. maybe we need to change the names to make it more sensible. -->
 		<param name="left_reference_frame"        value="subject_opensim"/>
 		<param name="right_reference_frame"        value="subject_opensim"/>
 		<param name="use_exact_sync"		value="$(arg use_exact_sync)"/>
-		<remap from="/id_node/input_filtered" to="/ik/output_filtered"/>
-		<remap from="/in_labels" to="/ik/outlabels"/>
+		<remap from="/id_node/input_filtered" 		to="/ik/output_filtered"/>
+		<remap from="/in_labels" 			to="/ik/outlabels"/>
 		<!--remap from="/id_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>
 		<remap from="/in_labels2" 	to="/inverse_kinematics_from_file/out_labels"/ -->
 		<remap from="/id_node/input2" 	to="/grf_node/output"/>
@@ -48,7 +49,7 @@
 		<param name="delay" 			value="14" />
 		<param name="spline_order" 		value="3" />
 
-		<param name="ik_delay"			value="0.16" />
+		<param name="ik_delay"			value="0.26" />
 		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
 
 		<!-- TODO: if I really want to generalize the number of wrenches i also need to change how async gets called-->

@@ -194,7 +194,9 @@ void IMUCalibrator::recordTime(const double& timeout) {
 
 void IMUCalibrator::computeAvgStaticPoseCommon()
 {
-    publishCalibrationData();
+	//TODO: this is sort of slow, check which are the slow bits to parallelize, it is like a mutex and thread join thing for each of the bits below. 
+	//i think maybe the waitformessage is the slow part.
+    publishCalibrationData(); //TODO: this can be parallelised
     std::vector<SimTK::Quaternion> old_avg_response_list = impl->computeAvgStaticPose();;
 
     ROS_INFO_STREAM("Now calculating average static pose");
@@ -203,7 +205,7 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 		ROS_INFO_STREAM("using external averagingMethod!");
     		//ROS_WARN("not yet implemented, using normal method");
 		std::vector<SimTK::Quaternion> avg_response_list;
-		for (auto imu_name:imuBodiesObservationOrder)
+		for (auto imu_name:imuBodiesObservationOrder) //TODO: this can also be parallelised
 		{
 			geometry_msgs::QuaternionConstPtr res_q;
 			geometry_msgs::Quaternion q;
