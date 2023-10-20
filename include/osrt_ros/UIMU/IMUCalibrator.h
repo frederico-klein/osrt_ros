@@ -114,7 +114,7 @@ namespace OpenSimRT {
 					SimTK::Array_<SimTK::Rotation> imuObservations;
 					for (const auto& data : imuData) {
 						const auto& q = data.getQuaternion();
-						const auto R = R_heading * R_GoGi * ~SimTK::Rotation(q);
+						const auto R = R_heading * R_GoGi * SimTK::Rotation(q);
 						imuObservations.push_back(R);
 					}
 					return imuObservations;
