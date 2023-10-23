@@ -116,7 +116,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
 	//TODO: which one is it?? try removing the inverse sign here
         //TODO: ACTUALLY, remove here becuse the inverse rotation is only being used for logging. 
-	const auto base_R = R_GoGi * ~Rotation(q0);
+	const auto base_R = R_GoGi * Rotation(q0);
 
         // get initial direction from the imu measurement (the axis looking
         // front)
@@ -172,7 +172,7 @@ void IMUCalibrator::calibrateIMUTasks(
 	const auto Corrected_Q0 = ~Rotation(q0);
     	ROS_DEBUG_STREAM("Corrected_Q0 orientation matrix:" << bodyName << "\n" << Corrected_Q0);
 
-	const auto R0 = R_heading * R_GoGi * ~Rotation(q0);
+	const auto R0 = R_heading * R_GoGi * Rotation(q0);
     	
 	ROS_DEBUG_STREAM("R0 orientation matrix:" << bodyName << "\n" << R0);
 
