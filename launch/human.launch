@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<!--arg name="model_file" 			default="/srv/data/mobl2016/mobl2016_v04.osim" /-->
-	<arg name="model_file" 			default="/srv/data/gait1992/model/model_generic.osim" />
+	<arg name="model_file" 			default="/catkin_ws/src/osrt_ros/simple.osim" />
+	<!--arg name="model_file" 			default="/srv/data/gait1992/model/model_generic.osim" / -->
 	<!--arg name="model_file" 			default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" / -->
 	<node name="human_publisher" pkg="osrt_ros" type="human_publisher_mini_node" output="screen" launch-prefix="gdb -ex run --args">
                 <param name="model_file" 		value="$(arg model_file)" />
+		<rosparam param="bodies_tf" >['ground','block']</rosparam>  
 		<!--rosparam param="bodies_tf" >['thorax','humerus','radius']</rosparam -->  
-		<rosparam param="bodies_tf" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam>
+		<!--rosparam param="bodies_tf" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam -->
 	</node>
     <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="human_joint_gui" >
         <remap from="joint_states" to="human_publisher/joint_states" />

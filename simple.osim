@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<OpenSimDocument Version="40000">
+  <Model name="SimpleModel">
+    <BodySet>
+      <Body name="ground" />
+      <Body name="block" />
+    </BodySet>
+    <JointSet>
+      <WeldJoint name="weld_joint" coordinate_coupler="weld_coord">
+        <parent_body>ground</parent_body>
+        <child_body>block</child_body>
+      </WeldJoint>
+    </JointSet>
+    <CoordinateSet>
+      <Coordinate name="weld_coord" />
+    </CoordinateSet>
+    <ForceSet />
+  </Model>
+</OpenSimDocument>
+

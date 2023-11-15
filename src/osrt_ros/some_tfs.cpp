@@ -135,6 +135,9 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh("~");
 	std::string modelFile;
 	nh.param<std::string>("model_file", modelFile, "");
+	auto model = OpenSim::Model(modelFile);
+	model.initSystem(); //this crashes idk why, probably model is broken or it's looking for things it cant find
+			    //
 
 	//something like imuBodiesObservation, but not really
 	Osim_tf_publisher op(modelFile);
