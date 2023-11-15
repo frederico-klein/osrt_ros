@@ -6,6 +6,7 @@
 
 #include "ros/ros.h"
 #include <Simulation/Model/Model.h>
+//#include "some_tfs.h" // if I include this everything fails. figure it out.
 
 int main(int argc, char **argv)
 {
@@ -17,6 +18,12 @@ int main(int argc, char **argv)
 	auto model = OpenSim::Model(modelFile);
 	auto state = model.initSystem(); //this crashes idk why, probably model is broken or it's looking for things it cant find
 			    //
+
+	//something like imuBodiesObservation, but not really
+	
+	//Osim_tf_publisher op(modelFile);
+	//op.init();	//
+
 	ros::spin();
 	return 0;
 }
