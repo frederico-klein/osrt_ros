@@ -23,7 +23,6 @@ class Osim_tf_publisher
 	{
 		ros::NodeHandle nh("~");
 		nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-		ROS_INFO_STREAM("Using modelFile:" << modelFile);
 		sync_input_sub = nh.subscribe("joint_states", 10, &Osim_tf_publisher::other_callback, this);
 		nh.getParam("bodies_tf", imuBodiesObservationOrder);
 		if (imuBodiesObservationOrder.size() == 0)
@@ -54,6 +53,7 @@ class Osim_tf_publisher
 		void init()
 		{
 			state = model.initSystem();
+			ROS_INFO_STREAM("what is q? "<< state.getQ());
 			model.realizePosition(state);
 			if (model.isValidSystem())
 			{
@@ -72,14 +72,29 @@ class Osim_tf_publisher
 
 				}
 				else
-					ROS_WARN_STREAM("cannot find body" << label);
+					ROS_WARN_STREAM("cannot find body:" << label);
 			}
 
 		}
 		ros::Subscriber sync_input_sub; 
 		std::map<std::string, SimTK::Transform> imuBodiesInGround;
+		void update(const SimTK::Vector& q)
+		{
+				state.updQ() = q;	
+
+		}
 		void other_callback (const sensor_msgs::JointStateConstPtr msg)
-		{}
+		{
+			if (model.isValidSystem())
+			{
+				SimTK::Vector v(msg->position.size());
+				for (size_t i=0;i<msg->position.size();i++)
+					v[i] =msg->position[i];
+				
+				//update(v); //this is a different size!
+			}
+
+		}
 		void callback(const sensor_msgs::JointStateConstPtr msg)
 		{
 			// creates some q to send to a model
@@ -105,7 +120,6 @@ class Osim_tf_publisher
 	private:
 		tf2_ros::TransformBroadcaster tf_broadcaster;
 		//lets load a model here
-		std::string modelFile;
 
 		OpenSim::Model model;	
 		SimTK::State state;

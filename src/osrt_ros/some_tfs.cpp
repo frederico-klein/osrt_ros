@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh("~");
 	std::string modelFile;
 	nh.param<std::string>("model_file", modelFile, "");
-	ROS_INFO_STREAM("modelFile" << modelFile);
+	ROS_INFO_STREAM("==== modelFile: " << modelFile);
 	const OpenSim::Model model1 = OpenSim::Model(modelFile);
 
 	//something like imuBodiesObservation, but not really
