@@ -138,6 +138,15 @@ target_link_libraries(custom_joints_node
   osrtRosPipeline
 )
 
+add_executable(human_publisher_mini_node src/osrt_ros/some_tfs.cpp)
+add_dependencies(human_publisher_mini_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(human_publisher_mini_node
+  ${catkin_LIBRARIES}
+  ${OpenSim_LIBRARIES}
+  ${opensimrt_LIBRARIES}
+  osrtRosPipeline
+)
+
 
 add_executable(external_average_quaternion_node src/osrt_ros/external_average_pose.cpp)
 add_dependencies(external_average_quaternion_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
