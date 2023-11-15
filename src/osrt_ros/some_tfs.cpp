@@ -5,8 +5,9 @@
  */
 
 #include "ros/ros.h"
-#include <Simulation/Model/Model.h>
-//#include "some_tfs.h" // if I include this everything fails. figure it out.
+#include "sensor_msgs/JointState.h"
+#include "some_tfs.h" // if I include this everything fails. figure it out.
+#include <OpenSim/Simulation/Model/Model.h>
 
 int main(int argc, char **argv)
 {
@@ -15,14 +16,19 @@ int main(int argc, char **argv)
 	std::string modelFile;
 	nh.param<std::string>("model_file", modelFile, "");
 	ROS_INFO_STREAM("modelFile" << modelFile);
-	auto model = OpenSim::Model(modelFile);
-	auto state = model.initSystem(); //this crashes idk why, probably model is broken or it's looking for things it cant find
-			    //
+	const OpenSim::Model model1 = OpenSim::Model(modelFile);
 
 	//something like imuBodiesObservation, but not really
 	
-	//Osim_tf_publisher op(modelFile);
-	//op.init();	//
+	Osim_tf_publisher op(model1);
+	op.init();	//
+	/*std::function<void(sensor_msgs::JointStateConstPtr)> callback = [&op](sensor_msgs::JointStateConstPtr msg) {
+        op.other_callback(msg);
+    };
+    */
+	//op.sync_input_sub = nh.subscribe<sensor_msgs::JointState>("joint_states", 10, callback);
+
+
 
 	ros::spin();
 	return 0;

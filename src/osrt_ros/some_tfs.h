@@ -9,9 +9,7 @@
 #include "geometry_msgs/TransformStamped.h"
 #include "sensor_msgs/JointState.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include <Simulation/Model/Model.h>
-#include <stdexcept>
-#include <vector>
+#include <OpenSim/Simulation/Model/Model.h>
 //this is a better version of human_state_publisher, aka, forward kinematics! it doesnt work though.
 
 //since i dont know this, lets at least make it a function, so once it is known i can reuse it maybe.
@@ -21,29 +19,24 @@ class Osim_tf_publisher
 {
 	public:
 		//	we sort of want just common stuff here too, right? this is maybe a common node.
-		Osim_tf_publisher(const std::string& modelFilePath)
+		Osim_tf_publisher(const OpenSim::Model& model_) : model(*model_.clone())
+	{
+		ros::NodeHandle nh("~");
+		nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
+		ROS_INFO_STREAM("Using modelFile:" << modelFile);
+		sync_input_sub = nh.subscribe("joint_states", 10, &Osim_tf_publisher::other_callback, this);
+		nh.getParam("bodies_tf", imuBodiesObservationOrder);
+		if (imuBodiesObservationOrder.size() == 0)
 		{
-			ros::NodeHandle nh("~");
-			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-			ROS_INFO_STREAM("Using modelFile:" << modelFile);
-			sync_input_sub = nh.subscribe("joint_states", 10, &Osim_tf_publisher::callback, this);
-			nh.getParam("bodies_tf", imuBodiesObservationOrder);
-			if (imuBodiesObservationOrder.size() == 0)
-			{
-				ROS_FATAL("IMU observation order not defined!");
-				throw(std::invalid_argument("imuObservationOrder not defined."));
-			}
-			else
-			{
-				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
-			}
-			//lets try this trick, 
-			model = OpenSim::Model(modelFilePath);
-
-			//OpenSim::Object* muscleModel = new OpenSim::Schutte1993Muscle_Deprecated();
-			//OpenSim::Object::RegisterType(*muscleModel);
-			ROS_INFO_STREAM("Initialized okay");
+			ROS_FATAL("IMU observation order not defined!");
+			throw(std::invalid_argument("imuObservationOrder not defined."));
 		}
+		else
+		{
+			ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
+		}
+
+	}
 		geometry_msgs::Transform fromSimTkTransform(SimTK::Transform some_simtk_tf)
 		{
 			geometry_msgs::Transform some_tf;	
@@ -60,9 +53,8 @@ class Osim_tf_publisher
 		}
 		void init()
 		{
-			model.setUseVisualizer(false);
-			model.initSystem(); //breaks
-			state = model.getWorkingState();
+			state = model.initSystem();
+			model.realizePosition(state);
 			if (model.isValidSystem())
 			{
 				ROS_INFO_STREAM("Initialized model okay");
@@ -72,22 +64,25 @@ class Osim_tf_publisher
 				ROS_FATAL_STREAM("model not valid");
 				throw(std::runtime_error("cannot read model."));
 			}
+			for (const auto& label : imuBodiesObservationOrder) {
+				const OpenSim::PhysicalFrame* frame = nullptr;
+				if ((frame = model.findComponent<OpenSim::PhysicalFrame>(label))) {
+					imuBodiesInGround[label] =
+						frame->getTransformInGround(state); // R_GB
+
+				}
+				else
+					ROS_WARN_STREAM("cannot find body" << label);
+			}
 
 		}
-	private:
-		tf2_ros::TransformBroadcaster tf_broadcaster;
 		ros::Subscriber sync_input_sub; 
-		//lets load a model here
-		std::string modelFile;
-
-		OpenSim::Model model;	
-		SimTK::State state;
-		std::vector<std::string> imuBodiesObservationOrder;
-		std::string tf_frame_prefix;
+		std::map<std::string, SimTK::Transform> imuBodiesInGround;
+		void other_callback (const sensor_msgs::JointStateConstPtr msg)
+		{}
 		void callback(const sensor_msgs::JointStateConstPtr msg)
 		{
 			// creates some q to send to a model
-			std::map<std::string, SimTK::Transform> imuBodiesInGround;
 			if (model.isValidSystem())
 			{
 				SimTK::Vector v(msg->position.size());
@@ -96,16 +91,6 @@ class Osim_tf_publisher
 				state.updQ() = v;	
 				model.realizePosition(state);
 				//now publish the tfs, but they will be in opensim frame of reference
-				for (const auto& label : imuBodiesObservationOrder) {
-					const OpenSim::PhysicalFrame* frame = nullptr;
-					if ((frame = model.findComponent<OpenSim::PhysicalFrame>(label))) {
-						imuBodiesInGround[label] =
-							frame->getTransformInGround(state); // R_GB
-
-					}
-					else
-						ROS_WARN_STREAM("cannot find body" << label);
-				}
 				for(const auto& label : imuBodiesObservationOrder) {
 					auto some_simtk_tf = imuBodiesInGround[label];
 					geometry_msgs::TransformStamped some_tf;	
@@ -117,5 +102,14 @@ class Osim_tf_publisher
 
 			}
 		}
+	private:
+		tf2_ros::TransformBroadcaster tf_broadcaster;
+		//lets load a model here
+		std::string modelFile;
+
+		OpenSim::Model model;	
+		SimTK::State state;
+		std::vector<std::string> imuBodiesObservationOrder;
+		std::string tf_frame_prefix;
 };
 #endif
