@@ -13,14 +13,10 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "human_joint_state_publisher");
 	ros::NodeHandle nh("~");
-	std::string modelFile;
-	nh.param<std::string>("model_file", modelFile, "");
-	ROS_INFO_STREAM("==== modelFile: " << modelFile);
-	const OpenSim::Model model1 = OpenSim::Model(modelFile);
 
 	//something like imuBodiesObservation, but not really
 	
-	Osim_tf_publisher op(model1);
+	Osim_tf_publisher op;
 	op.init();	//
 	/*std::function<void(sensor_msgs::JointStateConstPtr)> callback = [&op](sensor_msgs::JointStateConstPtr msg) {
         op.other_callback(msg);

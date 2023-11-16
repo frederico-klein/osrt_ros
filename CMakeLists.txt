@@ -3,7 +3,8 @@ project(osrt_ros)
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
-add_compile_options(-std=c++17 -O3 -g -Wall -pedantic -Wno-undef)
+#add_compile_options(-std=c++17 -O3 -g -Wall -pedantic -Wno-undef)
+add_compile_options(-std=c++17 -O -g)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -g")
 
 find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"

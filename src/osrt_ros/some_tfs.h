@@ -10,6 +10,8 @@
 #include "sensor_msgs/JointState.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include <OpenSim/Simulation/Model/Model.h>
+#include <vector>
+#include <Actuators/Schutte1993Muscle_Deprecated.h>
 //this is a better version of human_state_publisher, aka, forward kinematics! it doesnt work though.
 
 //since i dont know this, lets at least make it a function, so once it is known i can reuse it maybe.
@@ -19,23 +21,30 @@ class Osim_tf_publisher
 {
 	public:
 		//	we sort of want just common stuff here too, right? this is maybe a common node.
-		Osim_tf_publisher(const OpenSim::Model& model_) : model(*model_.clone())
-	{
-		ros::NodeHandle nh("~");
-		nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-		sync_input_sub = nh.subscribe("joint_states", 10, &Osim_tf_publisher::other_callback, this);
-		nh.getParam("bodies_tf", imuBodiesObservationOrder);
-		if (imuBodiesObservationOrder.size() == 0)
+		Osim_tf_publisher()
 		{
-			ROS_FATAL("IMU observation order not defined!");
-			throw(std::invalid_argument("imuObservationOrder not defined."));
-		}
-		else
-		{
-			ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
-		}
+			ros::NodeHandle nh("~");
+			std::string modelFile;
+			nh.param<std::string>("model_file", modelFile, "");
+			ROS_INFO_STREAM("==== modelFile: " << modelFile);
+			model = OpenSim::Model(modelFile);
+			
 
-	}
+			OpenSim::Object::RegisterType(OpenSim::Schutte1993Muscle_Deprecated());
+			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
+			sync_input_sub = nh.subscribe("joint_states", 10, &Osim_tf_publisher::other_callback, this);
+			nh.getParam("bodies_tf", imuBodiesObservationOrder);
+			if (imuBodiesObservationOrder.size() == 0)
+			{
+				ROS_FATAL("IMU observation order not defined!");
+				throw(std::invalid_argument("imuObservationOrder not defined."));
+			}
+			else
+			{
+				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
+			}
+
+		}
 		geometry_msgs::Transform fromSimTkTransform(SimTK::Transform some_simtk_tf)
 		{
 			geometry_msgs::Transform some_tf;	
@@ -80,7 +89,12 @@ class Osim_tf_publisher
 		std::map<std::string, SimTK::Transform> imuBodiesInGround;
 		void update(const SimTK::Vector& q)
 		{
-				state.updQ() = q;	
+			std::vector<double> qq{0, 0, 0, 0, 1, 0, 0.785398, 0, 0, -2e-08, -2e-8};
+			SimTK::Vector fixed_q(11);
+			for (size_t i=0;i<qq.size();i++)
+				fixed_q[i] = qq[i];
+			auto itself = state.getQ();
+			state.setQ(itself);	//this breaks everything
 
 		}
 		void other_callback (const sensor_msgs::JointStateConstPtr msg)
@@ -90,8 +104,13 @@ class Osim_tf_publisher
 				SimTK::Vector v(msg->position.size());
 				for (size_t i=0;i<msg->position.size();i++)
 					v[i] =msg->position[i];
-				
-				//update(v); //this is a different size!
+				auto numQModel = state.getQ().size();
+				if (v.size() == numQModel)
+					update(v); 
+				else
+				{
+					ROS_FATAL_STREAM("size of input bodies: "<< v.size() << " is different from model bodies size:" << numQModel);
+				}
 			}
 
 		}
