@@ -129,7 +129,7 @@ opensimrt_msgs::MultiMessage Pipeline::SoBare::run2(const std_msgs::Header h, do
 	t2 = chrono::high_resolution_clock::now();
 
 	//TODO: actually capture return params from soOutput!!!
-	opensimrt_msgs::MultiMessage msg_out = Osb::get_SO_as_Multi(h,t,q,soOutput);
+	opensimrt_msgs::MultiMessage msg_out = Osb::get_SO_as_Multi(h,t,q,soOutput,e.list);
 	msg_out.events = e;
 	return msg_out;
 }

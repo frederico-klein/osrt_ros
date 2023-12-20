@@ -1,6 +1,6 @@
 /**
  * @author      : frekle (frekle@bml01.mech.kth.se)
- * @file        : events
+ * @file        : events.h
  * @created     : Friday Mar 17, 2023 11:37:23 CET
  */
 
@@ -19,6 +19,13 @@ void addEvent(std::string event_name, opensimrt_msgs::Event & e);
 void addEvent(std::string event_name, opensimrt_msgs::CommonTimed & msg);
 
 void addEvent(std::string event_name, opensimrt_msgs::Events & ee);
+/********************************
+ *
+ * Combine events of two message pointers that have events. It's not working for dual and combined messages though.
+ *
+ *
+ */ 
+
 template <typename T, typename U>
 opensimrt_msgs::Events combineEvents(T msg_t, U msg_u)
 {
@@ -33,6 +40,7 @@ opensimrt_msgs::Events combineEvents(T msg_t, U msg_u)
 
 }
 
+opensimrt_msgs::Events combineEvents(const std::vector<opensimrt_msgs::Event> e1,const std::vector<opensimrt_msgs::Event> e2);
 
 opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::CommonTimedConstPtr & msg);
 opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::PosVelAccTimedConstPtr & msg);

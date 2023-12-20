@@ -10,6 +10,7 @@
 #include "sensor_msgs/JointState.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include <OpenSim/Simulation/Model/Model.h>
+#include <SimTKcommon/internal/State.h>
 #include <vector>
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
 //this is a better version of human_state_publisher, aka, forward kinematics! it doesnt work though.
@@ -21,14 +22,9 @@ class Osim_tf_publisher
 {
 	public:
 		//	we sort of want just common stuff here too, right? this is maybe a common node.
-		Osim_tf_publisher()
+		Osim_tf_publisher(OpenSim::Model& model_, SimTK::State& state_): model(model_), state(state_)
 		{
 			ros::NodeHandle nh("~");
-			std::string modelFile;
-			nh.param<std::string>("model_file", modelFile, "");
-			ROS_INFO_STREAM("==== modelFile: " << modelFile);
-			model = OpenSim::Model(modelFile);
-			
 
 			OpenSim::Object::RegisterType(OpenSim::Schutte1993Muscle_Deprecated());
 			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
@@ -61,7 +57,6 @@ class Osim_tf_publisher
 		}
 		void init()
 		{
-			state = model.initSystem();
 			ROS_INFO_STREAM("what is q? "<< state.getQ());
 			model.realizePosition(state);
 			if (model.isValidSystem())
@@ -140,8 +135,8 @@ class Osim_tf_publisher
 		tf2_ros::TransformBroadcaster tf_broadcaster;
 		//lets load a model here
 
-		OpenSim::Model model;	
-		SimTK::State state;
+		OpenSim::Model& model;
+		SimTK::State& state;
 		std::vector<std::string> imuBodiesObservationOrder;
 		std::string tf_frame_prefix;
 };

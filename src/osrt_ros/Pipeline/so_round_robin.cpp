@@ -96,6 +96,9 @@ void Pipeline::SoRR::callback(const opensimrt_msgs::CommonTimedConstPtr& message
 	opensimrt_msgs::Dual msg;
 	msg.q = *message_ik;
 	msg.tau = *message_tau;
+	auto bothEvents = combineEvents(message_ik,message_tau);
+	msg.q.events = bothEvents;
+	msg.tau.events = bothEvents;		
 	pubs_[counter%num_processes_].publish(msg);
 	counter++;
 
@@ -110,6 +113,9 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 	opensimrt_msgs::DualPos msg;
 	msg.qqq = *message_ik;
 	msg.tau = *message_tau;
+	auto bothEvents = combineEvents(message_ik,message_tau);
+	msg.qqq.events = bothEvents;
+	msg.tau.events = bothEvents;		
 	pubs_filtered[counter%num_processes_].publish(msg);
 	counter++;
 
@@ -124,6 +130,9 @@ void Pipeline::SoRR::sync_callback(const opensimrt_msgs::MultiMessageConstPtr &m
 	msg.qqq.time = message->time;
 	msg.tau.data = message->other[0].data;
 	msg.tau.header = message->header;
+	msg.qqq.events = message->events;
+	msg.tau.events = message->events;		
+
 	pubs_filtered[counter%num_processes_].publish(msg);
 	counter++;
 }
@@ -138,6 +147,8 @@ void Pipeline::SoRR::sync_callback_filtered(const opensimrt_msgs::MultiMessagePo
 	msg.qqq.time = message->time;
 	msg.tau.data = message->other[0].data;
 	msg.tau.header = message->header;
+	msg.qqq.events = message->events;
+	msg.tau.events = message->events;
 	pubs_filtered[counter%num_processes_].publish(msg);
 	counter++;
 

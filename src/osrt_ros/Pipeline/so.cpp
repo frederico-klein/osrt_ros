@@ -128,7 +128,7 @@ void Pipeline::So::run(const std_msgs::Header h, double t, SimTK::Vector q, std:
 	msg_out.events = e;
 	pub.publish(msg_out);
 	
-	opensimrt_msgs::MultiMessage msg_multi = Osb::get_SO_as_Multi(h,t,q,soOutput);
+	opensimrt_msgs::MultiMessage msg_multi = Osb::get_SO_as_Multi(h,t,q,soOutput,e.list);
 	sync_output_multi.publish(msg_multi);
 	try {
 

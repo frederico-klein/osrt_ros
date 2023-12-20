@@ -4,12 +4,13 @@ project(osrt_ros)
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 #add_compile_options(-std=c++17 -O3 -g -Wall -pedantic -Wno-undef)
-add_compile_options(-std=c++17 -O -g)
+add_compile_options(-std=c++17 -O0 -g)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -g")
 
-find_package(OpenSim 4.0 REQUIRED PATHS "${OPENSIM_HOME}"
+find_package(OpenSim REQUIRED PATHS "${OPENSIM_HOME}"
 		simbody
 	)
+#find_package(SimTK REQUIRED)
 
 find_package(Eigen3 3.3 REQUIRED)
 
@@ -20,12 +21,21 @@ find_package(catkin REQUIRED COMPONENTS
 	opensimrt_msgs
 	opensimrt_bridge
 	roscpp
+	rosdoc_lite
 	sensor_msgs
 	tf
 	tf2
 	tf2_ros
 	)
 #find_package(Simbody REQUIRED PATHS "/opt/dependencies/opensim-core/dependencies/simbody/lib/cmake/simbody/")
+
+# Define the target for Doxygen documentation
+message(NOTICE "Building doxygen?-----------------------------------------------------------------")
+# consider adding tags to link to docs from each package.
+add_custom_target(${PROJECT_NAME}_docs ALL
+  COMMAND rosdoc_lite -o docs ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Generating Doxygen documentation"
+)
 
 generate_dynamic_reconfigure_options(
 	cfg/UIMU.cfg
