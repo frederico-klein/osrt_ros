@@ -320,6 +320,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		pub_grf_right.publish(conv_grf_to_msg(h, grfRightWrench));
 		pub_ik.publish(conv_ik_to_msg(h, q));
 		last_received_ik_stamp = msg.header.stamp;*/
+		addEvent("id_common: before publish multi",e);
 		sync_output_multi.publish(Osb::get_as_Multi(h,t,q,idOutput.tau,e.list));
 	}
 	catch (ros::Exception& e)

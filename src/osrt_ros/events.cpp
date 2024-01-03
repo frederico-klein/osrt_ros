@@ -27,7 +27,7 @@ void addEvent(std::string event_name, opensimrt_msgs::Events & ee)
 	ee.list.push_back(e);
 
 }
-
+/*
 opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::CommonTimedConstPtr & msg)
 {
 	opensimrt_msgs::Event e;
@@ -50,6 +50,7 @@ opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::Po
 	allEvents.list = eee;
 	return allEvents;
 }
+*/
 //couldnt get the template to work, so here is another version...
 opensimrt_msgs::Events combineEvents(const std::vector<opensimrt_msgs::Event> e1,const std::vector<opensimrt_msgs::Event> e2)
 {

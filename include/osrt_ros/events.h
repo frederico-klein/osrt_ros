@@ -25,6 +25,18 @@ void addEvent(std::string event_name, opensimrt_msgs::Events & ee);
  *
  *
  */ 
+template <typename T>
+opensimrt_msgs::Events addEvent(std::string event_name, T msg_t)
+{
+	opensimrt_msgs::Event e;
+	addEvent(event_name, e);
+	const std::vector<opensimrt_msgs::Event> ee = msg_t->events.list;
+	std::vector<opensimrt_msgs::Event> eee = ee;
+	eee.push_back(e);
+	opensimrt_msgs::Events allEvents;
+	allEvents.list = eee;
+	return allEvents;
+}
 
 template <typename T, typename U>
 opensimrt_msgs::Events combineEvents(T msg_t, U msg_u)
@@ -42,7 +54,7 @@ opensimrt_msgs::Events combineEvents(T msg_t, U msg_u)
 
 opensimrt_msgs::Events combineEvents(const std::vector<opensimrt_msgs::Event> e1,const std::vector<opensimrt_msgs::Event> e2);
 
-opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::CommonTimedConstPtr & msg);
-opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::PosVelAccTimedConstPtr & msg);
+//opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::CommonTimedConstPtr & msg);
+//opensimrt_msgs::Events addEvent(std::string event_name, const opensimrt_msgs::PosVelAccTimedConstPtr & msg);
 #endif /* end of include guard EVENTS_H */
 

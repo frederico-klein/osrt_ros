@@ -94,6 +94,7 @@ void Pipeline::SoRR::callback(const opensimrt_msgs::CommonTimedConstPtr& message
 	//generates from 2 messages only one message
 	ROS_DEBUG_STREAM("callback called ik, tau");
 	opensimrt_msgs::Dual msg;
+	addEvent("so_rr: received msg_id",message_ik);
 	msg.q = *message_ik;
 	msg.tau = *message_tau;
 	auto bothEvents = combineEvents(message_ik,message_tau);
@@ -111,6 +112,7 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 	//generates from 2 messages only one message
 	ROS_DEBUG_STREAM("callback called ik_filtered, tau");
 	opensimrt_msgs::DualPos msg;
+	addEvent("so_rr: received msg_id",message_ik);
 	msg.qqq = *message_ik;
 	msg.tau = *message_tau;
 	auto bothEvents = combineEvents(message_ik,message_tau);
@@ -123,16 +125,16 @@ void Pipeline::SoRR::callback_filtered(const opensimrt_msgs::PosVelAccTimedConst
 }
 void Pipeline::SoRR::sync_callback(const opensimrt_msgs::MultiMessageConstPtr &message)
 {
-	ROS_DEBUG_STREAM("callback called sync_multi");
+	ROS_ERROR_STREAM_ONCE("callback called sync_multi");
 	opensimrt_msgs::DualPos msg;
+	auto newEvents = addEvent("so_rr: received msg_id multi_ik",message);
 	msg.qqq.d0_data = message->ik.data;
 	msg.qqq.header = message->header;
 	msg.qqq.time = message->time;
 	msg.tau.data = message->other[0].data;
 	msg.tau.header = message->header;
-	msg.qqq.events = message->events;
-	msg.tau.events = message->events;		
-
+	msg.qqq.events = newEvents;
+	msg.tau.events = newEvents;		
 	pubs_filtered[counter%num_processes_].publish(msg);
 	counter++;
 }
@@ -140,6 +142,7 @@ void Pipeline::SoRR::sync_callback_filtered(const opensimrt_msgs::MultiMessagePo
 {
 	ROS_DEBUG_STREAM("callback called sync_multi_filtered");
 	opensimrt_msgs::DualPos msg;
+	addEvent("so_rr: received msg_id multiPos",message);
 	msg.qqq.d0_data = message->d0_data.data; //arg, this is horrible, the same name different content 
 	//msg.qqq.d1_data = message->d1_data.data;
 	//msg.qqq.d2_data = message->d2_data.data;

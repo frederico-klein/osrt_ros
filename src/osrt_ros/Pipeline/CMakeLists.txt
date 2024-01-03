@@ -65,4 +65,11 @@ add_dependencies(id_async ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_
 target_link_libraries(id_async
 	${DEPENDENCY_LIBS}
 )
+add_executable(ground_orientation_service_provider_node nodes/ground_orientation_service_provider.cpp)
+
+add_dependencies(ground_orientation_service_provider_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(ground_orientation_service_provider_node
+	${DEPENDENCY_LIBS}
+)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
