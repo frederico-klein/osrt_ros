@@ -165,7 +165,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 			actualtransform.transform.rotation = nulltransform.transform.rotation;
 		if (get_external_orientation)
 		{
-			ROS_WARN_STREAM("getting external orientation");
+			ROS_DEBUG_STREAM("getting external orientation");
 			opensimrt_msgs::GroundProjectionOrientationAtTimeSrv srv;
 			srv.request.point_stamped.header = w.header; //will get the time of the found wrench.
 			srv.request.point_stamped.point.x = actualtransform.transform.translation.x; 
@@ -173,7 +173,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 			srv.request.point_stamped.point.z = actualtransform.transform.translation.z; 
 			if (ground_orientation_client.call(srv)) {
 				// Service call successful, process the response
-				ROS_INFO("Received orientation: x=%f, y=%f, z=%f, w=%f", srv.response.orientation.x, srv.response.orientation.y, srv.response.orientation.z, srv.response.orientation.w);
+				ROS_DEBUG("Received orientation: x=%f, y=%f, z=%f, w=%f", srv.response.orientation.x, srv.response.orientation.y, srv.response.orientation.z, srv.response.orientation.w);
 			} else {
 				// Service call failed
 				ROS_ERROR("Failed to call service!!!");
