@@ -1,6 +1,7 @@
 #include "osrt_ros/Pipeline/id_async.h"
 #include "geometry_msgs/WrenchStamped.h"
 #include "opensimrt_msgs/CommonTimed.h"
+#include "opensimrt_msgs/GroundProjectionOrientationAtTimeSrv.h"
 #include "ros/duration.h"
 #include "ros/time.h"
 #include <exception>
@@ -30,10 +31,21 @@ void Pipeline::WrenchSubscriber::onInit()
 	nh.param<std::string>(wrench_name_prefix+"_foot_tf_name", foot_tf_name, wrench_name_prefix+"_foot_forceplate");
 	nh.param<std::string>(wrench_name_prefix+"_reference_frame", grf_reference_frame, "map");
 	nh.param<bool>(wrench_name_prefix+"_no_rotation", no_rotation, false);
+	nh.param<bool>(wrench_name_prefix+"_get_external_orientation", get_external_orientation, false);
+
 	if(no_rotation)
 		ROS_ERROR_STREAM("no_rotation to be applied to: "<< wrench_name_prefix);
 	else
 		ROS_INFO_STREAM("Applying rotation to" << wrench_name_prefix);
+
+	if(get_external_orientation)
+	{
+		ROS_INFO_STREAM("Using External Orientation provider");
+		if(no_rotation)
+			ROS_WARN_STREAM("External Orientation is set and it overrides no_rotation option! Using external orientation service!");
+		ground_orientation_client = nh.serviceClient<opensimrt_msgs::GroundProjectionOrientationAtTimeSrv>("get_ground_projection_orientation");
+
+	}
 
 	//throw (std::runtime_error("bye"));
 }
@@ -98,13 +110,13 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 	}
 	ROS_DEBUG_STREAM("timing information:\nIK stamp: "<< timestamp <<"\nfound wrench header stamp:"<< w.header.stamp << "\nnow: "<< now <<"\nDelay of this node:" << now-timestamp );
 	//auto sometime = w.header.stamp; //I hate myself.
-					//auto sometime = ros::Time(0); //I hate myself.
-	
+	//auto sometime = ros::Time(0); //I hate myself.
+
 	auto sometime= timestamp;
-					//TODO:I actually should read the ref_frame from the wrench like a normal person.
-					//NO. we are using this for both the wrenches, so it will use the value for the wrong side if the transform fails!. 
-					// now get the translations from the transform
-					// for the untranslated version I just want to get the reference in their own coordinate reference frame
+	//TODO:I actually should read the ref_frame from the wrench like a normal person.
+	//NO. we are using this for both the wrenches, so it will use the value for the wrong side if the transform fails!. 
+	// now get the translations from the transform
+	// for the untranslated version I just want to get the reference in their own coordinate reference frame
 	geometry_msgs::TransformStamped nulltransform, actualtransform,inv_t;
 	nulltransform.transform.rotation.w = 1;
 	//ROS_DEBUG_STREAM("nulltransform" << nulltransform.transform);
@@ -136,7 +148,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		//this is actually already correct. what you need to do use this function is to have another fixed transform generating a "subject_opensim" frame of reference and everything should work
 		//IT IS OBVIOUSLY COMMING FROM HERE. BUT WHERE HERE?
 		//ROS_INFO_STREAM(ref_frame<<" "<<grf_reference_frame);
-		
+
 		actualtransform = tfBuffer.lookupTransform(grf_reference_frame, foot_tf_name, sometime);
 
 		wO->point[0] = actualtransform.transform.translation.x;
@@ -148,9 +160,27 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		//ROS_DEBUG_STREAM("actual transform" << actualtransform);
 		//ROS_DEBUG_STREAM("inverse transform" << inv_t);
 		//inv_t converts back to opensim
-		
+
 		if (no_rotation)
 			actualtransform.transform.rotation = nulltransform.transform.rotation;
+		if (get_external_orientation)
+		{
+			ROS_WARN_STREAM("getting external orientation");
+			opensimrt_msgs::GroundProjectionOrientationAtTimeSrv srv;
+			srv.request.point_stamped.header = w.header; //will get the time of the found wrench.
+			srv.request.point_stamped.point.x = actualtransform.transform.translation.x; 
+			srv.request.point_stamped.point.y = actualtransform.transform.translation.y; 
+			srv.request.point_stamped.point.z = actualtransform.transform.translation.z; 
+			if (ground_orientation_client.call(srv)) {
+				// Service call successful, process the response
+				ROS_INFO("Received orientation: x=%f, y=%f, z=%f, w=%f", srv.response.orientation.x, srv.response.orientation.y, srv.response.orientation.z, srv.response.orientation.w);
+			} else {
+				// Service call failed
+				ROS_ERROR("Failed to call service!!!");
+				//return 1;
+			}
+			actualtransform.transform.rotation = srv.response.orientation; 
+		}
 		//now convert it:
 		tf2::Quaternion q ;
 		tf2::fromMsg(actualtransform.transform.rotation,q);

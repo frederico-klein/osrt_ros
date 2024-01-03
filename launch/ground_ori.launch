@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node name="ground_projection_orientation_node" pkg="osrt_ros" type="ground_orientation_service_provider_node" output="screen">
+        <rosparam param="rotation_quaternion">[0.078, 0.0, 0.0, 0.997]</rosparam>
+    </node>
+</launch>
+
