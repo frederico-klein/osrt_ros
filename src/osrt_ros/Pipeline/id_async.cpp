@@ -56,8 +56,8 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 	//places the wrench in the buffer
 	geometry_msgs::WrenchStamped my_wrench = *msg.get();
 	wrenchBuffer.push_back(my_wrench);
-	//ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
-	//ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
+	ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
+	ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
 	while (wrenchBuffer.size()>max_buffer_length)
 	{
 		wrenchBuffer.pop_front();
@@ -90,7 +90,12 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		//ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
 		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
 		if (wrenchBuffer.front().header.stamp >timestamp || wrenchBuffer.back().header.stamp < timestamp)
+		{
 			ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
+			ROS_INFO_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
+			ROS_INFO_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
+			ROS_INFO_STREAM("desired time 		:" <<timestamp);
+		}
 	}
 	else
 	{
@@ -253,7 +258,7 @@ Pipeline::IdAsync::IdAsync():
 	wsR("right", "calcn_r")
 {
 	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay????????????????????????????????????????????????????????????????????????????????????");
-
+	ik_delay = 0.3;
 }
 
 Pipeline::IdAsync::IdAsync(double delay__): 
@@ -263,7 +268,9 @@ Pipeline::IdAsync::IdAsync(double delay__):
 	wsR("right", "calcn_r")
 {
 	ROS_INFO_STREAM("subscribing with a delay of: "<<delay__<<"s.");
+	ik_delay = delay__;
 }
+
 
 Pipeline::IdAsync::~IdAsync()
 {
@@ -312,6 +319,17 @@ void Pipeline::IdAsync::onInit() {
 	//I need a slow IK with a ton of delay.
 
 }
+ros::Time Pipeline::IdAsync::convert_time_stamp_to_the_past(const ros::Time timestamp0)
+{
+	ROS_FATAL_STREAM("not ncessary, do not use!!!");
+	auto t0secs = timestamp0.toSec();
+	ROS_WARN_STREAM("this is the IK header time that is in the callback!!!!\n" << timestamp0);
+	auto converted_time = ros::Time(t0secs - ik_delay);
+	ROS_INFO_STREAM("converted_time" << converted_time);
+	return converted_time;
+}
+
+
 
 void Pipeline::IdAsync::callback1(const opensimrt_msgs::CommonTimedConstPtr& message_grf) {
 	ROS_FATAL_STREAM("callback grf called. Not implemented for normal CommonTimedConstPtr messages yet.");
@@ -328,6 +346,7 @@ void Pipeline::IdAsync::callback0(const opensimrt_msgs::CommonTimedConstPtr& mes
 	auto iks = Osb::parse_ik_message(message_ik, &filtered_t, ikfilter);
 	addEvent("id: getting real wrenches", newEvents1);
 	auto timestamp =message_ik->header.stamp;
+	//ros::Time timestamp =convert_time_stamp_to_the_past(message_ik->header.stamp);
 	auto grfs = Pipeline::IdAsync::get_wrench(timestamp);
 	ROS_DEBUG_STREAM("filtered_t" << filtered_t);
 	//	run(ikFiltered.t, iks, grfs);	
@@ -348,6 +367,7 @@ void Pipeline::IdAsync::callback_filtered(const opensimrt_msgs::PosVelAccTimedCo
 	auto iks = Osb::parse_ik_message(message_ik);
 	addEvent("id: getting real wrenches", newEvents1);
 	auto timestamp =message_ik->header.stamp;
+	//ros::Time timestamp =convert_time_stamp_to_the_past(message_ik->header.stamp);
 	auto grfs = Pipeline::IdAsync::get_wrench(timestamp);
 	addEvent("calling run function of id", newEvents1);
 	ROS_DEBUG_STREAM("calling run function");

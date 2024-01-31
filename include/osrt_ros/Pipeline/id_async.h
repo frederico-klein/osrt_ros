@@ -15,6 +15,7 @@
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "ros/subscriber.h"
+#include "ros/time.h"
 #include "std_srvs/Empty.h"
 #include <Common/TimeSeriesTable.h>
 #include <SimTKcommon/internal/BigMatrix.h>
@@ -72,7 +73,7 @@ namespace Pipeline
 			~IdAsync();
 			std_msgs::Header::_stamp_type last_received_ik_stamp;
 			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;
-			
+			double ik_delay;	
 			//I need my very super slow delayed subscribers for IK.
 			//
 			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub__;
@@ -91,7 +92,7 @@ namespace Pipeline
 			WrenchSubscriber wsL, wsR;
 			
 			std::vector<OpenSimRT::ExternalWrench::Input> get_wrench(const std_msgs::Header::_stamp_type timestamp);
-
+			ros::Time convert_time_stamp_to_the_past(const ros::Time ik_t);
 			void onInit();
 
 			// now all the stuff I need to save between inInit and the callbacks

@@ -27,8 +27,8 @@
 		<remap from="/id_node/input2" 	to="/grf_node/output"/>
 		<remap from="/in_labels2" 	to="/grf_node/out_labels"/>
 		
-		<remap from="/id_node/left/wrench" 	to="/grf_left/wrench"/>
-		<remap from="/id_node/right/wrench" 	to="/grf_right/wrench"/>
+		<remap from="/id_node/left/wrench" 	to="/left/wrench_filtered"/>
+		<remap from="/id_node/right/wrench" 	to="/right/wrench_filtered"/>
 		<param name="grf_right_point_identifier" 		value="ground_force_p" />
                 <param name="grf_right_force_identifier" 		value="ground_force_v" />
                 <param name="grf_right_torque_identifier" 		value="ground_torque_" />
