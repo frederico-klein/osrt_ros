@@ -1,10 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-	<include file="$(find osrt_ros)/launch/ik_upper.launch" ns="ar" >
-		<arg name="tf_frame_prefix" value="ar" />
-		<arg name="rotation_y"      value="0"/>
-	</include>
-	<include file="$(find osrt_ros)/launch/ik_upper.launch" ns="imu" >
+	<arg name="run_ar" default="true" />
+	<arg name="fake_ar_arm" default="false" />
+	<arg name="run_imu" default="false" />
+	<group ns="ar">
+		<include file="$(find osrt_ros)/launch/ik_upper.launch" if="$(arg run_ar)" >
+			<arg name="tf_frame_prefix" 	value="ar" />
+			<arg name="rotation_x"      	value="-90"/>
+			<arg name="rotation_y"      	value="0"/>
+			<arg name="rotation_z"      	value="0"/>
+			<arg name="direction_axis"      value="z"/>
+		</include>
+		<include file="$(find osrt_ros)/launch/upper_body_tfs.launch" if="$(arg fake_ar_arm)">
+			<arg name="name" value="ar/thorax"/>
+			<arg name="tf_frame_prefix" value="ar"/>
+			<arg name="also_pub_thorax" value="false"/>
+
+		</include>
+
+	</group>
+	<include file="$(find osrt_ros)/launch/ik_upper.launch" ns="imu" if="$(arg run_imu)" >
 		<arg name="tf_frame_prefix" value="imu" />
 	</include>
 

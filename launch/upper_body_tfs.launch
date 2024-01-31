@@ -4,8 +4,9 @@
 	<arg name="freq" default="100" />
 	<arg name="name" 		default="ximu3" />
 	<arg name="tf_frame_prefix" 	default="imu"/>
+	<arg name="also_pub_thorax" 	default="true"/>
 
-	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/thorax $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/thorax $(arg freq)" if="$(arg also_pub_thorax)" />
 	<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/humerus $(arg freq)" />
 	<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="1 0 0 0 0 0 1 $(arg name) $(arg tf_frame_prefix)/radius $(arg freq)" />
 

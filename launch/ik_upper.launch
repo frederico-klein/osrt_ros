@@ -2,8 +2,10 @@
 <launch>
 	<arg name="freq" default="100" />
 	<arg name="tf_frame_prefix" 		default="imu" />
+	<arg name="rotation_x"			default="-90"/>
 	<arg name="rotation_y"			default="0"/>
-	
+	<arg name="rotation_z"			default="0"/>
+	<arg name="direction_axis"		default="z"/>	
         <node pkg="osrt_ros" type="OnlineUpperLimb" 	name="ik_upperbody_node" output="screen" >
 		<param name="model_file" 		value="/srv/data/mobl2016/mobl2016_v03.osim" />
 		<param name="imu_base_body" 		value="thorax" />
@@ -11,10 +13,10 @@
 
 		<param name="use_external_average_calibration_method" value="false" />
 		<param name="tf_frame_prefix" 		value="$(arg tf_frame_prefix)" />
-		<param name="imu_direction_axis" 		value="z" />
-		<param name="imu_ground_rotation_x" 		value="-90" />
-		<param name="imu_ground_rotation_y" 		value="0" />
-		<param name="imu_ground_rotation_z" 		value="0" />
+		<param name="imu_direction_axis" 		value="$(arg direction_axis)" />
+		<param name="imu_ground_rotation_x" 		value="$(arg rotation_x)" />
+		<param name="imu_ground_rotation_y" 		value="$(arg rotation_y)" />
+		<param name="imu_ground_rotation_z" 		value="$(arg rotation_z)" />
 		<param name="rate" 				value="$(arg freq)" />
 		<param name="logger_filename_ik" 		value="_ik_$(arg tf_frame_prefix)_upper" />
 		<param name="logger_filename_imus" 		value="_imus_upper" />
