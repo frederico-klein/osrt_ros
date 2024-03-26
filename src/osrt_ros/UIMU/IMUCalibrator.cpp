@@ -146,8 +146,8 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
 	ROS_WARN_STREAM("angularDifference: " << angularDifference);
         // set heading rotation (rotation about Y axis)
-        R_heading = Rotation(angularDifference, SimTK::YAxis);
-        //R_heading = Rotation();
+        //R_heading = Rotation(angularDifference, SimTK::YAxis);
+        R_heading = Rotation();
 
     } else {
         ROS_WARN("No heading correction is applied. Heading rotation is set to "
