@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="run_with_imus" default="true" />
+	<arg name="load_urdf_model" default="true" />
+	<group ns="ik">
+		<include file="$(find opensimrt_bridge)/launch/imus_from_sto.launch" if="$(arg run_with_imus)" >
+		</include>
+		<include file="$(find opensimrt_bridge)/launch/ik_dump....launch" unless="$(arg run_with_imus)" >
+		</include>
+		<include file="$(find osrt_ros)/launch/custom_filtered.launch" if="$(arg load_urdf_model)">
+			<remap from="/joint_states" to="model_generic/joint_states"/>
+			<arg name="in_labels" value="/ik/outlabels"/>
+		</include>
+
+		<include file="$(find gait1992_description)/launch/human_control_imus_movable_pipeline.launch" if="$(arg load_urdf_model)">
+			<arg name="tf_prefix" value="ik"/>
+
+		</include>
+		
+
+	</group>
+	<include file="$(find osrt_ros)/launch/ik_lowerbody_inverted_pelvis.launch" if="$(arg run_with_imus)" >
+		<arg name="tf_prefix" value="ik/" />
+		<!--arg name="tf_frame_prefix" value="imu" /-->
+		<remap from="/output_filtered" to="/ik/output_filtered"/>
+	</include>
+
+</launch>
+
+

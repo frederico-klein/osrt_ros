@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <node name="ground_projection_orientation_node" pkg="osrt_ros" type="ground_orientation_service_provider_node" output="screen">
-        <rosparam param="rotation_quaternion">[0.078, 0.0, 0.0, 0.997]</rosparam>
-    </node>
+	<node name="ground_projection_orientation_node" pkg="osrt_ros" type="ground_orientation_service_provider_node" output="screen">
+		<!-- x , y , z , w -->
+		<!-- 30 degrees -->
+		<!-- rosparam param="rotation_quaternion">[0.0, 0.0, 0.259, 0.966]</rosparam -->
+
+		<!-- 9 degrees -->
+		<rosparam param="rotation_quaternion">[0.0, 0.0, 0.078, 0.997]</rosparam>
+
+
+		<!--rosparam param="rotation_quaternion">[0.078, 0.0, 0.0, 0.997]</rosparam -->
+		<!-- rosparam param="rotation_quaternion">[0.055, 0.055, 0.705, 0.705]</rosparam -->
+		<!--rosparam param="rotation_quaternion">[0.459, -0.459, -0.538, -0.538]</rosparam -->
+		<!-- rosparam param="rotation_quaternion">[0.0, 0.0, 0.0, 1.0]</rosparam -->
+		<!-- rosparam param="rotation_quaternion">[-0.055, 0.055, 0.705, 0.705]</rosparam-->
+		<!-- rosparam param="rotation_quaternion">[-0.055, -0.055, -0.705, -0.705]</rosparam -->
+		<!-- rosparam param="rotation_quaternion">[-0.078, 0.0, -0.997, 0.0]</rosparam -->
+</node>
 </launch>
 

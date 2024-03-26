@@ -2,7 +2,7 @@
 <launch>
 	<arg name="run_ar" default="true" />
 	<arg name="fake_ar_arm" default="false" />
-	<arg name="run_imu" default="false" />
+	<arg name="run_imu" default="true" />
 	<group ns="ar">
 		<include file="$(find osrt_ros)/launch/ik_upper.launch" if="$(arg run_ar)" >
 			<arg name="tf_frame_prefix" 	value="ar" />

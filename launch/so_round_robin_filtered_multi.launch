@@ -19,7 +19,7 @@
 		<param name="moment_arm_library_path"	value="$(arg moment_arm_library_path)" />
 		
 		<remap from="/so_rr_node/sync_input" to="/id_node/output_multi"/>
-		<remap from="/in_labels" to="/ik/outlabels"/>
+		<remap from="/in_labels" to="/ik/out_labels"/>
 		<!--remap from="/so_rr_node/input2" 	to="/inverse_kinematics_from_file/r_data2"/>
 		<remap from="/in_labels2" 	to="/inverse_kinematics_from_file/out_labels"/ -->
 		<!-- remap from="/so_rr_node/input2" 	to="/id_node/output"/ -->

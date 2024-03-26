@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<arg name="freq" default="100" />
-
+	<arg name="tf_prefix" default=""/>
         <node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<param name="model_file" 		value="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" />
@@ -19,8 +19,8 @@
 		<param name="logger_filename_imus" 		value="_imus_lower" />
 		<param name="data_save_dir" 		value="/tmp" />
 		
-		<remap from="/ik_lowerbody_node/output" 		to="/ik/output"/>
-		<remap from="/ik_lowerbody_node/output_filtered" 	to="/ik/output_filtered"/>
+		<remap from="output" 		to="/ik/output"/>
+		<remap from="output_filtered" 	to="/ik/output_filtered"/>
 		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
 
 		<!-- Filter values for filtered output -->
@@ -32,6 +32,8 @@
 
         </node>
 	
-	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch"/>
+	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">
+		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
+	</include>
 </launch>
 

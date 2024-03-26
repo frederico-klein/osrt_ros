@@ -84,7 +84,7 @@ class qJointPublisher: public Ros::CommonNode
 		void onInit()
 		{
 			CommonNode::onInit(1);
-			for (int i=0;i<input.labels.size();i++)
+			for (size_t i=0;i<input.labels.size();i++)
 			{
 				ROS_DEBUG_STREAM(input.labels[i]);
 				label_map.insert(std::pair<std::string, int>(input.labels[i],i));
@@ -223,9 +223,9 @@ int main(int argc, char **argv)
 	qJointPublisher qJ;
 	qJ.onInit();
 	//everything is custom and different from each other. 
-	ros::NodeHandle nh("~");
-	ros::Subscriber sync_input_sub = nh.subscribe("sync_input", 10, &qJointPublisher::sync_callback, &qJ);
-	ros::Subscriber sync_input_filtered_sub = nh.subscribe("sync_filtered_input", 10, &qJointPublisher::sync_callback_filtered, &qJ);
+	ros::NodeHandle n;
+	ros::Subscriber sync_input_sub = n.subscribe("sync_input", 10, &qJointPublisher::sync_callback, &qJ);
+	ros::Subscriber sync_input_filtered_sub = n.subscribe("sync_filtered_input", 10, &qJointPublisher::sync_callback_filtered, &qJ);
 
 	// publish initial zero pose:
 	//qJ.pub_zero();
