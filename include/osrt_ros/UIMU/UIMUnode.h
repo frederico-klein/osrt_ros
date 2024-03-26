@@ -52,7 +52,8 @@ class UIMUnode: Ros::CommonNode
 	{}
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
-		double xGroundRotDeg, yGroundRotDeg, zGroundRotDeg;
+		double xGroundRotDeg1, yGroundRotDeg1, zGroundRotDeg1;
+		double xGroundRotDeg2, yGroundRotDeg2, zGroundRotDeg2;
 		std::vector<std::string> imuObservationOrder;
 		double rate;
 		ros::Rate* r;
@@ -93,9 +94,12 @@ class UIMUnode: Ros::CommonNode
 
 			nh.param<std::string>("imu_base_body", imuBaseBody, "");
 
-			nh.param<double>("imu_ground_rotation_x", xGroundRotDeg, 0.0);
-			nh.param<double>("imu_ground_rotation_y", yGroundRotDeg, 0.0);
-			nh.param<double>("imu_ground_rotation_z", zGroundRotDeg, 0.0);
+			nh.param<double>("imu_ground_rotation_x1", xGroundRotDeg1, 0.0);
+			nh.param<double>("imu_ground_rotation_y1", yGroundRotDeg1, 0.0);
+			nh.param<double>("imu_ground_rotation_z1", zGroundRotDeg1, 0.0);
+			nh.param<double>("imu_ground_rotation_x2", xGroundRotDeg2, 0.0);
+			nh.param<double>("imu_ground_rotation_y2", yGroundRotDeg2, 0.0);
+			nh.param<double>("imu_ground_rotation_z2", zGroundRotDeg2, 0.0);
 			nh.getParam("imu_observation_order", imuObservationOrder);
 			if (imuObservationOrder.size() == 0)
 			{
@@ -141,9 +145,9 @@ class UIMUnode: Ros::CommonNode
 			if (clb_is_ready)
 			{
 				imuDirectionAxis = config.imu_direction_axis_param;
-				xGroundRotDeg = config.imu_ground_rotation_x;
-				yGroundRotDeg = config.imu_ground_rotation_y;
-				zGroundRotDeg = config.imu_ground_rotation_z;
+				xGroundRotDeg2 = config.imu_ground_rotation_x;
+				yGroundRotDeg2 = config.imu_ground_rotation_y;
+				zGroundRotDeg2 = config.imu_ground_rotation_z;
 
 				start_ik();
 			}
@@ -180,7 +184,8 @@ class UIMUnode: Ros::CommonNode
 				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
 			ROS_DEBUG_STREAM("setGroundOrientationSeq");
-			clb->setGroundOrientationSeq(xGroundRotDeg, yGroundRotDeg, zGroundRotDeg);
+			clb->R_GoGi1 = clb->setGroundOrientationSeq(xGroundRotDeg1, yGroundRotDeg1, zGroundRotDeg1);
+			clb->R_GoGi2 = clb->setGroundOrientationSeq(xGroundRotDeg2, yGroundRotDeg2, zGroundRotDeg2);
 			ROS_DEBUG_STREAM("heading");
 			clb->computeHeadingRotation(imuBaseBody, imuDirectionAxis);
 

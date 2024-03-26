@@ -11,9 +11,12 @@
 
 		<param name="tf_frame_prefix" 		value="imu" />
 		<param name="imu_direction_axis" 		value="-z" />
-		<param name="imu_ground_rotation_x" 		value="-90" />
-		<param name="imu_ground_rotation_y" 		value="0" />
-		<param name="imu_ground_rotation_z" 		value="0" />
+		<param name="imu_ground_rotation_x1" 		value="-90" />
+		<param name="imu_ground_rotation_y1" 		value="0" />
+		<param name="imu_ground_rotation_z1" 		value="0" />
+		<param name="imu_ground_rotation_x2" 		value="0" />
+		<param name="imu_ground_rotation_y2" 		value="0" />
+		<param name="imu_ground_rotation_z2" 		value="0" />
 		<param name="rate" 				value="$(arg freq)" />
 		<param name="logger_filename_ik" 		value="_ik_lower" />
 		<param name="logger_filename_imus" 		value="_imus_lower" />

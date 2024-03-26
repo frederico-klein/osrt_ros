@@ -29,9 +29,12 @@
 #include "InverseKinematics.h"
 //#include "U?->NGIMUInputDriver.h"
 #include "Utils.h"
+#include "tf/transform_broadcaster.h"
 #include <Simulation/Model/Model.h>
 #include <string>
 #include <type_traits>
+#include <tf2_ros/transform_broadcaster.h>
+
 #include <ros/ros.h>
 namespace OpenSimRT {
 
@@ -50,8 +53,10 @@ namespace OpenSimRT {
 	class  IMUCalibrator {
 		public:
 			std::vector<SimTK::Quaternion> staticPoseQuaternions; // static pose data
+			tf::TransformBroadcaster tb;
 			std::vector<ros::Publisher> pub;
 			ros::NodeHandle nhandle;
+			long baseBodyIndex;
 			//std::vector<ros::Subscriber> avg_pose_subs;
 
 			/**
@@ -111,14 +116,22 @@ namespace OpenSimRT {
 			void computeAvgStaticPoseCommon();
 			template <typename T>
 				SimTK::Array_<SimTK::Rotation> transform(const std::vector<T>& imuData) {
+					long i=0;
 					SimTK::Array_<SimTK::Rotation> imuObservations;
 					for (const auto& data : imuData) {
 						const auto& q = data.getQuaternion();
-						const auto R = R_heading * R_GoGi * ~SimTK::Rotation(q);
+						SimTK::Rotation R;
+						//if (i == baseBodyIndex)
+							R = R_heading *R_GoGi1* ~SimTK::Rotation(q);
+						//else
+						//	R = R_GoGi1 * ~SimTK::Rotation(q);
 						imuObservations.push_back(R);
+						i++;
 					}
 					return imuObservations;
 				}
+			SimTK::Rotation R_GoGi1;    // ground-to-ground transformation
+			SimTK::Rotation R_GoGi2;    // ground-to-ground transformation
 
 		private:
 			bool externalAveragingMethod = false;
@@ -255,7 +268,6 @@ namespace OpenSimRT {
 				impl; // pointer to DriverErasureBase class
 			std::map<std::string, SimTK::Rotation> imuBodiesInGround; // R_GB per body
 			std::vector<std::string> imuBodiesObservationOrder;       // imu order
-			SimTK::Rotation R_GoGi;    // ground-to-ground transformation
 			SimTK::Rotation R_heading; // heading correction
 	};
 } // namespace OpenSimRT
