@@ -9,14 +9,25 @@
 		<param name="imu_base_body" 		value="pelvis" />
 		<rosparam param="imu_observation_order" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam>
 
+		
+		<!-- OK, this is confusing as hell-->
+		<!-- but let's break it down. the tf_prefix is to allow for multiple skeletons from different parts to be shown-->
+		<!-- OK, this is confusing as hell-->
+		<!-- OK, this is confusing as hell-->
+		<param name="tf_prefix" value="$(arg tf_prefix)"/>
+		
+		<!-- OK, this is confusing as hell-->
+		<!-- however tf_frame_prefix is the source of tf, either imu or ar right now, that will be put before the name so we can have both of these at the same time. they could be shared, i think in the future, but this is more flexible.-->
+		
 		<param name="tf_frame_prefix" 		value="imu" />
+		
 		<param name="imu_direction_axis" 		value="-z" />
 		<param name="imu_ground_rotation_x1" 		value="-90" />
 		<param name="imu_ground_rotation_y1" 		value="0" />
 		<param name="imu_ground_rotation_z1" 		value="0" />
 		<param name="imu_ground_rotation_x2" 		value="0" />
-		<param name="imu_ground_rotation_y2" 		value="0" />
-		<param name="imu_ground_rotation_z2" 		value="0" />
+		<param name="imu_ground_rotation_y2" 		value="90" />
+		<param name="imu_ground_rotation_z2" 		value="180" />
 		<param name="rate" 				value="$(arg freq)" />
 		<param name="logger_filename_ik" 		value="_ik_lower" />
 		<param name="logger_filename_imus" 		value="_imus_lower" />
@@ -26,13 +37,14 @@
 		<remap from="output_filtered" 	to="/ik/output_filtered"/>
 		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
 
+		<param name="debug_reference_frame" 		value="map"/>
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />
 		<param name="memory" 			value="35" />
 		<param name="cutoff_freq" 		value="6" />
 		<param name="delay" 			value="14" />
 		<param name="spline_order" 		value="3" />
-
+		<param name="heading_debug"		value="-90"/>
         </node>
 	
 	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">

@@ -4,6 +4,8 @@
 #include "osrt_ros/UIMU/QuaternionAverage.h"
 #include "tf/LinearMath/Vector3.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #include <ostream>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <vector>
@@ -17,16 +19,19 @@ class ExternalAveragePosePublisher
 		ros::NodeHandle n;
 		ros::Subscriber imu_poses;
 		ros::Publisher avg_pose;
-		std::string body_frame, imu_cal_frame, own_name;
+		std::string body_frame, imu_cal_frame, own_name, heading_reference_frame;
 		tf2_ros::StaticTransformBroadcaster br;
+		tf2_ros::Buffer tfBuffer;
+		tf2_ros::TransformListener tfListener;
 		geometry_msgs::Quaternion q_ ; //TODO: this should be a simtk style quaternion message
 		std::vector<double> origin{0,0,0};
-		ExternalAveragePosePublisher()
+		ExternalAveragePosePublisher(): tfListener(tfBuffer)
 		{
 			//n = ros::NodeHandle();
 			own_name = n.resolveName("imu_cal");
 			ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
 			nh.param<std::string>("imu_cal_frame",imu_cal_frame, "xxx_imu");
+			nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
 			nh.param<std::string>("imu_ref_frame",body_frame, "map");
 			nh.param("origin", origin, {0,0,0});
 			std::stringstream origin_str;
@@ -44,8 +49,8 @@ class ExternalAveragePosePublisher
 			geometry_msgs::TransformStamped transformStamped;
 
 			transformStamped.header.stamp = ros::Time::now();
-			transformStamped.header.frame_id = body_frame;
-			transformStamped.child_frame_id = imu_cal_frame;
+			transformStamped.header.frame_id = "map"; //otherwise it will break because it is not yet a part of the same tree. 
+			transformStamped.child_frame_id = imu_cal_frame+"_raw"; //this is going to the be the one with added heading angle
 			transformStamped.transform.translation.x = origin[0];
 			transformStamped.transform.translation.y = origin[1];
 			transformStamped.transform.translation.z = origin[2];
@@ -63,6 +68,15 @@ class ExternalAveragePosePublisher
 			transformStamped.transform.rotation.w = q_result.w();
  */
 			br.sendTransform(transformStamped);
+			// we write it also to the buffer
+			tfBuffer.setTransform(transformStamped, "ExternalAveragePosePublisher",true); // it is static
+			auto heading_transform = tfBuffer.lookupTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0)); //it's either like this or the other way around i guess.
+			heading_transform.child_frame_id = imu_cal_frame;
+			heading_transform.header.frame_id = body_frame;
+			heading_transform.transform.translation = transformStamped.transform.translation;
+			br.sendTransform(heading_transform);
+			
+
 
 		}
 

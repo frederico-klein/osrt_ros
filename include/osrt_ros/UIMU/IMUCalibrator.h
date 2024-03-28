@@ -30,6 +30,8 @@
 //#include "U?->NGIMUInputDriver.h"
 #include "Utils.h"
 #include "tf/transform_broadcaster.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #include <Simulation/Model/Model.h>
 #include <string>
 #include <type_traits>
@@ -54,8 +56,12 @@ namespace OpenSimRT {
 		public:
 			std::vector<SimTK::Quaternion> staticPoseQuaternions; // static pose data
 			tf::TransformBroadcaster tb;
+			tf2_ros::Buffer tfBuffer;
+			tf2_ros::TransformListener tfListener;
 			std::vector<ros::Publisher> pub;
 			ros::NodeHandle nhandle;
+			std::string debug_reference_frame;
+			bool old_method_of_getting_averaged = false;
 			long baseBodyIndex;
 			//std::vector<ros::Subscriber> avg_pose_subs;
 
@@ -72,9 +78,9 @@ namespace OpenSimRT {
 						const std::vector<std::string>& observationOrder)
 				// instantiate the DriverErasure object by forwarding the input
 				// driver in its contructor.
-				: impl(new DriverErasure<T>(
-							std::forward<const InputDriver<T>* const>(driver))),
-				model(*otherModel.clone()) {
+				: tfListener(tfBuffer), model(*otherModel.clone()),
+				impl(new DriverErasure<T>(
+							std::forward<const InputDriver<T>* const>(driver))) {
 					setup(observationOrder);
 				}
 

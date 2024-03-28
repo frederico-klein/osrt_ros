@@ -7,9 +7,11 @@
 	<arg name="in_sync_filtered" default="sync_filtered_input"/>
 	<arg name="in_labels" default="out_labels"/>
 	<arg name="tf_prefix" default="ik/" />
+	<arg name="base_parent" default="map"/>
 	<node name="custom_joints" pkg="osrt_ros" type="custom_joints_node" output="screen">
+		<param name="opensim_frame" value="$(arg tf_prefix)subject_opensim"/>
 		<param name="model_base_frame" value="$(arg tf_prefix)pelvis"/>
-		<param name="parent_base_frame" value="map"/>
+		<param name="parent_base_frame" value="$(arg base_parent)"/>
 		<rosparam command="load" file="$(find gait1992_description)/joint_mapping.yaml" />
 		<!-- remap from="/custom_joints/input" to="/ik/output"/ -->
 		<!-- If I use the normal unfiltered output here, I gain some milliseconds to calculate the TFs, so I need less delay on the rest of the pipeline -->

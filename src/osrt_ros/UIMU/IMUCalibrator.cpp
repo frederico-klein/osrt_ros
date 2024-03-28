@@ -22,6 +22,7 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/Vector3.h"
 #include "ros/message_traits.h"
+#include "ros/node_handle.h"
 #include "ros/time.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -39,6 +40,9 @@ using namespace std;
 void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 //	ros::NodeHandle n("~");
   	nhandle = ros::NodeHandle("~");
+    	nhandle.param<string>("debug_reference_frame",debug_reference_frame,"map");
+	
+
 	R_heading = SimTK::Rotation();
     //why?
 	R_GoGi1 = SimTK::Rotation();
@@ -63,7 +67,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
     }
 }
 
-geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_offset, double x_offset,string name)
+geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_offset, double x_offset,string name, string debug_reference_frame)
 {
 	geometry_msgs::Quaternion rosq;
 	geometry_msgs::Vector3 translationRos;
@@ -72,11 +76,11 @@ geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_off
 	rosq.x = simq[1];
 	rosq.y = simq[2];
 	rosq.z = simq[3];
-	translationRos.x = 1+x_offset;
+	translationRos.x = 0.3+x_offset;
 	translationRos.y = -1+y_offset;
 	translationRos.z = 1;
 	std_msgs::Header h;
-	h.frame_id = "map";
+	h.frame_id = debug_reference_frame;
 	h.stamp = ros::Time::now();
 	rosTF.header = h;
 	rosTF.transform.rotation = rosq;
@@ -85,11 +89,12 @@ geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_off
 	return rosTF;
 }
 
-geometry_msgs::TransformStamped  publish_tf(SimTK::Rotation R, double y_offset, double x_offset,string name)
+geometry_msgs::TransformStamped  publish_tf(SimTK::Rotation R, double y_offset, double x_offset,string name, string debug_reference_frame)
 {
+	ROS_WARN_STREAM("im going to publish this tf:\n"<< name <<"\n"<<R);
 	SimTK::Quaternion simq = R.convertRotationToQuaternion();
 
-return publish_tf(simq, y_offset, x_offset, name);
+return publish_tf(simq, y_offset, x_offset, name,debug_reference_frame);
 }
 
 SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
@@ -154,9 +159,12 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
         const auto base_R = R_GoGi2 * ~Rotation(q0);
 
-	tb.sendTransform(publish_tf(R_GoGi2,0.3,1,"R_GoGi2"));
-	tb.sendTransform(publish_tf(R_GoGi1,0.35,1,"R_GoGi1"));
-	tb.sendTransform(publish_tf(q0,0.2,1,"just_q0"));
+	tb.sendTransform(publish_tf(R_GoGi2,0.3,.1,"R_GoGi2",debug_reference_frame));
+	tb.sendTransform(publish_tf(~R_GoGi2,0.3,0.15,"R_GoGi2_inverse",debug_reference_frame));
+	tb.sendTransform(publish_tf(R_GoGi1,0.35,.1,"R_GoGi1",debug_reference_frame));
+	tb.sendTransform(publish_tf(~R_GoGi1,0.35,0.15,"R_GoGi1_inverse",debug_reference_frame));
+	tb.sendTransform(publish_tf(q0,0.2,.1,"just_q0",debug_reference_frame));
+	tb.sendTransform(publish_tf(inverseq0_rotation_matrix,0.2,.15,"q0_inverse",debug_reference_frame));
 
         //const SimTK::Rotation base_R = ~Rotation(q0);
 
@@ -189,10 +197,33 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	//this is super fishy. let's show this:
 	//
 	//
-	auto baseTF =  publish_tf(baseFrame->getRotationInGround(state),0,1,"wtf_base");
+	auto baseTF =  publish_tf(baseFrame->getRotationInGround(state),0,.1,"wtf_base",debug_reference_frame);
 	tb.sendTransform(baseTF);
+	double offset=0.2;
+        const auto base_R__ = R_GoGi2 * Rotation(q0);
+	tb.sendTransform(publish_tf(base_R__,0.1,offset,"wtf_base_measured0",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__1 = ~R_GoGi2 * Rotation(q0);
+	tb.sendTransform(publish_tf(base_R__1,0.1,offset,"wtf_base_measured1",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__2 = ~R_GoGi2 * ~Rotation(q0);
+	tb.sendTransform(publish_tf(base_R__2,0.1,offset,"wtf_base_measured2",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__3 = Rotation(q0)*R_GoGi2;
+	tb.sendTransform(publish_tf(base_R__3,0.1,offset,"wtf_base_measured3",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__4 = ~Rotation(q0)*R_GoGi2;
+	tb.sendTransform(publish_tf(base_R__4,0.1,offset,"wtf_base_measured4",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__5 = ~Rotation(q0)*~R_GoGi2;
+	tb.sendTransform(publish_tf(base_R__5,0.1,offset,"wtf_base_measured5",debug_reference_frame));
+	offset+=0.05;
+        const auto base_R__6 = Rotation(q0)*~R_GoGi2;
+	tb.sendTransform(publish_tf(base_R__6,0.1,offset,"wtf_base_measured6",debug_reference_frame));
+	offset+=0.05;
+	offset+=0.05;
 
-	auto baseTF_R = publish_tf(base_R,0.1,1,"wtf_base_measured");
+	auto baseTF_R = publish_tf(base_R,0.1,.1,"wtf_base_measured",debug_reference_frame);
 	tb.sendTransform(baseTF_R);
         auto angularDifference =
                 acos(~baseSegmentXheading * baseFrameXInGround);
@@ -201,9 +232,12 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
         if (xproduct.get(1) < 0) { angularDifference *= -1; }
 
-	ROS_WARN_STREAM("angularDifference: " << angularDifference);
+	ROS_WARN_STREAM("angularDifference: " << angularDifference << " (" << angularDifference/3.14159205*180.0);
         // set heading rotation (rotation about Y axis)
         R_heading = Rotation(angularDifference , SimTK::YAxis);
+    
+	for (int jj= 0;jj<10;jj++)
+		tb.sendTransform(publish_tf(Rotation(angularDifference*(double(jj)/10.0) , SimTK::YAxis),-0.1,.2,"R_heading"+to_string(jj),debug_reference_frame));
         //R_heading = Rotation(-3.1415/2 , SimTK::YAxis);
         
 	/*if (abs(angularDifference) > 3.141592/2)
@@ -223,16 +257,21 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	tf2::Matrix3x3 m(qqqq);
 	double roll, pitch, yaw;
 		m.getRPY(roll, pitch, yaw);
-	R_heading = Rotation(yaw, SimTK::YAxis);
-	ROS_WARN_STREAM("yaw: " << yaw);
+	//R_heading = Rotation(yaw, SimTK::YAxis);
+	ROS_WARN_STREAM("yaw: " << yaw << "(" << yaw*180.0/3.14159205);
 	
     } else {
         ROS_WARN("No heading correction is applied. Heading rotation is set to "
                 "default");
     }
-    ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
-    tb.sendTransform(publish_tf(R_heading,-0.1,1,"R_heading"));
 
+    ros::NodeHandle nh("~");
+    double ext_head;
+    nh.param<double>("heading_debug",ext_head,0.0);
+    R_heading = Rotation(3.141592/180.0*ext_head , SimTK::YAxis);
+    
+    ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
+    tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
     return R_heading;
 }
 
@@ -250,7 +289,7 @@ void IMUCalibrator::calibrateIMUTasks(
 
 	const auto R0 = R_GoGi1 * ~Rotation(q0);
 	
-	tb.sendTransform(publish_tf(R0,0.1*i+0.5,1.1,"ro_"+bodyName));
+	tb.sendTransform(publish_tf(R0,0.1*i+0.5,0.3,"ro_"+bodyName,debug_reference_frame));
     	
 	ROS_DEBUG_STREAM("R0 orientation matrix:" << bodyName << "\n" << R0);
 
@@ -260,7 +299,7 @@ void IMUCalibrator::calibrateIMUTasks(
 		RR = R_heading;
         const auto R_BS = RR * ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
     
-	tb.sendTransform(publish_tf(R_BS,0.1*i+0.5,1.2,bodyName));
+	tb.sendTransform(publish_tf(R_BS,0.1*i+0.5,0.4,bodyName,debug_reference_frame));
     	
 	ROS_DEBUG_STREAM("Fully corrected orientation matrix:" << bodyName << "\n" << R_BS);
 
@@ -296,33 +335,85 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 		{
 			geometry_msgs::QuaternionConstPtr res_q;
 			geometry_msgs::Quaternion q;
-			auto topic_name = nhandle.resolveName(imu_name+"/avg_pose");
-			ROS_DEBUG_STREAM("trying to read: " <<topic_name);
-			res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
-			if (res_q)
-			{
-			ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			ROS_DEBUG_STREAM(res_q);
-			q = *res_q;
-			ROS_DEBUG_STREAM(q);
-			ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-			//the first term of the quaternion is w in simtk:
-			//Quaternion 	( 		 )  	[inline]
-
-			//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
 			
-			SimTK::Quaternion si_q;
-			si_q[0] = q.w;
-			si_q[1] = q.x;
-			si_q[2] = q.y;
-			si_q[3] = q.z;
-			//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
-			//SimTK::Quaternion one;
-			//avg_response_list.push_back(one);
-			avg_response_list.push_back(si_q);
+				
+			//janky af, this waits for the avg to be available, even though in the new method, we do nothing with this info
+			auto topic_name = nhandle.resolveName(imu_name+"/avg_pose");
+				ROS_DEBUG_STREAM("trying to read: " <<topic_name);
+				res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
+			if (old_method_of_getting_averaged)
+			{
+				if (res_q)
+				{
+					ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+					ROS_DEBUG_STREAM(res_q);
+					q = *res_q;
+					ROS_DEBUG_STREAM(q);
+					ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+					//the first term of the quaternion is w in simtk:
+					//Quaternion 	( 		 )  	[inline]
+
+					//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
+					
+					SimTK::Quaternion si_q;
+					si_q[0] = q.w;
+					si_q[1] = q.x;
+					si_q[2] = q.y;
+					si_q[3] = q.z;
+					//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
+					//SimTK::Quaternion one;
+					//avg_response_list.push_back(one);
+					avg_response_list.push_back(si_q);
+				}
+				else
+					ROS_FATAL_STREAM("failed to read avg_pose response for imu" << imu_name);
 			}
 			else
-				ROS_FATAL_STREAM("failed to read avg_pose response for imu" << imu_name);
+			{
+				// this is turning into spaghetti...
+				// not sure if it makes sense, but the source of the skeleton (either being republished from ik or id or so right now)
+				// and the source of input are different things, or maybe they arent idk. this is like this for now
+				string tf_prefix;
+				nhandle.param<string>("tf_prefix",tf_prefix,"");
+			string imu_calib_name = tf_prefix+imu_name+"_imu"; // this is probably wrong, i make like a complicated name...
+			auto imu_calib_from_tf = tfBuffer.lookupTransform(imu_calib_name,tf_prefix+imu_name,ros::Time(0));
+
+				if(res_q)	
+				{
+					const std::string red("\033[0;31m");
+const std::string green("\033[1;32m");
+const std::string yellow("\033[1;33m");
+const std::string cyan("\033[0;36m");
+const std::string magenta("\033[0;35m");
+const std::string reset("\033[0m");
+
+				auto res_q_tf = imu_calib_from_tf.transform.rotation;
+				ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				
+				//just in case you are wondering, if no heading is given, these two give the same quaternion. 
+				//or almost the same, the tf one is -q, which should be the same, the inverse would be the conjugate (inverted w), 
+				//but I repeat, THIS IS NOT THE CASE, if the heading is zero. 
+				ROS_INFO_STREAM(magenta <<"[" << res_q->w <<","<< res_q->x <<","<< res_q->y <<","<< res_q->z << "] (w,x,y,z) this if from avg_pose_nonsense!!"<< reset);
+				ROS_INFO_STREAM(cyan <<"[" << res_q_tf.w <<","<< res_q_tf.x <<","<< res_q_tf.y <<","<< res_q_tf.z << "] (w,x,y,z) this if from tf!!"<< reset);
+				q = imu_calib_from_tf.transform.rotation;
+				ROS_DEBUG_STREAM(q);
+				ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				//the first term of the quaternion is w in simtk:
+				//Quaternion 	( 		 )  	[inline]
+
+				//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
+				
+				SimTK::Quaternion si_q;
+				si_q[0] = q.w;
+				si_q[1] = q.x;
+				si_q[2] = q.y;
+				si_q[3] = q.z;
+				//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
+				//SimTK::Quaternion one;
+				//avg_response_list.push_back(one);
+				avg_response_list.push_back(si_q);
+				}
+			}
 		}
 		//staticPoseQuaternions = impl->computeAvgStaticPose();
 		staticPoseQuaternions = avg_response_list;

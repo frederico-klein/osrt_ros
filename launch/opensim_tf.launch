@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<arg name="freq" default="100"/>
+	<arg name="heading_degrees" default="-90"/>
+	<!-- we need to use radians, but they are not very easy to remember, anyway, you can use both like this -->
+	<arg name="heading_rad" default="$(eval arg('heading_degrees')/180*3.14159265)"/>
 	<!-- TODO: merge those 2 frames probably -->
 	<!-- This looks like it is the correct transformation for ros to opensim -->
-	<!--node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject $(arg freq)" /-->
+	<!--node pkg="§tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject $(arg freq)" /-->
 	<!-- include file="$(find moticon_insoles)/launch/subject_fixer.launch"> 
 		<param name="body" value="subject_opensim" />
 	</include -->
 	<!-- This looks like it is the correct transformation for ros to opensim -->
-	<node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros2" args="0 0 0  0.5 0.5 0.5 0.5 map subject_opensim $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="subject_heading" args="0.1 0 0  $(arg heading_rad) 0 0 map subject_adds_heading $(arg freq)" />
+	<!-- node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros2" args="0.2 0 0  0.5 0.5 0.5 0.5 subject_adds_heading subject_opensim $(arg freq)" / -->
 	<!--node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0  0.0 0.707 0.707 0.0 map subject_opensim $(arg freq)" /-->
 </launch>
 
