@@ -20,4 +20,13 @@ target_link_libraries(OnlineUpperLimb
   ${DEPENDENCY_LIBS} osrtRosPipeline
 )
 
+add_executable(wth_node nodes/what_the_heading.cpp)
+
+add_dependencies(wth_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+target_link_libraries(wth_node
+${DEPENDENCY_LIBS}
+)
+
 
