@@ -49,7 +49,9 @@ find_package(opensimrt_bridge REQUIRED COMPONENTS
 	conversions
 	)
 
-catkin_package(CATKIN_DEPENDS 
+catkin_package(
+	INCLUDE_DIRS include
+	CATKIN_DEPENDS 
 	message_runtime
 	opensimrt_msgs 
 	opensimrt_bridge
@@ -57,6 +59,7 @@ catkin_package(CATKIN_DEPENDS
 	sensor_msgs
 	tf2
 	tf2_ros
+	LIBRARIES osrtRosUIMU osrtRosPipeline
 	)
 
 message(NOTICE "Eigen3")
@@ -129,6 +132,8 @@ add_subdirectory(src/osrt_ros/Visualizers)
 file (GLOB UIMU_SOURCES CONFIGURE_DEPENDS "src/osrt_ros/UIMU/*.cpp" "src/osrt_ros/events.cpp" )
 file (GLOB UIMU_HEADERS CONFIGURE_DEPENDS "include/UIMU/*.h")
 
+add_subdirectory(src/osrt_ros/UIMU)
+
 set(target osrtRosUIMU)
 
 add_library(osrtRosUIMU ${UIMU_HEADERS} ${UIMU_SOURCES} )
@@ -137,7 +142,6 @@ add_dependencies(osrtRosUIMU ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(osrtRosUIMU ${catkin_LIBRARIES} ${OpenSim_LIBRARIES} ${opensimrt_LIBRARIES} Eigen3::Eigen)
 
-add_subdirectory(src/osrt_ros/UIMU)
 ###\UIMU############################################################
 
 add_executable(custom_joints_node src/osrt_ros/custom_joints_node.cpp)
