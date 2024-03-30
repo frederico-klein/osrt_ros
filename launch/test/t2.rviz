@@ -59,16 +59,52 @@ Visualization Manager:
       Marker Topic: /wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        imu_heading_axis: true
+        heading_imu_measured: true
+        heading_imu_measured_projected: true
+        heading_os_default: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
       Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
-      Frame Timeout: 15
+      Frame Timeout: 10000
       Frames:
         All Enabled: false
+        R_GoGi1:
+          Value: false
+        R_GoGi1_inverse:
+          Value: false
+        R_GoGi2:
+          Value: false
+        R_GoGi2_inverse:
+          Value: false
+        R_heading:
+          Value: false
+        R_heading0:
+          Value: false
+        R_heading1:
+          Value: false
+        R_heading2:
+          Value: false
+        R_heading3:
+          Value: false
+        R_heading4:
+          Value: false
+        R_heading5:
+          Value: false
+        R_heading6:
+          Value: false
+        R_heading7:
+          Value: false
+        R_heading8:
+          Value: false
+        R_heading9:
+          Value: false
+        femur_l:
+          Value: false
+        femur_r:
+          Value: false
         ik/calcn_l:
           Value: false
         ik/calcn_r:
@@ -165,14 +201,64 @@ Visualization Manager:
           Value: false
         imu_default_frame:
           Value: true
+        just_q0:
+          Value: false
         map:
           Value: true
         opensim_default_frame:
           Value: true
+        pelvis:
+          Value: false
+        q0_inverse:
+          Value: false
+        ro_femur_l:
+          Value: false
+        ro_femur_r:
+          Value: false
+        ro_pelvis:
+          Value: false
+        ro_talus_l:
+          Value: false
+        ro_talus_r:
+          Value: false
+        ro_tibia_l:
+          Value: false
+        ro_tibia_r:
+          Value: false
+        ro_torso:
+          Value: false
         subject_adds_heading:
           Value: true
         subject_adds_heading2:
           Value: true
+        talus_l:
+          Value: false
+        talus_r:
+          Value: false
+        tibia_l:
+          Value: false
+        tibia_r:
+          Value: false
+        torso:
+          Value: false
+        wtf_base:
+          Value: true
+        wtf_base_measured:
+          Value: true
+        wtf_base_measured0:
+          Value: false
+        wtf_base_measured1:
+          Value: false
+        wtf_base_measured2:
+          Value: false
+        wtf_base_measured3:
+          Value: false
+        wtf_base_measured4:
+          Value: false
+        wtf_base_measured5:
+          Value: false
+        wtf_base_measured6:
+          Value: false
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -181,6 +267,40 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
+          R_GoGi1:
+            {}
+          R_GoGi1_inverse:
+            {}
+          R_GoGi2:
+            {}
+          R_GoGi2_inverse:
+            {}
+          R_heading:
+            {}
+          R_heading0:
+            {}
+          R_heading1:
+            {}
+          R_heading2:
+            {}
+          R_heading3:
+            {}
+          R_heading4:
+            {}
+          R_heading5:
+            {}
+          R_heading6:
+            {}
+          R_heading7:
+            {}
+          R_heading8:
+            {}
+          R_heading9:
+            {}
+          femur_l:
+            {}
+          femur_r:
+            {}
           ik/femur_l_imu_raw:
             {}
           ik/femur_r_imu_raw:
@@ -257,11 +377,61 @@ Visualization Manager:
             {}
           imu_default_frame:
             {}
+          just_q0:
+            {}
           opensim_default_frame:
+            {}
+          pelvis:
+            {}
+          q0_inverse:
+            {}
+          ro_femur_l:
+            {}
+          ro_femur_r:
+            {}
+          ro_pelvis:
+            {}
+          ro_talus_l:
+            {}
+          ro_talus_r:
+            {}
+          ro_tibia_l:
+            {}
+          ro_tibia_r:
+            {}
+          ro_torso:
             {}
           subject_adds_heading:
             {}
           subject_adds_heading2:
+            {}
+          talus_l:
+            {}
+          talus_r:
+            {}
+          tibia_l:
+            {}
+          tibia_r:
+            {}
+          torso:
+            {}
+          wtf_base:
+            {}
+          wtf_base_measured:
+            {}
+          wtf_base_measured0:
+            {}
+          wtf_base_measured1:
+            {}
+          wtf_base_measured2:
+            {}
+          wtf_base_measured3:
+            {}
+          wtf_base_measured4:
+            {}
+          wtf_base_measured5:
+            {}
+          wtf_base_measured6:
             {}
       Update Interval: 0
       Value: true
@@ -293,7 +463,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.7986258268356323
+      Distance: 3.264502763748169
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -309,9 +479,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0903970003128052
+      Pitch: 0.9397957921028137
       Target Frame: <Fixed Frame>
-      Yaw: 5.5885844230651855
+      Yaw: 6.003574371337891
     Saved: ~
 Window Geometry:
   Displays:
@@ -319,7 +489,7 @@ Window Geometry:
   Height: 1054
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000384fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730300000803000000b40000032a00000384fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000035ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730200000872000000c80000010f0000035ffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000030700fffffffb0000000800540069006d00650100000000000004500000000000000000000007800000038400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000015600000384fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007303000007d8000000b40000032a00000384fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000035ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730200000872000000c80000010f0000035ffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000030700fffffffb0000000800540069006d00650100000000000004500000000000000000000007800000038400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -329,5 +499,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1920
-  X: 0
+  X: 258
   Y: 0

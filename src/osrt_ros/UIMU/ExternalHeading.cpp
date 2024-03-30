@@ -135,6 +135,14 @@ geometry_msgs::Vector3 project_on_plane(geometry_msgs::Vector3 vv, bivector3 a_p
 	return vtov(result);
 }
 
+double angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vector3 b)
+{
+	tf::Vector3 A{a.x,a.y,a.z};
+	tf::Vector3 B{b.x,b.y,b.z};
+
+	return tf::tfAngle(A,B);
+}
+
 
 geometry_msgs::Vector3 pick_heading_from_tf(geometry_msgs::Transform some_frame, const geometry_msgs::Vector3 some_heading)
 {
@@ -157,11 +165,13 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 {
 
 
-	auto imu_ori = vector_to_point( default_measure_frame.translation);
+	auto default_os_ori = vector_to_point( default_measure_frame.translation);
 	//maybe I will tranform something
-	auto heading_imu_default = pick_heading_from_tf(default_measure_frame,imu_heading_axis_vector);
+	auto heading_os_default = pick_heading_from_tf(default_measure_frame,opensim_heading);
 
-	debug_markers.push_back(getArrowForVector("heading_imu_default", heading_imu_default, imu_ori ));
+	auto m = getArrowForVector("heading_os_default", heading_os_default, default_os_ori );
+	m.color.b = 0, m.color.g =1;
+	debug_markers.push_back(m);
 	debug_point = vector_to_point(imu_heading_axis_vector);
 	
 	auto heading_imu_measured = pick_heading_from_tf(measured_frame,imu_heading_axis_vector);
@@ -173,14 +183,26 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	
 	debug_markers.push_back(getArrowForVector("heading_imu_measured_projected", projected_measured_heading, measure_ori));
 	
+
+	//is it just the angle with y from map?
+	// then it's just getyaw from tf?
+	//
+	//and if there is a minus sign, then i just add 180, whatever, this is the crazy debugging, so let's go all out
+	//
+	auto WTH = vtov(tf::Vector3{opensim_heading.x,opensim_heading.y,opensim_heading.z});
+	tf::Quaternion qqq;
+	tf::quaternionMsgToTF(measured_frame.rotation,qqq)	;
+	double aa = (tf::getYaw(qqq));
+	ROS_INFO_STREAM("yaw,,," << aa*180/3.1415);
+	
+	//im too stupid for this.
+	return angle_between_vectors(WTH,projected_measured_heading);
+	
+
+
 	//debug_markers.push_back(getArrowForVector("heading_imu_measured_normal", heading_imu_measured - projected_measured_heading,measure_ori ));
 
-	return 0.0;
-}
-double ExternalHeading::calculate_damn_angle(geometry_msgs::Quaternion default_measure_frame, geometry_msgs::Quaternion measured_frame, geometry_msgs::Quaternion new_default_frame)
-{
-	ROS_FATAL_STREAM("not implemented");
-	return 0.0;
+	return angle_between_vectors(projected_measured_heading,heading_os_default);
 }
 
 geometry_msgs::PoseStamped ExternalHeading::calibrate()
@@ -197,6 +219,9 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		geometry_msgs::TransformStamped imu_default_frame = tfBuffer.lookupTransform(parent_frame_name, imu_default_frame_name, ros::Time(0));
 		geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(parent_frame_name, opensim_base_default_frame_name, ros::Time(0));
 		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(parent_frame_name, imu_base_measured_frame_name, ros::Time(0));
+
+		
+
 		ROS_INFO_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
 		ROS_INFO_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
 
@@ -205,8 +230,10 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 
 		//now the important part, calculate this damn angle
 
-		double heading_angle = calculate_angle(imu_default_frame.transform, imu_base_measured_frame.transform, heading);
+		//double heading_angle = calculate_angle(imu_default_frame.transform, imu_base_measured_frame.transform, heading);
+		double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
 
+		ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
 		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
 
 		heading_pose.pose.orientation.w = q_heading.w();

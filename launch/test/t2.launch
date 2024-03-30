@@ -7,7 +7,7 @@
 
 	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading" args="-0.3 0.3 0 -0.70711 0.0 0.0 0.70711 map imu_default_frame $(arg freq)" />
 	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading1" args="0 0.6 0  0 0 -0.70711 0.70711 map opensim_default_frame $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading2" args="0 0.9 0  $(arg heading_rad) 0 0 map subject_adds_heading2 $(arg freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading2" args="0 0.9 0  $(arg heading_rad) 0 0 map subject_adds_heading3 $(arg freq)" />
 
 	<node pkg="rviz" type="rviz" name="rviz2" args="-d $(find osrt_ros)/launch/test/t2.rviz"/>
 	<node pkg="osrt_ros" type="wth_node" name="wtfh" output="screen">

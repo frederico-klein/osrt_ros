@@ -1,47 +1,56 @@
+#include "ros/init.h"
 #include "ros/ros.h"
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/Quaternion.h>
 #include "osrt_ros/UIMU/QuaternionAverage.h"
+#include "ros/service_client.h"
+#include "ros/spinner.h"
 #include "tf/LinearMath/Vector3.h"
+#include "tf/exceptions.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "tf2/exceptions.h"
 #include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer_interface.h"
 #include "tf2_ros/transform_listener.h"
 #include <ostream>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <vector>
 #include <sstream>
+#include "tf/transform_listener.h"
 
 using namespace std;
 
 class ExternalAveragePosePublisher
 {
 	public:
+		bool is_calibrated = false;
 		ros::NodeHandle n;
 		ros::Subscriber imu_poses;
 		ros::Publisher avg_pose;
 		std::string body_frame, imu_cal_frame, own_name, heading_reference_frame;
 		tf2_ros::StaticTransformBroadcaster br;
 		tf2_ros::Buffer tfBuffer;
+		tf::TransformListener tf1Listener;
 		tf2_ros::TransformListener tfListener;
 		geometry_msgs::Quaternion q_ ; //TODO: this should be a simtk style quaternion message
 		std::vector<double> origin{0,0,0};
 		ExternalAveragePosePublisher(): tfListener(tfBuffer)
-		{
-			//n = ros::NodeHandle();
-			own_name = n.resolveName("imu_cal");
-			ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
-			nh.param<std::string>("imu_cal_frame",imu_cal_frame, "xxx_imu");
-			nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
-			nh.param<std::string>("imu_ref_frame",body_frame, "map");
-			nh.param("origin", origin, {0,0,0});
-			std::stringstream origin_str;
-			for (auto v:origin)
-				origin_str << v << ",";
-			ROS_WARN_STREAM("Using origin" << origin_str.str() <<" for ExternalAveragePosePublisher" << own_name);
-			ROS_INFO_STREAM("started avg_pose publisher reading from node: " << own_name);
-			imu_poses = n.subscribe("imu_cal", 1, &ExternalAveragePosePublisher::callback, this);
-			avg_pose = n.advertise<geometry_msgs::Quaternion>("avg_pose",1,true);
-		}
+	{
+		//n = ros::NodeHandle();
+		own_name = n.resolveName("imu_cal");
+		ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
+		nh.param<std::string>("imu_cal_frame",imu_cal_frame, "xxx_imu");
+		nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
+		nh.param<std::string>("imu_ref_frame",body_frame, "map");
+		nh.param("origin", origin, {0,0,0});
+		std::stringstream origin_str;
+		for (auto v:origin)
+			origin_str << v << ",";
+		ROS_WARN_STREAM("Using origin" << origin_str.str() <<" for ExternalAveragePosePublisher" << own_name);
+		ROS_INFO_STREAM("started avg_pose publisher reading from node: " << own_name);
+		imu_poses = n.subscribe("imu_cal", 1, &ExternalAveragePosePublisher::callback, this);
+		avg_pose = n.advertise<geometry_msgs::Quaternion>("avg_pose",1,true);
+	}
 		//TODO:there should be a service here, which gets the latest tf from body_imu, then I can change those things around with a dynamic reconfigure and get the latest tf when I start the measurement
 		// i.e. the setting and the publishing need to be decoupled. 
 		void publish_tf_body()
@@ -59,30 +68,39 @@ class ExternalAveragePosePublisher
 			transformStamped.transform.rotation.y = q_.y;
 			transformStamped.transform.rotation.z = q_.z;
 			transformStamped.transform.rotation.w = -q_.w; //TODO:this is from the inverse quaternions thing from opensimrt. 
-			//we still need to fix the heading though.
-/*			tf2::Quaternion q_fixed_opensim_transform{0.0,0.707,0.707,0.0}, q_input{q_.x,q_.y,q_.z,q_.w}, q_result;
-			q_result = q_fixed_opensim_transform*q_input;
-			transformStamped.transform.rotation.x = q_result.x();
-			transformStamped.transform.rotation.y = q_result.y();
-			transformStamped.transform.rotation.z = q_result.z();
-			transformStamped.transform.rotation.w = q_result.w();
- */
+								       //we still need to fix the heading though.
+			/*			tf2::Quaternion q_fixed_opensim_transform{0.0,0.707,0.707,0.0}, q_input{q_.x,q_.y,q_.z,q_.w}, q_result;
+						q_result = q_fixed_opensim_transform*q_input;
+						transformStamped.transform.rotation.x = q_result.x();
+						transformStamped.transform.rotation.y = q_result.y();
+						transformStamped.transform.rotation.z = q_result.z();
+						transformStamped.transform.rotation.w = q_result.w();
+						*/
 			br.sendTransform(transformStamped);
-			// we write it also to the buffer
-			tfBuffer.setTransform(transformStamped, "ExternalAveragePosePublisher",true); // it is static
-			auto heading_transform = tfBuffer.lookupTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0)); //it's either like this or the other way around i guess.
-			heading_transform.child_frame_id = imu_cal_frame;
-			heading_transform.header.frame_id = body_frame;
-			heading_transform.transform.translation = transformStamped.transform.translation;
-			br.sendTransform(heading_transform);
-			
-
+			if (is_calibrated)
+			{
+				// we write it also to the buffer
+				tfBuffer.setTransform(transformStamped, "ExternalAveragePosePublisher",true); // it is static
+				try
+				{
+				
+				tf1Listener.waitForTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0), ros::Duration(10)); //it's either like this or the other way around i guess.
+				auto heading_transform = tfBuffer.lookupTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0)); //it's either like this or the other way around i guess.
+				heading_transform.child_frame_id = imu_cal_frame;
+				heading_transform.header.frame_id = body_frame;
+				heading_transform.transform.translation = transformStamped.transform.translation;
+				br.sendTransform(heading_transform);
+				} catch (tf::TransformException &ex)
+				{
+				}
+			}
 
 		}
 
 		void callback(const geometry_msgs::PoseArrayPtr& msg)
 		{
 			ROS_DEBUG_STREAM("Received pose array msg");
+			is_calibrated =true;
 			//std_msgs::Header h;
 			//h.stamp = ros::Time::now();
 			geometry_msgs::Quaternion msg_q;
@@ -116,7 +134,33 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "external_average_pose_publisher", ros::init_options::AnonymousName);
 	ExternalAveragePosePublisher eApp;
-	ros::spin();
+	ros::Rate r(10);
+	while(!eApp.is_calibrated && ros::ok() )
+	{
+		//let's publish something
+		try
+		{
+			auto Tt =eApp.tfBuffer.lookupTransform("map",eApp.imu_cal_frame,ros::Time(0));
+
+			eApp.q_.x = Tt.transform.rotation.x;
+			eApp.q_.y = Tt.transform.rotation.y;
+			eApp.q_.z = Tt.transform.rotation.z;
+			eApp.q_.w = Tt.transform.rotation.w;
+			eApp.publish_tf_body();
+		}
+		catch (tf2::TransformException ex)
+
+		{
+			ROS_WARN_STREAM("oops");
+		}
+		ros::spinOnce();
+		r.sleep();
+
+	}
+	if (ros::ok())
+	{
+		ros::spin();
+	}
 	return 0;
 }
 
