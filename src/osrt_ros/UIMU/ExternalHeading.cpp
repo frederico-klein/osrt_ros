@@ -5,6 +5,7 @@
 #include "geometry_msgs/Vector3.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
+#include "std_msgs/Float64.h"
 #include "tf/LinearMath/Quaternion.h"
 #include "tf/LinearMath/Transform.h"
 #include "tf/LinearMath/Vector3.h"
@@ -56,7 +57,9 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 
 	heading = get_vect_param(nh,"heading", {0,0,-1});
 	opensim_heading = get_vect_param(nh,"opensim_heading", {0,1,0});
-	
+
+	heading_angle_publisher = n.advertise<std_msgs::Float64>("/heading_angle",1,true);
+
 }
 
 
@@ -113,7 +116,7 @@ geometry_msgs::Point vector_to_point(geometry_msgs::Vector3 vector)
 	p.y= vector.y;
 	p.z= vector.z;
 	
-	ROS_INFO_STREAM(yellow << vector << "\n" << green << p << reset);
+	//ROS_INFO_STREAM(yellow << vector << "\n" << green << p << reset);
 	return p;
 }
 geometry_msgs::Vector3 vtov(tf::Vector3 result)
@@ -130,9 +133,13 @@ geometry_msgs::Vector3 project_on_plane(geometry_msgs::Vector3 vv, bivector3 a_p
 
 	tf::Vector3 v{vv.x,vv.y,vv.z};
 
-	auto result = v - tf::tfDot(v, a_plane)*a_plane;
+	double cosine = cos(tf::tfAngle(v, a_plane));
+	ROS_INFO_STREAM(magenta << cosine << reset);
 
-	return vtov(result);
+	auto result = v - cosine*a_plane;
+	auto output = vtov(result);
+	ROS_INFO_STREAM(magenta << "project abs:" << result.absolute() << "\noutput:" <<output << reset);
+	return output;
 }
 
 double angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vector3 b)
@@ -156,7 +163,7 @@ geometry_msgs::Vector3 pick_heading_from_tf(geometry_msgs::Transform some_frame,
 	some_copy = tf::quatRotate(qq,some_copy);
 	tf::Vector3 offset{some_frame.translation.x,some_frame.translation.y,some_frame.translation.z};
 
-	ROS_INFO_STREAM(magenta << some_heading << green << some_copy <<reset);
+	//ROS_INFO_STREAM(magenta << some_heading << green << some_copy <<reset);
 	return vtov(some_copy+offset);
 
 }
@@ -174,13 +181,24 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	debug_markers.push_back(m);
 	debug_point = vector_to_point(imu_heading_axis_vector);
 	
+	//this is a point, and i want the diff
 	auto heading_imu_measured = pick_heading_from_tf(measured_frame,imu_heading_axis_vector);
 
 	auto measure_ori = vector_to_point(measured_frame.translation);
 	debug_markers.push_back(getArrowForVector("heading_imu_measured", heading_imu_measured, measure_ori));
 
-	geometry_msgs::Vector3 projected_measured_heading = project_on_plane(heading_imu_measured, PLANEXY);
+	//this is relative i need to make it in map
+	//
+	geometry_msgs::Vector3 heading_imu_measured_diff;
+	heading_imu_measured_diff.x = heading_imu_measured.x - measure_ori.x;
+	heading_imu_measured_diff.y = heading_imu_measured.y - measure_ori.y;
+	heading_imu_measured_diff.z = heading_imu_measured.z - measure_ori.z;
+	geometry_msgs::Vector3 projected_measured_heading = project_on_plane(heading_imu_measured_diff, PLANEXY);
 	
+	projected_measured_heading.x += measure_ori.x;
+	projected_measured_heading.y += measure_ori.y;
+	projected_measured_heading.z += measure_ori.z;
+
 	debug_markers.push_back(getArrowForVector("heading_imu_measured_projected", projected_measured_heading, measure_ori));
 	
 
@@ -193,7 +211,7 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	tf::Quaternion qqq;
 	tf::quaternionMsgToTF(measured_frame.rotation,qqq)	;
 	double aa = (tf::getYaw(qqq));
-	ROS_INFO_STREAM("yaw,,," << aa*180/3.1415);
+	//ROS_INFO_STREAM("yaw,,," << aa*180/3.1415);
 	
 	//im too stupid for this.
 	return angle_between_vectors(WTH,projected_measured_heading);
@@ -234,6 +252,11 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
 
 		ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
+		
+		std_msgs::Float64 h_msg;
+		h_msg.data = heading_angle;
+		heading_angle_publisher.publish(h_msg);
+
 		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
 
 		heading_pose.pose.orientation.w = q_heading.w();
@@ -256,7 +279,7 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 	}
 	catch(tf2::TransformException &ex) 
 	{
-		ROS_INFO_STREAM("oops");
+			ROS_WARN_STREAM("oops:" << ex.what());
 	}
 	return heading_pose;
 

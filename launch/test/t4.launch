@@ -10,7 +10,7 @@
 		</include>
 		
 		<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">
-			<arg name="tf_prefix" value="imu"/>
+			<arg name="tf_prefix" value="ik"/>
 		</include>
 		<node pkg="rviz" type="rviz" name="rviz" args="-d $(find osrt_ros)/launch/test/t4.rviz"/>
 

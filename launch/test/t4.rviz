@@ -56,10 +56,12 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /wtfh/visualization_marker
+      Marker Topic: /ik/pelvis/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        {}
+        heading_imu_measured: true
+        heading_imu_measured_projected: true
+        heading_os_default: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -71,37 +73,43 @@ Visualization Manager:
         All Enabled: true
         imu/femur_l:
           Value: true
+        imu/femur_l_0:
+          Value: true
         imu/femur_r:
+          Value: true
+        imu/femur_r_0:
           Value: true
         imu/pelvis:
           Value: true
+        imu/pelvis_0:
+          Value: true
         imu/talus_l:
+          Value: true
+        imu/talus_l_0:
           Value: true
         imu/talus_r:
           Value: true
+        imu/talus_r_0:
+          Value: true
         imu/tibia_l:
+          Value: true
+        imu/tibia_l_0:
           Value: true
         imu/tibia_r:
           Value: true
+        imu/tibia_r_0:
+          Value: true
         imu/torso:
           Value: true
-        imufemur_l_imu_raw:
+        imu/torso_0:
           Value: true
-        imufemur_r_imu_raw:
-          Value: true
-        imupelvis_imu_raw:
-          Value: true
-        imutalus_l_imu_raw:
-          Value: true
-        imutalus_r_imu_raw:
-          Value: true
-        imutibia_l_imu_raw:
-          Value: true
-        imutibia_r_imu_raw:
-          Value: true
-        imutorso_imu_raw:
+        imu_default_frame:
           Value: true
         map:
+          Value: true
+        opensim_default_frame:
+          Value: true
+        subject_adds_heading2:
           Value: true
       Marker Alpha: 1
       Marker Scale: 1
@@ -113,35 +121,41 @@ Visualization Manager:
         map:
           imu/femur_l:
             {}
+          imu/femur_l_0:
+            {}
           imu/femur_r:
+            {}
+          imu/femur_r_0:
             {}
           imu/pelvis:
             {}
+          imu/pelvis_0:
+            {}
           imu/talus_l:
+            {}
+          imu/talus_l_0:
             {}
           imu/talus_r:
             {}
+          imu/talus_r_0:
+            {}
           imu/tibia_l:
+            {}
+          imu/tibia_l_0:
             {}
           imu/tibia_r:
             {}
+          imu/tibia_r_0:
+            {}
           imu/torso:
             {}
-          imufemur_l_imu_raw:
+          imu/torso_0:
             {}
-          imufemur_r_imu_raw:
+          imu_default_frame:
             {}
-          imupelvis_imu_raw:
+          opensim_default_frame:
             {}
-          imutalus_l_imu_raw:
-            {}
-          imutalus_r_imu_raw:
-            {}
-          imutibia_l_imu_raw:
-            {}
-          imutibia_r_imu_raw:
-            {}
-          imutorso_imu_raw:
+          subject_adds_heading2:
             {}
       Update Interval: 0
       Value: true

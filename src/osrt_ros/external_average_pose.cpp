@@ -7,6 +7,7 @@
 #include "osrt_ros/UIMU/QuaternionAverage.h"
 #include "ros/service_client.h"
 #include "ros/spinner.h"
+#include "std_msgs/Float64.h"
 #include "tf/LinearMath/Vector3.h"
 #include "tf/exceptions.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -41,7 +42,8 @@ class ExternalAveragePosePublisher
 		bool is_calibrated = false;
 		bool is_heading_corrected = false;
 		ros::NodeHandle n;
-		ros::Subscriber imu_poses;
+		ros::Subscriber heading_subscriber;
+		//ros::Subscriber imu_poses;
 		ros::Publisher avg_pose;
 		std::string body_frame, imu_cal_frame, imu_raw,  own_name, heading_reference_frame;
 		size_t num_samples = 10;
@@ -59,7 +61,7 @@ class ExternalAveragePosePublisher
 		own_name = n.resolveName("imu_cal");
 		ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
 		nh.param<std::string>("imu_raw",imu_raw, "imu/pelvis");
-		nh.param<std::string>("imu_cal_frame",imu_cal_frame, "imu/pelvis_cal");
+		nh.param<std::string>("imu_cal_frame",imu_cal_frame, "_imu");
 		nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
 		nh.param<std::string>("imu_ref_frame",body_frame, "map");
 		nh.param("origin", origin, {0,0,0});
@@ -68,6 +70,9 @@ class ExternalAveragePosePublisher
 			origin_str << v << ",";
 		ROS_WARN_STREAM("Using origin" << origin_str.str() <<" for ExternalAveragePosePublisher" << own_name);
 		ROS_INFO_STREAM("started avg_pose publisher reading from node: " << own_name);
+		
+		heading_subscriber = n.subscribe("/heading_angle", 1, &ExternalAveragePosePublisher::callback, this);
+
 		//imu_poses = n.subscribe("imu_cal", 1, &ExternalAveragePosePublisher::callback, this);
 		avg_pose = n.advertise<geometry_msgs::Quaternion>("avg_pose",1,true);
 	}
@@ -100,23 +105,6 @@ class ExternalAveragePosePublisher
 						transformStamped.transform.rotation.w = q_result.w();
 						*/
 			br.sendTransform(transformStamped);
-			if (is_calibrated)
-			{
-				// we write it also to the buffer
-				tfBuffer.setTransform(transformStamped, "ExternalAveragePosePublisher",true); // it is static
-				try
-				{
-				
-				tf1Listener.waitForTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0), ros::Duration(10)); //it's either like this or the other way around i guess.
-				auto heading_transform = tfBuffer.lookupTransform(heading_reference_frame,imu_cal_frame+"_raw",ros::Time(0)); //it's either like this or the other way around i guess.
-				heading_transform.child_frame_id = imu_cal_frame;
-				heading_transform.header.frame_id = body_frame;
-				heading_transform.transform.translation = transformStamped.transform.translation;
-				br.sendTransform(heading_transform);
-				} catch (tf::TransformException &ex)
-				{
-				}
-			}
 
 		}
 
@@ -147,10 +135,10 @@ class ExternalAveragePosePublisher
 			if (num_poses_stored > num_samples)
 				calibrate();
 		}
-		catch (tf2::TransformException ex)
+		catch (tf2::TransformException &ex)
 
 		{
-			ROS_WARN_STREAM("oops");
+			ROS_WARN_STREAM("oops:" << ex.what());
 		}
 		ros::spinOnce();
 		r.sleep();
@@ -159,9 +147,52 @@ class ExternalAveragePosePublisher
 		}
 		void correct_heading(double yaw)
 		{
+
+
 			ROS_ERROR_STREAM("not implemented");
 		}
 
+		void callback(std_msgs::Float64 heading_angle)
+		{
+			ROS_INFO_STREAM("heading_angle"<< heading_angle);
+			//well, this must mean that the tf for the heading should be there too. let's try using it. 
+			if (is_calibrated)
+			{
+				ROS_INFO_STREAM("==================\n" << heading_reference_frame << "\n"<< imu_raw+"_0\n"<< body_frame << "\nimu_cal_frame: " << imu_cal_frame  <<"\n reached is_calibrated\n===============");
+
+				try
+				{
+				
+				tf1Listener.waitForTransform(heading_reference_frame,imu_raw+"_0",ros::Time(0), ros::Duration(10)); //it's either like this or the other way around i guess.
+				auto heading_transform = tfBuffer.lookupTransform(heading_reference_frame,imu_raw+"_0",ros::Time(0)); //it's either like this or the other way around i guess.
+				
+				//this is for calibrating ik from imu/ar
+				
+				heading_transform.child_frame_id = imu_raw+"_cal";
+				heading_transform.header.frame_id = "map";
+				heading_transform.transform.translation.x = origin[0] +avg_point.x;
+				heading_transform.transform.translation.y = origin[1]+avg_point.y;
+				heading_transform.transform.translation.z = origin[2]+avg_point.z;
+
+				br.sendTransform(heading_transform);
+				
+
+				//this is for showing the urdf
+				heading_transform.child_frame_id = imu_cal_frame;
+				heading_transform.header.frame_id = body_frame;
+				heading_transform.transform.translation.x = origin[0];
+				heading_transform.transform.translation.y = origin[1];
+				heading_transform.transform.translation.z = origin[2];
+				br.sendTransform(heading_transform);
+				is_heading_corrected = true;
+				} catch (tf::TransformException &ex)
+				{
+				}
+			}
+
+
+
+		}
 		//void callback(const geometry_msgs::PoseArrayPtr& msg)
 		void calibrate()
 		{

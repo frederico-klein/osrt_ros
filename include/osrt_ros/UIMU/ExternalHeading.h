@@ -26,6 +26,8 @@ class ExternalHeading
 	public:
 		ros::NodeHandle n;
 	std::vector<visualization_msgs::Marker> debug_markers;
+		
+		ros::Publisher heading_angle_publisher;
 
 		std::string imu_default_frame_name, imu_heading_axis, imu_base_measured_frame_name, opensim_base_default_frame_name, added_heading_frame_name, parent_frame_name;
 		tf2_ros::StaticTransformBroadcaster br;
