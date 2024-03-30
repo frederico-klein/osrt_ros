@@ -4,14 +4,25 @@
 	<arg name="prefix" 	default="/ik_lowerbody_node"/>
 	<arg name="origin" 	default="[0.0,0.0,0.0]"/>
 	<arg name="tf_prefix" default=""/>
+	<arg name="is_base_body" default="false"/>
 
-	<node name="pose_average_$(arg imu_body)" type="external_average_quaternion_node" pkg="osrt_ros" output="log">
-		<param name="origin"        type="yaml" value="$(arg origin)" />
-		<param name="imu_cal_frame" value="$(arg tf_prefix)$(arg imu_body)_imu" />
-		<param name="imu_ref_frame" value="$(arg tf_prefix)$(arg imu_body)" />
-		<remap to="$(arg prefix)/$(arg imu_body)/imu_cal"					from="/imu_cal"/>
-		<remap to="$(arg prefix)/$(arg imu_body)/avg_pose"					from="/avg_pose"/>
-	</node>
+	<group ns="$(arg imu_body)">
+		<node name="pose_average" type="external_average_quaternion_node" pkg="osrt_ros" output="log">
+			<param name="origin"        type="yaml" value="$(arg origin)" />
+			<param name="imu_raw" value="imu/$(arg imu_body)" />
+
+			<param name="imu_cal_frame" value="$(arg tf_prefix)$(arg imu_body)_imu" />
+			<param name="imu_ref_frame" value="$(arg tf_prefix)$(arg imu_body)" />
+			<remap to="$(arg prefix)/$(arg imu_body)/imu_cal"					from="/imu_cal"/>
+			<remap to="$(arg prefix)/$(arg imu_body)/avg_pose"					from="/avg_pose"/>
+		</node>
+		<node pkg="osrt_ros" type="wth_node" name="wtfh" output="screen" if="$(arg is_base_body)">
+			<param name="imu_base_measured_frame" value="imu/pelvis_0"/>
+			<param name="added_heading_frame" value="subject_adds_heading2"/>
+			<rosparam param="origin">[0,0,0]</rosparam>	
+			<rosparam param="heading">[0,0,-1]</rosparam>	
+		</node>
+	</group>
 </launch>
 
 

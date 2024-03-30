@@ -10,6 +10,7 @@
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
 		<arg name="origin" 	value="[0.0,-0.2,0.0]"/>
 		<arg name="imu_body" value="pelvis"/>
+		<arg name="is_base_body" value="true"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
