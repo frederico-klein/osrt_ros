@@ -128,7 +128,7 @@ namespace OpenSimRT {
 						const auto& q = data.getQuaternion();
 						SimTK::Rotation R;
 						//if (i == baseBodyIndex)
-							R = R_heading *R_GoGi1* ~SimTK::Rotation(q);
+							R = R_heading *R_GoGi1* SimTK::Rotation(q);
 						//else
 						//	R = R_GoGi1 * ~SimTK::Rotation(q);
 						imuObservations.push_back(R);

@@ -9,15 +9,7 @@
 			<arg name="sto_file" value="$(arg sto_file)"/>
 		</include>
 		
-		<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">
-			<arg name="tf_prefix" value="ik"/>
-		</include>
-		<node pkg="rviz" type="rviz" name="rviz" args="-d $(find osrt_ros)/launch/test/t4.rviz"/>
-
 	</group>
-	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading" args="1 0.3 0 -0.70711 0.0 0.0 0.70711 map imu_default_frame $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="t2_subject_heading1" args="1 0.6 0  0 0 -0.70711 0.70711 map opensim_default_frame $(arg freq)" />
-
 </launch>
 
 

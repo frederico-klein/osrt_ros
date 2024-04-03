@@ -293,9 +293,12 @@ class UIMUnode: Ros::CommonNode
 			ROS_INFO_STREAM("Publisher labels: "<<all_labels);
 
 			// visualizer
-			ROS_DEBUG_STREAM("Setting up visualizer");
-			ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
-			visualizer = new BasicModelVisualizer(model);
+			if (visualiseIt)
+			{
+				ROS_DEBUG_STREAM("Setting up visualizer");
+				ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
+				visualizer = new BasicModelVisualizer(model);
+			}
 			if(publish_filtered)
 			{
 				//filter

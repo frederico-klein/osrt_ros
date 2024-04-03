@@ -5,6 +5,9 @@
 	<arg name="origin" 	default="[0.0,0.0,0.0]"/>
 	<arg name="tf_prefix" default=""/>
 	<arg name="is_base_body" default="false"/>
+	
+	<arg name="heading" 	default="[0.0,0.0,-1.0]"/>
+	<arg name="run_as_service" default="true"/>
 
 	<group ns="$(arg imu_body)">
 		<node name="pose_average" type="external_average_quaternion_node" pkg="osrt_ros" output="screen">
@@ -19,13 +22,23 @@
 			<remap to="/ik/heading_angle"					from="/heading_angle"/>
 			<param name="heading_ref_frame" value="subject_adds_heading2" />
 		</node>
-		<node pkg="osrt_ros" type="wth_node" name="wtfh" output="screen" if="$(arg is_base_body)">
+		<!--node pkg="osrt_ros" type="wth_node" name="wtfh" output="screen" if="$(arg is_base_body)" -->
+		<node pkg="osrt_ros" type="wth_node" name="wtfh" output="screen">
 		<!--node pkg="osrt_ros" type="wth_node" name="wtfh" if="$(arg is_base_body)" -->
-			<param name="imu_base_measured_frame" value="imu/pelvis_0"/>
+			<param name="imu_base_measured_frame" value="imu/$(arg imu_body)_0"/>
 			<param name="added_heading_frame" value="subject_adds_heading2"/>
 			<rosparam param="origin">[0,0,0]</rosparam>	
-			<rosparam param="heading">[0,0,-1]</rosparam>	
-			<remap to="/ik/heading_angle"					from="/heading_angle"/>
+			<param name="heading"    type="yaml" value="$(arg heading)" />
+			<rosparam param="opensim_heading">[1,0,0]</rosparam>	
+			<remap to="/ik/$(arg imu_body)/heading_angle"					from="/heading_angle"/>
+			<param name="angle_offset" value="0"/>
+			<param name="flip_sign" value="false"/>
+			<param name="bypass_everything" value="false"/>
+			<param name="angle_manual" value="0"/>
+			
+			<param name="run_as_service" value="$(arg run_as_service)"/>
+
+			<param name="is_base_body" value="$(arg is_base_body)"/>
 		</node>
 	</group>
 </launch>

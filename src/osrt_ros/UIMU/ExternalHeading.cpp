@@ -16,9 +16,9 @@
 #include <ostream>
 #include <vector>
 
-typedef tf::Vector3 bivector3  ;
 
 bivector3 PLANEXY{0,0,1};
+
 
 geometry_msgs::Vector3 get_vect_param(ros::NodeHandle handle, std::string name, const std::vector<double>& default_value)
 {
@@ -58,7 +58,54 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 	heading = get_vect_param(nh,"heading", {0,0,-1});
 	opensim_heading = get_vect_param(nh,"opensim_heading", {0,1,0});
 
+	nh.param<bool>("flip_sign",flip_sign,false);
+	nh.param<double>("angle_offset",angle_offset,0.0);
+	
+	nh.param<bool>("bypass_everything",bypass_everything,false);
+	nh.param<double>("angle_manual",angle_manual,0.0);
 	heading_angle_publisher = n.advertise<std_msgs::Float64>("/heading_angle",1,true);
+
+	nh.param<bool>("is_base_body",is_base_body,false);
+
+		if(is_base_body)
+			heading_angle_subscriber = n.subscribe("/ik/heading_angle",1, &ExternalHeading::callback, this);
+	
+
+}
+
+void ExternalHeading::callback(std_msgs::Float64 msg )
+{
+	try
+	{
+		ROS_INFO_STREAM(magenta <<"im publi" << imu_base_measured_frame_name << " "  << msg.data*180/3.141592 );
+		auto q_heading = tf::createQuaternionFromYaw(msg.data);
+	geometry_msgs::PoseStamped heading_pose;
+		heading_pose.header.stamp = ros::Time::now();
+		heading_pose.pose.position = origin;
+
+		heading_pose.pose.orientation.w = q_heading.w();
+		heading_pose.pose.orientation.x = q_heading.x();
+		heading_pose.pose.orientation.y = q_heading.y();
+		heading_pose.pose.orientation.z = q_heading.z();
+
+		//send it as a tf for others to use
+		geometry_msgs::TransformStamped heading_tf;
+		heading_tf.header.stamp = ros::Time::now();
+		heading_tf.header.frame_id = parent_frame_name;
+		heading_tf.child_frame_id = added_heading_frame_name;
+
+		heading_tf.transform.translation.x = origin.x;
+		heading_tf.transform.translation.y = origin.y;
+		heading_tf.transform.translation.z = origin.z;
+
+		heading_tf.transform.rotation = heading_pose.pose.orientation;
+		br.sendTransform(heading_tf);
+	}
+	catch(tf2::TransformException &ex) 
+	{
+			ROS_WARN_STREAM("oops:" << ex.what());
+	}
+
 
 }
 
@@ -67,6 +114,13 @@ bool ExternalHeading::calibrate_srv(std_srvs::EmptyRequest & req, std_srvs::Empt
 {
 	calibrate();
 	return true;
+}
+
+void set_marker_color (visualization_msgs::Marker &m, geometry_msgs::Vector3 c)
+{
+	m.color.r = abs(c.x);
+	m.color.g = abs(c.y);
+	m.color.b = abs(c.z);
 }
 
 visualization_msgs::Marker ExternalHeading::getArrowForVector(std::string name, geometry_msgs::Vector3 vv, geometry_msgs::Point origin_)
@@ -92,11 +146,12 @@ visualization_msgs::Marker ExternalHeading::getArrowForVector(std::string name, 
 		m.points.push_back(pp);
 		//m.points.push_back(a);
 		//m.points.push_back(b);
-
+		
+		//it wont work if you dont use unit vectors
 		m.color.a = 1.0; // Don't forget to set the alpha!
-		m.color.r = 0.0;
-		m.color.g = 0.0;
-		m.color.b = 1.0; // cause I want it to be like z, right.
+		m.color.r = abs(m.points[0].x - m.points[1].x);
+		m.color.g = abs(m.points[0].y - m.points[1].y);
+		m.color.b = abs(m.points[0].z - m.points[1].z); // cause I want it to be like z, right.
 		m.scale.x = 0.01;
 		m.scale.y = 0.02;
 		m.scale.z = 0.05;
@@ -107,6 +162,13 @@ visualization_msgs::Marker ExternalHeading::getArrowForVector(std::string name, 
 visualization_msgs::Marker ExternalHeading::getArrowForVector(std::string name, geometry_msgs::Vector3 vv)
 {
 	return getArrowForVector(name, vv, origin);
+}
+
+visualization_msgs::Marker ExternalHeading::getArrowForVector(std::string name, VectorWithLikeAPointOfApplicationThingy V)
+
+{
+	return getArrowForVector(name, V.getAsVector(), V.p);
+
 }
 
 geometry_msgs::Point vector_to_point(geometry_msgs::Vector3 vector)
@@ -134,24 +196,36 @@ geometry_msgs::Vector3 project_on_plane(geometry_msgs::Vector3 vv, bivector3 a_p
 	tf::Vector3 v{vv.x,vv.y,vv.z};
 
 	double cosine = cos(tf::tfAngle(v, a_plane));
-	ROS_INFO_STREAM(magenta << cosine << reset);
+	//ROS_INFO_STREAM(magenta << cosine << reset);
 
 	auto result = v - cosine*a_plane;
 	auto output = vtov(result);
-	ROS_INFO_STREAM(magenta << "project abs:" << result.absolute() << "\noutput:" <<output << reset);
+	ROS_DEBUG_STREAM(magenta << "project abs:" << result.absolute() << "\noutput:" <<output << reset);
 	return output;
 }
+
+VectorWithLikeAPointOfApplicationThingy project_on_plane (VectorWithLikeAPointOfApplicationThingy VV, bivector3 a_plane)
+	{
+		VectorWithLikeAPointOfApplicationThingy V;
+		V.p = VV.p;
+		V.v = project_on_plane(VV.v, a_plane);
+		return V;
+	}
 
 double angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vector3 b)
 {
 	tf::Vector3 A{a.x,a.y,a.z};
 	tf::Vector3 B{b.x,b.y,b.z};
 
-	return tf::tfAngle(A,B);
+	ROS_INFO_STREAM(green << "\na:" << a << "\nb:" << b);
+
+	double result = tf::tfAngle(A,B);
+	ROS_INFO_STREAM(yellow << "resuts:" << reset << result);
+	return result;
 }
 
 
-geometry_msgs::Vector3 pick_heading_from_tf(geometry_msgs::Transform some_frame, const geometry_msgs::Vector3 some_heading)
+VectorWithLikeAPointOfApplicationThingy pick_heading_from_tf(geometry_msgs::Transform some_frame, const geometry_msgs::Vector3 some_heading)
 {
 	//maybe I will tranform something
 	tf::Quaternion qq;
@@ -164,69 +238,80 @@ geometry_msgs::Vector3 pick_heading_from_tf(geometry_msgs::Transform some_frame,
 	tf::Vector3 offset{some_frame.translation.x,some_frame.translation.y,some_frame.translation.z};
 
 	//ROS_INFO_STREAM(magenta << some_heading << green << some_copy <<reset);
-	return vtov(some_copy+offset);
+	VectorWithLikeAPointOfApplicationThingy VV;
+	VV.setOrigin(vector_to_point(vtov(offset)));
+	VV.setVector(vtov(some_copy));
+	return VV;
 
 }
+
+
 
 double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure_frame, geometry_msgs::Transform measured_frame, geometry_msgs::Vector3 imu_heading_axis_vector)
 {
 
 
-	auto default_os_ori = vector_to_point( default_measure_frame.translation);
-	//maybe I will tranform something
 	auto heading_os_default = pick_heading_from_tf(default_measure_frame,opensim_heading);
 
-	auto m = getArrowForVector("heading_os_default", heading_os_default, default_os_ori );
-	m.color.b = 0, m.color.g =1;
+	auto m = getArrowForVector("heading_os_default", heading_os_default);
 	debug_markers.push_back(m);
 	debug_point = vector_to_point(imu_heading_axis_vector);
+
+	//this is spaghetti, it needs to be based on the difference
+	//TODO: make some class so that this will make sense
+	//
 	
+		
+
 	//this is a point, and i want the diff
 	auto heading_imu_measured = pick_heading_from_tf(measured_frame,imu_heading_axis_vector);
 
-	auto measure_ori = vector_to_point(measured_frame.translation);
-	debug_markers.push_back(getArrowForVector("heading_imu_measured", heading_imu_measured, measure_ori));
+	debug_markers.push_back(getArrowForVector("heading_imu_measured", heading_imu_measured));
 
 	//this is relative i need to make it in map
-	//
-	geometry_msgs::Vector3 heading_imu_measured_diff;
-	heading_imu_measured_diff.x = heading_imu_measured.x - measure_ori.x;
-	heading_imu_measured_diff.y = heading_imu_measured.y - measure_ori.y;
-	heading_imu_measured_diff.z = heading_imu_measured.z - measure_ori.z;
-	geometry_msgs::Vector3 projected_measured_heading = project_on_plane(heading_imu_measured_diff, PLANEXY);
 	
-	projected_measured_heading.x += measure_ori.x;
-	projected_measured_heading.y += measure_ori.y;
-	projected_measured_heading.z += measure_ori.z;
+	VectorWithLikeAPointOfApplicationThingy projected_measured_heading = project_on_plane(heading_imu_measured, PLANEXY);
+	
+	auto m2 =getArrowForVector("heading_imu_measured_projected", projected_measured_heading); 
+	set_marker_color(m2,heading);
+	debug_markers.push_back(m2);
+	
 
-	debug_markers.push_back(getArrowForVector("heading_imu_measured_projected", projected_measured_heading, measure_ori));
-	
+
+	auto m23 =getArrowForVector("heading_imu_at_zero", projected_measured_heading.v , origin); 
+
+	set_marker_color(m23,heading);
+
+	m23.scale.x = 0.05;
+	debug_markers.push_back(m23);
 
 	//is it just the angle with y from map?
 	// then it's just getyaw from tf?
-	//
+	//**
 	//and if there is a minus sign, then i just add 180, whatever, this is the crazy debugging, so let's go all out
 	//
-	auto WTH = vtov(tf::Vector3{opensim_heading.x,opensim_heading.y,opensim_heading.z});
+	//auto WTH = vtov(tf::Vector3{opensim_heading.x,opensim_heading.y,opensim_heading.z});
+
+
+	//ROS_INFO_STREAM(red<<WTH<<green << "thiiiiiiiiiiiiiiii");
 	tf::Quaternion qqq;
 	tf::quaternionMsgToTF(measured_frame.rotation,qqq)	;
-	double aa = (tf::getYaw(qqq));
+	//double aa = (tf::getYaw(qqq));
 	//ROS_INFO_STREAM("yaw,,," << aa*180/3.1415);
 	
 	//im too stupid for this.
-	return angle_between_vectors(WTH,projected_measured_heading);
+	return angle_between_vectors(heading_os_default.v,projected_measured_heading.v);
 	
 
 
 	//debug_markers.push_back(getArrowForVector("heading_imu_measured_normal", heading_imu_measured - projected_measured_heading,measure_ori ));
 
-	return angle_between_vectors(projected_measured_heading,heading_os_default);
+	return angle_between_vectors(projected_measured_heading.v,heading_os_default.v);
 }
 
 geometry_msgs::PoseStamped ExternalHeading::calibrate()
 {
 	geometry_msgs::TransformStamped transformStamped;
-	geometry_msgs::PoseStamped heading_pose;
 
 	//get the imu default frame, the opensim default frame and the current imu base measured frame:
 	try{
@@ -240,47 +325,47 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 
 		
 
-		ROS_INFO_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
-		ROS_INFO_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
+		ROS_DEBUG_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
+		ROS_DEBUG_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
 
-		heading_pose.header.stamp = ros::Time::now();
-		heading_pose.pose.position = origin;
 
 		//now the important part, calculate this damn angle
 
 		//double heading_angle = calculate_angle(imu_default_frame.transform, imu_base_measured_frame.transform, heading);
 		double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
+		if (abs(angle_offset) > 0.1 )
+		{
+			ROS_WARN_STREAM("adding "<< angle_offset <<" degrees, because maybe, idk");
+			heading_angle += 3.14159265/180*angle_offset;
+		}
+		if (flip_sign)
+		{
+			ROS_WARN_STREAM("FLIPPING SIGN");
+			heading_angle *= -1;
+		}
+		if (bypass_everything)
+		{
+				heading_angle = 3.14159265/180*angle_manual;
+				ROS_WARN_STREAM("BYPASSING EVERYTHING!!!!\n");
+				ROS_WARN_STREAM(magenta <<"BYPASSING EVERYTHING!!!!");
+		}
+		///////////////////////////////////////////////////
+		///////////////////////////////////////////////////
 
-		ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
+		//ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
 		
 		std_msgs::Float64 h_msg;
 		h_msg.data = heading_angle;
 		heading_angle_publisher.publish(h_msg);
 
-		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
-
-		heading_pose.pose.orientation.w = q_heading.w();
-		heading_pose.pose.orientation.x = q_heading.x();
-		heading_pose.pose.orientation.y = q_heading.y();
-		heading_pose.pose.orientation.z = q_heading.z();
-
-		//send it as a tf for others to use
-		geometry_msgs::TransformStamped heading_tf;
-		heading_tf.header.stamp = ros::Time::now();
-		heading_tf.header.frame_id = parent_frame_name;
-		heading_tf.child_frame_id = added_heading_frame_name;
-
-		heading_tf.transform.translation.x = origin.x;
-		heading_tf.transform.translation.y = origin.y;
-		heading_tf.transform.translation.z = origin.z;
-
-		heading_tf.transform.rotation = heading_pose.pose.orientation;
-		br.sendTransform(heading_tf);
 	}
 	catch(tf2::TransformException &ex) 
 	{
 			ROS_WARN_STREAM("oops:" << ex.what());
 	}
+	
+	//I just broke this
+	geometry_msgs::PoseStamped heading_pose;
 	return heading_pose;
 
 }

@@ -16,9 +16,11 @@ int main(int argc, char **argv)
 	ExternalHeading eApp;
 	ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
 	ros::ServiceServer serv_calib = nh.advertiseService("calibrate_heading",&ExternalHeading::calibrate_srv, &eApp);
+	bool run_as_service;
+	nh.param<bool>("run_as_service", run_as_service, true); // I was running this in a loop, but I am not sure it makes sense. I just want to calibrate it once and maybe when I have service calls, right?
 	
 	//ros::Publisher pub = nh.advertise<geometry_msgs::PoseStamped>("pppppppp",10,false);
-	ros::Publisher pub2 = nh.advertise<visualization_msgs::Marker>("visualization_marker",10,false);
+	ros::Publisher pub2 = nh.advertise<visualization_msgs::Marker>("visualization_marker",10,true);
 	ros::Rate r(1);
 	while(ros::ok())
 	{
@@ -55,8 +57,12 @@ int main(int argc, char **argv)
 
 		ros::spinOnce();
 		r.sleep();
+		if (run_as_service)
+			break;
 	}
 
+	if (run_as_service)
+		ros::spin();
 	return 0;
 }
 

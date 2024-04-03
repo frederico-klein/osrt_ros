@@ -154,11 +154,11 @@ class ExternalAveragePosePublisher
 
 		void callback(std_msgs::Float64 heading_angle)
 		{
-			ROS_INFO_STREAM("heading_angle"<< heading_angle);
+			//ROS_INFO_STREAM("heading_angle"<< heading_angle);
 			//well, this must mean that the tf for the heading should be there too. let's try using it. 
 			if (is_calibrated)
 			{
-				ROS_INFO_STREAM("==================\n" << heading_reference_frame << "\n"<< imu_raw+"_0\n"<< body_frame << "\nimu_cal_frame: " << imu_cal_frame  <<"\n reached is_calibrated\n===============");
+				//ROS_INFO_STREAM("==================\n" << heading_reference_frame << "\n"<< imu_raw+"_0\n"<< body_frame << "\nimu_cal_frame: " << imu_cal_frame  <<"\n reached is_calibrated\n===============");
 
 				try
 				{

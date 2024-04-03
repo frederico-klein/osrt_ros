@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="freq" default="100"/>⏎
+	<arg name="run_with_imus" default="true" />
+	<arg name="run_as_service" default="true" />
+	<arg name="load_urdf_model" default="true" />
+	<arg name="sto_file" default="/catkin_ws/Data/02_ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_imus_lower.sto" />
+	<group ns="ik">
+		<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">
+			<arg name="tf_prefix" value="ik"/>
+			<arg name="run_as_service" value="$(arg run_as_service)" />
+		</include>
+
+	</group>
+
+</launch>
+
+

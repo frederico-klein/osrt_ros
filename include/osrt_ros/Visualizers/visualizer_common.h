@@ -12,6 +12,7 @@
 #include "ros/init.h"
 #include "ros/ros.h"
 #include "ros/subscriber.h"
+#include "ros/time.h"
 #include <Actuators/Thelen2003Muscle.h>
 #include <Common/Object.h>
 #include <SimTKcommon/internal/BigMatrix.h>
@@ -107,6 +108,7 @@ namespace Visualizers
 						q[i] = msg_ik->data[i];
 					}
 					visualizer->update(q);
+					visualizer->fps->actual_delay = (ros::Time::now().toSec() - msg_ik->header.stamp.toSec())*1000; // this is in ms
 					after_callback();
 				} catch (std::exception& e) {
 					std::cout << e.what() << std::endl;
@@ -121,6 +123,7 @@ namespace Visualizers
 						q[i] = msg_ik->d0_data[i];
 					}
 					visualizer->update(q);
+					visualizer->fps->actual_delay = (ros::Time::now().toSec() - msg_ik->header.stamp.toSec())*1000; // this is in ms
 					after_callback();
 
 				} catch (std::exception& e) {

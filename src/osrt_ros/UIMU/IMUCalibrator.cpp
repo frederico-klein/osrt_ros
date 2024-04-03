@@ -145,27 +145,30 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
         // get initial measurement of base imu
 	//cout << baseBodyIndex << endl;
-	ROS_DEBUG_STREAM("baseBodyIndex:" << baseBodyIndex );
+	//ROS_DEBUG_STREAM("baseBodyIndex:" << baseBodyIndex );
 	for (int g= 0; g < staticPoseQuaternions.size();g++)
 	{
 		//cout << staticPoseQuaternions[g] << endl;
 		ROS_DEBUG_STREAM("Quaternion for imu[" << g << "]" << staticPoseQuaternions[g]);
 	}
         const auto q0 = staticPoseQuaternions[baseBodyIndex];
-	ROS_INFO_STREAM("Basebody q0: "<< q0);
+	//ROS_INFO_STREAM("Basebody q0: "<< q0);
 
 	auto inverseq0_rotation_matrix = ~Rotation(q0);
 
-	ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
-        const auto base_R = R_GoGi2 * ~Rotation(q0);
+	//ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
+        const auto base_R = R_GoGi2 * Rotation(q0);
+        //const auto base_R = R_GoGi2 * ~Rotation(q0);
 
+	if (false)
+	{
 	tb.sendTransform(publish_tf(R_GoGi2,0.3,.1,"R_GoGi2",debug_reference_frame));
 	tb.sendTransform(publish_tf(~R_GoGi2,0.3,0.15,"R_GoGi2_inverse",debug_reference_frame));
 	tb.sendTransform(publish_tf(R_GoGi1,0.35,.1,"R_GoGi1",debug_reference_frame));
 	tb.sendTransform(publish_tf(~R_GoGi1,0.35,0.15,"R_GoGi1_inverse",debug_reference_frame));
 	tb.sendTransform(publish_tf(q0,0.2,.1,"just_q0",debug_reference_frame));
 	tb.sendTransform(publish_tf(inverseq0_rotation_matrix,0.2,.15,"q0_inverse",debug_reference_frame));
-
+	}
         //const SimTK::Rotation base_R = ~Rotation(q0);
 
         // get initial direction from the imu measurement (the axis looking
@@ -199,6 +202,8 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	//
 	auto baseTF =  publish_tf(baseFrame->getRotationInGround(state),0,.1,"wtf_base",debug_reference_frame);
 	tb.sendTransform(baseTF);
+	if (false)
+	{
 	double offset=0.2;
         const auto base_R__ = R_GoGi2 * Rotation(q0);
 	tb.sendTransform(publish_tf(base_R__,0.1,offset,"wtf_base_measured0",debug_reference_frame));
@@ -222,6 +227,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	tb.sendTransform(publish_tf(base_R__6,0.1,offset,"wtf_base_measured6",debug_reference_frame));
 	offset+=0.05;
 	offset+=0.05;
+	}
 
 	auto baseTF_R = publish_tf(base_R,0.1,.1,"wtf_base_measured",debug_reference_frame);
 	tb.sendTransform(baseTF_R);
@@ -230,9 +236,9 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
         // compute sign
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
-        if (xproduct.get(1) < 0) { angularDifference *= -1; }
+        if (xproduct.get(1) > 0) { angularDifference *= -1; }
 
-	ROS_WARN_STREAM("angularDifference: " << angularDifference << " (" << angularDifference/3.14159205*180.0);
+	ROS_INFO_STREAM("angularDifference: " << angularDifference << " (" << angularDifference/3.14159205*180.0);
         // set heading rotation (rotation about Y axis)
         R_heading = Rotation(angularDifference , SimTK::YAxis);
     
@@ -258,19 +264,24 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	double roll, pitch, yaw;
 		m.getRPY(roll, pitch, yaw);
 	//R_heading = Rotation(yaw, SimTK::YAxis);
-	ROS_WARN_STREAM("yaw: " << yaw << "(" << yaw*180.0/3.14159205);
+	//ROS_WARN_STREAM("yaw: " << yaw << "(" << yaw*180.0/3.14159205);
 	
     } else {
         ROS_WARN("No heading correction is applied. Heading rotation is set to "
                 "default");
     }
-
     ros::NodeHandle nh("~");
+    bool bypass_everything;
+    nh.param<bool>("bypass_everything",bypass_everything,false);
+
+    if (bypass_everything)
+    {
     double ext_head;
     nh.param<double>("heading_debug",ext_head,0.0);
     R_heading = Rotation(3.141592/180.0*ext_head , SimTK::YAxis);
     
     ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
+    }
     tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
     return R_heading;
 }
@@ -282,12 +293,12 @@ void IMUCalibrator::calibrateIMUTasks(
 	ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         const auto& bodyName = imuTasks[i].body;
         
-	const auto& q0 = staticPoseQuaternions[i];
+	const auto& q0 = staticPoseQuaternions[i]; //TODO:: maybe make this come from TF directly?
 
-	const auto Corrected_Q0 = ~Rotation(q0);
-    	ROS_DEBUG_STREAM("Corrected_Q0 orientation matrix:" << bodyName << "\n" << Corrected_Q0);
+	//const auto Corrected_Q0 = ~Rotation(q0);
+    	//ROS_DEBUG_STREAM("Corrected_Q0 orientation matrix:" << bodyName << "\n" << Corrected_Q0);
 
-	const auto R0 = R_GoGi1 * ~Rotation(q0);
+	const auto R0 = R_GoGi1 * Rotation(q0);
 	
 	tb.sendTransform(publish_tf(R0,0.1*i+0.5,0.3,"ro_"+bodyName,debug_reference_frame));
     	
