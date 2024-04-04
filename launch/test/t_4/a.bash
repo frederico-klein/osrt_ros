@@ -12,15 +12,18 @@ W2=(
 #"roslaunch osrt_ros t.launch sto_file:=$a_file"
 #"roslaunch osrt_ros t3.launch sto_file:=$a_file"
 "roslaunch osrt_ros t41.launch sto_file:=$a_file"
-"roslaunch osrt_ros t42.launch sto_file:=$a_file run_as_service:=false"
-"roslaunch osrt_ros t43.launch sto_file:=$a_file"
-"roslaunch osrt_ros t44.launch sto_file:=$a_file"
-"roslaunch osrt_ros t45.launch sto_file:=$a_file"
-"roslaunch osrt_ros t46.launch sto_file:=$a_file bypass_heading_computation:=true heading_debug:=90 visualise:=false"
-#"roslaunch custom_clock simpler_clock.launch clock_step_microsseconds:=1000 slowdown_rate:=1" 
+"roslaunch osrt_ros t42.launch run_as_service:=false parent_frame:=map"
+"roslaunch osrt_ros t43.launch "
+#### These to show the skeleton
+#"roslaunch osrt_ros t44.launch base_parent:=opensim_default_frame"
+"roslaunch osrt_ros t44.launch base_parent:=map"
+"roslaunch osrt_ros t45.launch "
+"roslaunch osrt_ros t46.launch bypass_heading_computation:=false heading_debug:=0 visualise:=false"
+
+##"roslaunch custom_clock simpler_clock.launch clock_step_microsseconds:=1000 slowdown_rate:=1" 
 "roslaunch osrt_ros vis_ik.launch"
-"rqt_graph"
-"/catkin_ws/src/osrt_ros/avg.py"
+#"rqt_graph"
+#"/catkin_ws/src/osrt_ros/avg.py"
 )
 
 create_tmux_window "$SESSION_NAME" "sync" "${W2[@]}"

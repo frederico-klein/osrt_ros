@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<arg name="tf_prefix" default=""/>
+	<arg name="parent_frame" default="map"/>
 	<arg name="run_as_service" default="true"/>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -8,6 +9,7 @@
 		<arg name="imu_body" value="torso"/>
 		<arg name="heading" value="[0.0,0.0,-1.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -16,6 +18,7 @@
 		<arg name="is_base_body" value="true"/>
 		<arg name="heading" value="[0.0,0.0,-1.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -23,6 +26,7 @@
 		<arg name="imu_body" value="femur_r"/>
 		<arg name="heading" value="[0.0,1.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -30,6 +34,7 @@
 		<arg name="imu_body" value="femur_l"/>
 		<arg name="heading" value="[0.0,-1.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -37,6 +42,7 @@
 		<arg name="imu_body" value="tibia_r"/>
 		<arg name="heading" value="[0.0,1.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -44,6 +50,7 @@
 		<arg name="imu_body" value="tibia_l"/>
 		<arg name="heading" value="[0.0,-1.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -51,6 +58,7 @@
 		<arg name="imu_body" value="talus_r"/>
 		<arg name="heading" value="[1.0,0.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 	<include file="$(find osrt_ros)/launch/ext_quat_avg.launch">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
@@ -58,5 +66,6 @@
 		<arg name="imu_body" value="talus_l"/>
 		<arg name="heading" value="[1.0,0.0,0.0]"/>
 		<arg name="run_as_service" value="$(arg run_as_service)"/>
+		<arg name="parent_frame" value="$(arg parent_frame)"/>
 	</include>
 </launch>

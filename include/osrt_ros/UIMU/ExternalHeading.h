@@ -79,13 +79,14 @@ class ExternalHeading
 	std::vector<visualization_msgs::Marker> debug_markers;
 		bool flip_sign = false;
 		bool is_base_body = false;
+		bool subscribe_to_external_heading_topic = false;
 		double angle_offset = 0;
 		bool bypass_everything = false;	
 		double angle_manual = 0;
 		ros::Publisher heading_angle_publisher;
 		ros::Subscriber heading_angle_subscriber;
 
-		std::string imu_default_frame_name, imu_heading_axis, imu_base_measured_frame_name, opensim_base_default_frame_name, added_heading_frame_name, parent_frame_name;
+		std::string imu_default_frame_name, imu_heading_axis, imu_base_measured_frame_name, opensim_base_default_frame_name, heading_reference_frame, parent_frame_name;
 		tf2_ros::StaticTransformBroadcaster br;
 		tf2_ros::Buffer tfBuffer;
 		tf2_ros::TransformListener tfListener;

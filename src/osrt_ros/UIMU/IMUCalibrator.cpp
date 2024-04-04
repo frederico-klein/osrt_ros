@@ -37,6 +37,13 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace std;
 
+const std::string red("\033[0;31m");
+const std::string green("\033[1;32m");
+const std::string yellow("\033[1;33m");
+const std::string cyan("\033[0;36m");
+const std::string magenta("\033[0;35m");
+const std::string reset("\033[0m");
+
 void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 //	ros::NodeHandle n("~");
   	nhandle = ros::NodeHandle("~");
@@ -67,7 +74,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
     }
 }
 
-geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_offset, double x_offset,string name, string debug_reference_frame)
+geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double z_offset, double x_offset,string name, string debug_reference_frame)
 {
 	geometry_msgs::Quaternion rosq;
 	geometry_msgs::Vector3 translationRos;
@@ -76,9 +83,9 @@ geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_off
 	rosq.x = simq[1];
 	rosq.y = simq[2];
 	rosq.z = simq[3];
-	translationRos.x = 0.3+x_offset;
-	translationRos.y = -1+y_offset;
-	translationRos.z = 1;
+	translationRos.x = -0.6+x_offset;
+	translationRos.y = 1.0;
+	translationRos.z = -1+z_offset;
 	std_msgs::Header h;
 	h.frame_id = debug_reference_frame;
 	h.stamp = ros::Time::now();
@@ -91,7 +98,7 @@ geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double y_off
 
 geometry_msgs::TransformStamped  publish_tf(SimTK::Rotation R, double y_offset, double x_offset,string name, string debug_reference_frame)
 {
-	ROS_WARN_STREAM("im going to publish this tf:\n"<< name <<"\n"<<R);
+	ROS_DEBUG_STREAM("im going to publish this tf:\n"<< name <<"\n"<<R);
 	SimTK::Quaternion simq = R.convertRotationToQuaternion();
 
 return publish_tf(simq, y_offset, x_offset, name,debug_reference_frame);
@@ -108,7 +115,7 @@ SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
     //my trusty calculator (https://www.andre-gaschler.com/rotationconverter/) tells me that this is in fact a zyx euler rotation.
     auto R_GoGiX = Rotation(SimTK::BodyOrSpaceType::SpaceRotationSequence, xRad,
                       SimTK::XAxis, yRad, SimTK::YAxis, zRad, SimTK::ZAxis);
-    ROS_WARN_STREAM("ground orientation matrix:\n" << R_GoGiX);
+    ROS_DEBUG_STREAM("ground orientation matrix:\n" << R_GoGiX);
     return R_GoGiX;
 }
 
@@ -156,18 +163,18 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
 	auto inverseq0_rotation_matrix = ~Rotation(q0);
 
-	//ROS_INFO_STREAM("inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix);
+	ROS_INFO_STREAM(cyan << "inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix<<reset);
         const auto base_R = R_GoGi2 * Rotation(q0);
         //const auto base_R = R_GoGi2 * ~Rotation(q0);
 
-	if (false)
+	if (true)
 	{
 	tb.sendTransform(publish_tf(R_GoGi2,0.3,.1,"R_GoGi2",debug_reference_frame));
 	tb.sendTransform(publish_tf(~R_GoGi2,0.3,0.15,"R_GoGi2_inverse",debug_reference_frame));
 	tb.sendTransform(publish_tf(R_GoGi1,0.35,.1,"R_GoGi1",debug_reference_frame));
 	tb.sendTransform(publish_tf(~R_GoGi1,0.35,0.15,"R_GoGi1_inverse",debug_reference_frame));
-	tb.sendTransform(publish_tf(q0,0.2,.1,"just_q0",debug_reference_frame));
-	tb.sendTransform(publish_tf(inverseq0_rotation_matrix,0.2,.15,"q0_inverse",debug_reference_frame));
+	tb.sendTransform(publish_tf(q0,0.2,.1,"just_q0_base",debug_reference_frame));
+	tb.sendTransform(publish_tf(inverseq0_rotation_matrix,0.2,.15,"q0_inverse_base",debug_reference_frame));
 	}
         //const SimTK::Rotation base_R = ~Rotation(q0);
 
@@ -192,6 +199,8 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         const SimTK::Transform& baseXForm =
                 baseFrame->getTransformInGround(state);
         Vec3 baseFrameXInGround = baseXForm.xformFrameVecToBase(baseFrameX);
+	
+	ROS_WARN_STREAM("baseFrameXInGround" << baseFrameXInGround);
 
         // compute the angular difference between the model heading and imu
         // heading
@@ -238,7 +247,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
         if (xproduct.get(1) > 0) { angularDifference *= -1; }
 
-	ROS_INFO_STREAM("angularDifference: " << angularDifference << " (" << angularDifference/3.14159205*180.0);
+	ROS_WARN_STREAM("angularDifference: " << angularDifference << " ( " << angularDifference/3.14159205*180.0 <<")");
         // set heading rotation (rotation about Y axis)
         R_heading = Rotation(angularDifference , SimTK::YAxis);
     
@@ -433,13 +442,13 @@ const std::string reset("\033[0m");
     	staticPoseQuaternions = impl->computeAvgStaticPose();
     }
     //let's compare the results:
-    ROS_INFO_STREAM("\n===== Calibration results ============");
+    ROS_DEBUG_STREAM("\n===== Calibration results ============");
     for (int i=0;i<old_avg_response_list.size(); i++)
     {
-	ROS_INFO_STREAM("\nOLD:" <<old_avg_response_list[i] <<
+	ROS_DEBUG_STREAM("\nOLD:" <<old_avg_response_list[i] <<
 			"\nNEW;" <<staticPoseQuaternions[i]);
     }
-    ROS_INFO_STREAM("\n===== End of calibration results =====");
+    ROS_DEBUG_STREAM("\n===== End of calibration results =====");
 }
 void IMUCalibrator::setMethod(bool method) {
 	ROS_INFO_STREAM("setting calibration method");

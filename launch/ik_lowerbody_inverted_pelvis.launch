@@ -23,14 +23,14 @@
 		<!-- OK, this is confusing as hell-->
 		<!-- however tf_frame_prefix is the source of tf, either imu or ar right now, that will be put before the name so we can have both of these at the same time. they could be shared, i think in the future, but this is more flexible.-->
 		
-		<param name="tf_frame_prefix" 		value="imu/h0" />
+		<param name="tf_frame_prefix" 		value="imu" />
 		
 		<param name="imu_direction_axis" 		value="-z" />
 		<param name="imu_ground_rotation_x1" 		value="-90" />
 		<param name="imu_ground_rotation_y1" 		value="0" />
 		<param name="imu_ground_rotation_z1" 		value="0" />
 		<param name="imu_ground_rotation_x2" 		value="-90" />
-		<param name="imu_ground_rotation_y2" 		value="0" />
+		<param name="imu_ground_rotation_y2" 		value="-90" />
 		<param name="imu_ground_rotation_z2" 		value="0" />
 		<param name="rate" 				value="$(arg freq)" />
 		<param name="logger_filename_ik" 		value="_ik_lower" />
@@ -41,7 +41,7 @@
 		<remap from="output_filtered" 	to="/ik/output_filtered"/>
 		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
 		<param name="use_external_average_calibration_method" value="false"/>
-		<param name="debug_reference_frame" 		value="map"/>
+		<param name="debug_reference_frame" 		value="opensim_default_frame"/>
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />
 		<param name="memory" 			value="35" />

@@ -157,81 +157,49 @@ Visualization Manager:
         ik/torso_imu:
           Value: false
         imu/femur_l:
-          Value: false
-        imu/femur_l_0:
-          Value: false
-        imu/femur_l_cal:
-          Value: false
-        imu/femur_r:
-          Value: false
-        imu/femur_r_0:
-          Value: false
-        imu/femur_r_cal:
-          Value: false
-        imu/h0/femur_l:
-          Value: false
-        imu/h0/femur_r:
-          Value: false
-        imu/h0/pelvis:
           Value: true
-        imu/h0/talus_l:
-          Value: false
-        imu/h0/talus_r:
-          Value: false
-        imu/h0/tibia_l:
-          Value: false
-        imu/h0/tibia_r:
-          Value: false
-        imu/h0/torso:
-          Value: false
+        imu/femur_l_0:
+          Value: true
+        imu/femur_r:
+          Value: true
+        imu/femur_r_0:
+          Value: true
         imu/pelvis:
-          Value: false
+          Value: true
         imu/pelvis_0:
           Value: true
-        imu/pelvis_cal:
-          Value: false
         imu/talus_l:
-          Value: false
+          Value: true
         imu/talus_l_0:
-          Value: false
-        imu/talus_l_cal:
-          Value: false
+          Value: true
         imu/talus_r:
-          Value: false
+          Value: true
         imu/talus_r_0:
-          Value: false
-        imu/talus_r_cal:
-          Value: false
+          Value: true
         imu/tibia_l:
-          Value: false
+          Value: true
         imu/tibia_l_0:
-          Value: false
-        imu/tibia_l_cal:
-          Value: false
+          Value: true
         imu/tibia_r:
-          Value: false
+          Value: true
         imu/tibia_r_0:
-          Value: false
-        imu/tibia_r_cal:
-          Value: false
+          Value: true
         imu/torso:
           Value: false
         imu/torso_0:
           Value: false
-        imu/torso_cal:
-          Value: false
         imu_default_frame:
           Value: false
-        just_q0:
-          Value: false
+        just_q0_base:
+          Value: true
         map:
           Value: false
         opensim_default_frame:
           Value: false
         pelvis:
           Value: false
-        q0_inverse:
-          Value: false
+        q0_inverse_base:
+          Value: true
         ro_femur_l:
           Value: false
         ro_femur_r:
@@ -248,7 +216,7 @@ Visualization Manager:
           Value: false
         ro_torso:
           Value: false
-        subject_adds_heading2:
+        subject_heading:
           Value: true
         talus_l:
           Value: false
@@ -264,62 +232,14 @@ Visualization Manager:
           Value: false
         wtf_base_measured:
           Value: false
-        wtf_base_measured0:
-          Value: false
-        wtf_base_measured1:
-          Value: false
-        wtf_base_measured2:
-          Value: false
-        wtf_base_measured3:
-          Value: false
-        wtf_base_measured4:
-          Value: false
-        wtf_base_measured5:
-          Value: false
-        wtf_base_measured6:
-          Value: false
       Marker Alpha: 1
-      Marker Scale: 1
+      Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
         map:
-          R_GoGi1:
-            {}
-          R_GoGi1_inverse:
-            {}
-          R_GoGi2:
-            {}
-          R_GoGi2_inverse:
-            {}
-          R_heading:
-            {}
-          R_heading0:
-            {}
-          R_heading1:
-            {}
-          R_heading2:
-            {}
-          R_heading3:
-            {}
-          R_heading4:
-            {}
-          R_heading5:
-            {}
-          R_heading6:
-            {}
-          R_heading7:
-            {}
-          R_heading8:
-            {}
-          R_heading9:
-            {}
-          femur_l:
-            {}
-          femur_r:
-            {}
           ik/pelvis:
             ik/femur_l_f1:
               ik/femur_l_f2:
@@ -362,126 +282,112 @@ Visualization Manager:
                     {}
           ik/subject_opensim:
             {}
-          imu/femur_l:
-            {}
-          imu/femur_l_0:
-            {}
-          imu/femur_l_cal:
-            {}
-          imu/femur_r:
-            {}
-          imu/femur_r_0:
-            {}
-          imu/femur_r_cal:
-            {}
-          imu/h0/femur_l:
-            {}
-          imu/h0/femur_r:
-            {}
-          imu/h0/pelvis:
-            {}
-          imu/h0/talus_l:
-            {}
-          imu/h0/talus_r:
-            {}
-          imu/h0/tibia_l:
-            {}
-          imu/h0/tibia_r:
-            {}
-          imu/h0/torso:
-            {}
-          imu/pelvis:
-            {}
-          imu/pelvis_0:
-            {}
-          imu/pelvis_cal:
-            {}
-          imu/talus_l:
-            {}
-          imu/talus_l_0:
-            {}
-          imu/talus_l_cal:
-            {}
-          imu/talus_r:
-            {}
-          imu/talus_r_0:
-            {}
-          imu/talus_r_cal:
-            {}
-          imu/tibia_l:
-            {}
-          imu/tibia_l_0:
-            {}
-          imu/tibia_l_cal:
-            {}
-          imu/tibia_r:
-            {}
-          imu/tibia_r_0:
-            {}
-          imu/tibia_r_cal:
-            {}
-          imu/torso:
-            {}
-          imu/torso_0:
-            {}
-          imu/torso_cal:
-            {}
           imu_default_frame:
             {}
-          just_q0:
-            {}
           opensim_default_frame:
-            {}
-          pelvis:
-            {}
-          q0_inverse:
-            {}
-          ro_femur_l:
-            {}
-          ro_femur_r:
-            {}
-          ro_pelvis:
-            {}
-          ro_talus_l:
-            {}
-          ro_talus_r:
-            {}
-          ro_tibia_l:
-            {}
-          ro_tibia_r:
-            {}
-          ro_torso:
-            {}
-          subject_adds_heading2:
-            {}
-          talus_l:
-            {}
-          talus_r:
-            {}
-          tibia_l:
-            {}
-          tibia_r:
-            {}
-          torso:
-            {}
-          wtf_base:
-            {}
-          wtf_base_measured:
-            {}
-          wtf_base_measured0:
-            {}
-          wtf_base_measured1:
-            {}
-          wtf_base_measured2:
-            {}
-          wtf_base_measured3:
-            {}
-          wtf_base_measured4:
-            {}
-          wtf_base_measured5:
-            {}
-          wtf_base_measured6:
-            {}
+            R_GoGi1:
+              {}
+            R_GoGi1_inverse:
+              {}
+            R_GoGi2:
+              {}
+            R_GoGi2_inverse:
+              {}
+            R_heading:
+              {}
+            R_heading0:
+              {}
+            R_heading1:
+              {}
+            R_heading2:
+              {}
+            R_heading3:
+              {}
+            R_heading4:
+              {}
+            R_heading5:
+              {}
+            R_heading6:
+              {}
+            R_heading7:
+              {}
+            R_heading8:
+              {}
+            R_heading9:
+              {}
+            femur_l:
+              {}
+            femur_r:
+              {}
+            just_q0_base:
+              {}
+            pelvis:
+              {}
+            q0_inverse_base:
+              {}
+            ro_femur_l:
+              {}
+            ro_femur_r:
+              {}
+            ro_pelvis:
+              {}
+            ro_talus_l:
+              {}
+            ro_talus_r:
+              {}
+            ro_tibia_l:
+              {}
+            ro_tibia_r:
+              {}
+            ro_torso:
+              {}
+            talus_l:
+              {}
+            talus_r:
+              {}
+            tibia_l:
+              {}
+            tibia_r:
+              {}
+            torso:
+              {}
+            wtf_base:
+              {}
+            wtf_base_measured:
+              {}
+          subject_heading:
+            imu/femur_l:
+              {}
+            imu/femur_l_0:
+              {}
+            imu/femur_r:
+              {}
+            imu/femur_r_0:
+              {}
+            imu/pelvis:
+              {}
+            imu/pelvis_0:
+              {}
+            imu/talus_l:
+              {}
+            imu/talus_l_0:
+              {}
+            imu/talus_r:
+              {}
+            imu/talus_r_0:
+              {}
+            imu/tibia_l:
+              {}
+            imu/tibia_l_0:
+              {}
+            imu/tibia_r:
+              {}
+            imu/tibia_r_0:
+              {}
+            imu/torso:
+              {}
+            imu/torso_0:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/Marker
@@ -489,10 +395,7 @@ Visualization Manager:
       Marker Topic: /ik/femur_l/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -511,10 +414,7 @@ Visualization Manager:
       Marker Topic: /ik/torso/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -522,10 +422,7 @@ Visualization Manager:
       Marker Topic: /ik/femur_r/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -533,10 +430,7 @@ Visualization Manager:
       Marker Topic: /ik/talus_l/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -544,10 +438,7 @@ Visualization Manager:
       Marker Topic: /ik/talus_r/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -555,10 +446,7 @@ Visualization Manager:
       Marker Topic: /ik/tibia_l/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -566,10 +454,7 @@ Visualization Manager:
       Marker Topic: /ik/tibia_r/wtfh/visualization_marker
       Name: Marker
       Namespaces:
-        heading_imu_at_zero: true
-        heading_imu_measured: true
-        heading_imu_measured_projected: true
-        heading_os_default: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -600,7 +485,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.7477831840515137
+      Distance: 2.0013153553009033
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -608,17 +493,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.08858665078878403
-        Y: 0.01815062388777733
-        Z: 0.3654143214225769
+        X: 0.04529247060418129
+        Y: 0.06079348549246788
+        Z: 0.4458106458187103
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7247912883758545
+      Pitch: 0.4397905170917511
       Target Frame: <Fixed Frame>
-      Yaw: 4.798590660095215
+      Yaw: 6.223586082458496
     Saved: ~
 Window Geometry:
   Displays:

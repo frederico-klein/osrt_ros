@@ -40,7 +40,7 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 	nh.param<std::string>("opensim_base_default_frame",opensim_base_default_frame_name, "opensim_default_frame");
 	nh.param<std::string>("imu_heading_axis",imu_heading_axis, "-z");
 	nh.param<std::string>("imu_base_measured_frame",imu_base_measured_frame_name, "ik/pelvis_imu_raw");
-	nh.param<std::string>("added_heading_frame",added_heading_frame_name, "subject_adds_heading2");
+	nh.param<std::string>("heading_frame",heading_reference_frame, "subject_heading");
 	nh.param<std::string>("parent_frame", parent_frame_name, "map");
 	std::vector<double> origin_{0,0,0};
 	nh.param("origin", origin_, {0,0,0});
@@ -56,7 +56,7 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 	//we should normalize and choose a color here. also publish it here probably.
 
 	heading = get_vect_param(nh,"heading", {0,0,-1});
-	opensim_heading = get_vect_param(nh,"opensim_heading", {0,1,0});
+	opensim_heading = get_vect_param(nh,"opensim_heading", {1,0,0});
 
 	nh.param<bool>("flip_sign",flip_sign,false);
 	nh.param<double>("angle_offset",angle_offset,0.0);
@@ -67,7 +67,10 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 
 	nh.param<bool>("is_base_body",is_base_body,false);
 
-		if(is_base_body)
+
+	//why?
+	nh.param<bool>("subscribe_to_external_heading_topic",subscribe_to_external_heading_topic,false);
+		if(subscribe_to_external_heading_topic)
 			heading_angle_subscriber = n.subscribe("/ik/heading_angle",1, &ExternalHeading::callback, this);
 	
 
@@ -92,7 +95,7 @@ void ExternalHeading::callback(std_msgs::Float64 msg )
 		geometry_msgs::TransformStamped heading_tf;
 		heading_tf.header.stamp = ros::Time::now();
 		heading_tf.header.frame_id = parent_frame_name;
-		heading_tf.child_frame_id = added_heading_frame_name;
+		heading_tf.child_frame_id = heading_reference_frame;
 
 		heading_tf.transform.translation.x = origin.x;
 		heading_tf.transform.translation.y = origin.y;
@@ -103,7 +106,7 @@ void ExternalHeading::callback(std_msgs::Float64 msg )
 	}
 	catch(tf2::TransformException &ex) 
 	{
-			ROS_WARN_STREAM("oops:" << ex.what());
+			ROS_ERROR_STREAM("Error trying to send a tf\noops:" << ex.what());
 	}
 
 
@@ -217,10 +220,10 @@ double angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vector3 b)
 	tf::Vector3 A{a.x,a.y,a.z};
 	tf::Vector3 B{b.x,b.y,b.z};
 
-	ROS_INFO_STREAM(green << "\na:" << a << "\nb:" << b);
+	ROS_DEBUG_STREAM(green << "\na:" << a << "\nb:" << b);
 
 	double result = tf::tfAngle(A,B);
-	ROS_INFO_STREAM(yellow << "resuts:" << reset << result);
+	ROS_DEBUG_STREAM(yellow << "results:" << reset << result);
 	return result;
 }
 
@@ -321,7 +324,9 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		*/
 		geometry_msgs::TransformStamped imu_default_frame = tfBuffer.lookupTransform(parent_frame_name, imu_default_frame_name, ros::Time(0));
 		geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(parent_frame_name, opensim_base_default_frame_name, ros::Time(0));
-		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(parent_frame_name, imu_base_measured_frame_name, ros::Time(0));
+		
+
+		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(heading_reference_frame, imu_base_measured_frame_name, ros::Time(0));
 
 		
 
@@ -357,6 +362,11 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		std_msgs::Float64 h_msg;
 		h_msg.data = heading_angle;
 		heading_angle_publisher.publish(h_msg);
+		if (is_base_body)
+		{
+			ROS_WARN_STREAM_ONCE("I am using a weird loopback thing to publish this TF, it was easier this way, please change me!");
+			callback(h_msg);
+		}
 
 	}
 	catch(tf2::TransformException &ex) 
