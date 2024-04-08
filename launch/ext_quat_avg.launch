@@ -36,7 +36,7 @@
 			<remap to="/ik/$(arg imu_body)/heading_angle"					from="/heading_angle"/>
 			<param name="angle_offset" value="0"/>
 			<param name="flip_sign" value="false"/>
-			<param name="bypass_everything" value="true"/>
+			<param name="bypass_everything" value="false"/>
 			<param name="angle_manual" value="0"/>
 			
 			<param name="run_as_service" value="$(arg run_as_service)"/>

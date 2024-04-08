@@ -17,11 +17,11 @@ timeout_time = 60
 
 for a_file in sto_files:
     print(a_file)
-    if True and "02_ruoli" in a_file:
+    if False and "02_ruoli" in a_file:
         print("skipped")
         continue
 
-    if False and not "2023-03-03-11-56-24walking012_imus_lower" in a_file:
+    if True and not "2023-03-03-11-56-24walking012_imus_lower" in a_file:
         print("skipped")
         continue
     

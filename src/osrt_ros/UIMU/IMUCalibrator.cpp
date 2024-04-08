@@ -317,7 +317,9 @@ void IMUCalibrator::calibrateIMUTasks(
 
 	//if (i==baseBodyIndex)
 		RR = R_heading;
-        const auto R_BS = RR * ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
+	const auto R_BS = RR * ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
+        //const auto R_BS = ~imuBodiesInGround[bodyName]* RR * R0; // ~R_GB * R_GO
+        //const auto R_BS = ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
     
 	tb.sendTransform(publish_tf(R_BS,0.1*i+0.5,0.4,bodyName,debug_reference_frame));
     	

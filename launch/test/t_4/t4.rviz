@@ -191,7 +191,7 @@ Visualization Manager:
         imu_default_frame:
           Value: false
         just_q0_base:
-          Value: true
+          Value: false
         map:
           Value: false
         opensim_default_frame:
@@ -199,7 +199,7 @@ Visualization Manager:
         pelvis:
           Value: false
         q0_inverse_base:
-          Value: true
+          Value: false
         ro_femur_l:
           Value: false
         ro_femur_r:
@@ -501,9 +501,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4397905170917511
+      Pitch: 0.7697967290878296
       Target Frame: <Fixed Frame>
-      Yaw: 6.223586082458496
+      Yaw: 4.7285847663879395
     Saved: ~
 Window Geometry:
   Displays:
@@ -521,5 +521,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1023
-  X: 0
-  Y: 250
+  X: 2474
+  Y: 337

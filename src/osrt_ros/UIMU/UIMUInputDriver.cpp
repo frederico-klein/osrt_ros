@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "osrt_ros/UIMU/TfServer.h"
 #include "osrt_ros/UIMU/CometaServer.h"
@@ -44,7 +45,14 @@ UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, c
 		}
 		ROS_INFO_STREAM("Using observationOrder of:" << wholeObservationOrderStr);
 		ROS_INFO_STREAM("Using tf_frame_prefix: " << tf_frame_prefix);
-		server = new TfServer(imuObservationOrder, tf_frame_prefix);	
+		server = new TfServer(imuObservationOrder, tf_frame_prefix);
+		ros::NodeHandle nh("~");
+		std::string world_tf_reference;
+		nh.param<std::string>("imu_tf_world_reference", world_tf_reference, "/map");
+		//fffs
+		auto bbb = dynamic_cast<TfServer*>(server);
+		bbb->set_world_reference(world_tf_reference);
+		
 	}
 
 // i maybe want to start the server!
