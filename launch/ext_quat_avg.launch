@@ -38,7 +38,7 @@
 			<remap to="/ik/$(arg imu_body)/heading_angle"					from="/heading_angle"/>
 			<!-- FFS there is a -90 degree offset now for some reason, but to make it work, we are going to need to set it to zero and fix this in code! -->
 			<!-- param name="angle_offset" value="-90"/ -->
-			<param name="angle_offset" value="-90"/>
+			<param name="angle_offset" value="0"/>
 			<param name="flip_sign" value="false"/>
 			<param name="bypass_everything" value="false"/>
 			<param name="angle_manual" value="0"/>

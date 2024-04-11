@@ -62,7 +62,7 @@ class VectorWithLikeAPointOfApplicationThingy
 		this->v.z-= vv.v.z;
 		return *this;
 }
-	geometry_msgs::Vector3 getAsVector()
+	geometry_msgs::Vector3 getAsVector() //this feels wrong
 		{
 			geometry_msgs::Vector3 fullV=v;
 			fullV.x+=p.x;
@@ -70,6 +70,14 @@ class VectorWithLikeAPointOfApplicationThingy
 			fullV.z+=p.z;
 			return fullV;
 		}
+	/*geometry_msgs::Vector3 getAsDisplacedVector()
+		{
+			geometry_msgs::Vector3 fullV=v;
+			fullV.x+=p.x;
+			fullV.y+=p.y;
+			fullV.z+=p.z;
+			return fullV;
+		}*/
 };
 
 class ExternalHeading

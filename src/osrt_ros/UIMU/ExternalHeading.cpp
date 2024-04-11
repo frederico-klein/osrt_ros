@@ -78,6 +78,9 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 }
 void ExternalHeading::callback(std_msgs::Float64 msg )
 {
+		int n = heading_angle_publisher.getNumSubscribers();
+		if(n>0)
+			ROS_INFO_STREAM(magenta <<"im publishing" << imu_base_measured_frame_name << " "  << msg.data*180/3.141592 <<" to " <<n <<" Subscribers." );
 
 	send_a_heading_to_tf(msg.data, heading_reference_frame);
 
@@ -86,7 +89,6 @@ void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string hea
 {
 	try
 	{
-		ROS_INFO_STREAM(magenta <<"im publi" << imu_base_measured_frame_name << " "  << heading_angle*180/3.141592 );
 		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
 	geometry_msgs::PoseStamped heading_pose;
 		heading_pose.header.stamp = ros::Time::now();
@@ -226,7 +228,7 @@ double angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vector3 b)
 	tf::Vector3 A{a.x,a.y,a.z};
 	tf::Vector3 B{b.x,b.y,b.z};
 
-	ROS_DEBUG_STREAM(green << "\na:" << a << "\nb:" << b);
+	ROS_INFO_STREAM_ONCE(green << "\na:" << a << "\nb:" << b);
 
 	double result = tf::tfAngle(A,B);
 	ROS_DEBUG_STREAM(yellow << "results:" << reset << result);
@@ -266,7 +268,8 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	debug_markers.push_back(m);
 	debug_point = vector_to_point(imu_heading_axis_vector);
 
-	auto m_zero = getArrowForVector("heading_zero_zero", heading_os_default.getAsVector(), origin);
+	auto m_zero = getArrowForVector("heading_zero_zero", heading_os_default.v, origin);
+	debug_markers.push_back(m_zero);
 	//this is spaghetti, it needs to be based on the difference
 	//TODO: make some class so that this will make sense
 	//
@@ -316,7 +319,7 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 
 	//debug_markers.push_back(getArrowForVector("heading_imu_measured_normal", heading_imu_measured - projected_measured_heading,measure_ori ));
 
-	return angle_between_vectors(projected_measured_heading.v,heading_os_default.v);
+//	return angle_between_vectors(projected_measured_heading.v,heading_os_default.v);
 }
 
 geometry_msgs::PoseStamped ExternalHeading::calibrate()
@@ -347,19 +350,19 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
 		if (abs(angle_offset) > 0.1 )
 		{
-			ROS_WARN_STREAM("adding "<< angle_offset <<" degrees, because maybe, idk");
+			ROS_WARN_STREAM_ONCE("adding "<< angle_offset <<" degrees, because maybe, idk");
 			heading_angle += 3.14159265/180*angle_offset;
 		}
 		if (flip_sign)
 		{
-			ROS_WARN_STREAM("FLIPPING SIGN");
+			ROS_WARN_STREAM_ONCE("FLIPPING SIGN");
 			heading_angle *= -1;
 		}
 		if (bypass_everything)
 		{
 				heading_angle = 3.14159265/180*angle_manual;
-				ROS_WARN_STREAM("BYPASSING EVERYTHING!!!!\n");
-				ROS_WARN_STREAM(magenta <<"BYPASSING EVERYTHING!!!!");
+ROS_WARN_STREAM_ONCE("BYPASSING EVERYTHING!!!!\n");
+				ROS_WARN_STREAM_ONCE(magenta <<"BYPASSING EVERYTHING!!!!");
 		}
 		///////////////////////////////////////////////////
 		///////////////////////////////////////////////////

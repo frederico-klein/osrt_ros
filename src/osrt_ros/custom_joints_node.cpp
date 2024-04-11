@@ -32,19 +32,20 @@ class OpenSimBaseTfPublisher
 		OpenSimBaseTfPublisher()
 		{
 			ros::NodeHandle nh("~");
-			nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
+			nh.param<std::string>("opensim_parent_base_frame", opensim_parent_base_frame, "map");
+
 			nh.param<std::string>("opensim_frame", opensim_frame, "subject_opensim");
-			opensim_rotation.w = 0.5;
-			opensim_rotation.x = 0.5;
-			opensim_rotation.y = 0.5;
-			opensim_rotation.z = 0.5;
-			t.header.frame_id = parent_base_frame;
+			opensim_rotation.w = 0.7071067811865476;
+			opensim_rotation.x = 0;
+			opensim_rotation.y = 0;
+			opensim_rotation.z = -0.7071067811865476;
+			t.header.frame_id = opensim_parent_base_frame;
 			t.child_frame_id = opensim_frame;
 			t.transform.rotation = opensim_rotation;
 			t.transform.translation = geometry_msgs::Vector3();
 
 		}
-		std::string parent_base_frame, opensim_frame;
+		std::string opensim_parent_base_frame, opensim_frame;
 		tf2_ros::StaticTransformBroadcaster tb;
 		geometry_msgs::Quaternion opensim_rotation;
 		geometry_msgs::TransformStamped t;
@@ -69,7 +70,7 @@ class qJointPublisher: public Ros::CommonNode
 		ros::NodeHandle nh("~");
 		chatter_pub = n.advertise<sensor_msgs::JointState>("joint_states", 2);
 		nh.param<std::string>("model_base_frame", model_base_frame, "model_base");
-		nh.param<std::string>("parent_base_frame", parent_base_frame, "map");
+		nh.param<std::string>("parent_base_frame", parent_base_frame, "subject_opensim");
 		nh.getParam("joint_mapping", RJointToOJoint);
 		for (auto el:RJointToOJoint)
 			names.push_back(el.first);

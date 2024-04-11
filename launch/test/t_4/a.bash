@@ -16,7 +16,7 @@ W2=(
 "roslaunch osrt_ros t43.launch "
 #### These to show the skeleton
 #"roslaunch osrt_ros t44.launch base_parent:=opensim_default_frame"
-"roslaunch osrt_ros t44.launch base_parent:=map"
+"roslaunch osrt_ros t44.launch"
 "roslaunch osrt_ros t45.launch "
 "roslaunch osrt_ros t46.launch bypass_heading_computation:=true heading_debug:=0 visualise:=false"
 

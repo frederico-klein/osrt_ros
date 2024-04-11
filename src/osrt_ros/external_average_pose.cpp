@@ -45,7 +45,7 @@ class ExternalAveragePosePublisher
 		ros::NodeHandle n;
 		ros::Subscriber heading_subscriber;
 		//ros::Subscriber imu_poses;
-		std::string body_frame, imu_cal_frame, imu_raw,  own_name, heading_reference_frame, heading_publication_frame;
+		std::string body_frame, imu_cal_frame, imu_raw,  own_name, heading_reference_frame, heading_publication_frame, jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj;
 		size_t num_samples = 10;
 		ros::Rate r;
 		tf2_ros::StaticTransformBroadcaster br;
@@ -62,6 +62,7 @@ class ExternalAveragePosePublisher
 		ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
 		nh.param<std::string>("imu_raw",imu_raw, "imu/pelvis");
 		nh.param<std::string>("imu_cal_frame",imu_cal_frame, "_imu");
+		nh.param<std::string>("so_many_heading_transformations",jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj, "ik/subject_opensim"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
 		nh.param<std::string>("heading_pub_frame",heading_publication_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
 		nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
 		nh.param<std::string>("imu_ref_frame",body_frame, "map");
@@ -169,8 +170,8 @@ class ExternalAveragePosePublisher
 			try
 			{
 
-				tf1Listener.waitForTransform("map",imu_raw+"_0",ros::Time(0), ros::Duration(10)); //it's either like this or the other way around i guess.
-				auto heading_transform = tfBuffer.lookupTransform("map",imu_raw+"_0",ros::Time(0)); //it's either like this or the other way around i guess.
+				tf1Listener.waitForTransform(jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj,imu_raw+"_0",ros::Time(0), ros::Duration(10)); //it's either like this or the other way around i guess.
+				auto heading_transform = tfBuffer.lookupTransform(jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj,imu_raw+"_0",ros::Time(0)); //it's either like this or the other way around i guess.
 
 
 				//this is for showing the urdf
