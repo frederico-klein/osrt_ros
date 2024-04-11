@@ -86,7 +86,7 @@ class ExternalHeading
 		ros::Publisher heading_angle_publisher;
 		ros::Subscriber heading_angle_subscriber;
 
-		std::string imu_default_frame_name, imu_heading_axis, imu_base_measured_frame_name, opensim_base_default_frame_name, heading_reference_frame, parent_frame_name;
+		std::string imu_default_frame_name, imu_heading_axis, imu_base_measured_frame_name, opensim_base_default_frame_name, heading_reference_frame, negative_heading_reference_frame, parent_frame_name;
 		tf2_ros::StaticTransformBroadcaster br;
 		tf2_ros::Buffer tfBuffer;
 		tf2_ros::TransformListener tfListener;
@@ -98,6 +98,7 @@ class ExternalHeading
 		double calculate_angle(geometry_msgs::Transform default_measure_frame, geometry_msgs::Transform measured_frame, geometry_msgs::Vector3 imu_heading_axis_vector);
 
 		void callback(std_msgs::Float64 msg);
+		void send_a_heading_to_tf(double heading_angle, std::string heading_frame_name );
 		geometry_msgs::PoseStamped calibrate();
 
 		visualization_msgs::Marker getArrowForVector(std::string name, geometry_msgs::Vector3, geometry_msgs::Point origin_);

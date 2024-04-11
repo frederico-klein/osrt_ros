@@ -25,15 +25,33 @@
 #include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "osrt_ros/UIMU/TfServer.h"
+#include "osrt_ros/UIMU/ImuSubscriberServer.h"
 #include "osrt_ros/UIMU/CometaServer.h"
 
 using namespace OpenSimRT;
 using namespace SimTK;
 
+
+
+enum server_code {
+	eTf,
+	eSubscriber,
+	eCometa,
+	eUnknown,
+};
+
+server_code hashit (std::string const& inString) {
+	if (inString == "cometa") return eCometa;
+	if (inString == "subscriber") return eSubscriber;
+	if (inString == "tf") return eTf;
+	return eUnknown;
+}
+
+
 //TODO: this is already threaded because ROS is threaded. Remove this thread. remove the table which just grown and no one reads, since you have it inside a thread!!!!!!!!!!!!!!!!
 
 UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, const std::string tf_frame_prefix, const double& sendRate)
-	: terminationFlag(false), rate(sendRate) {
+	: rate(sendRate), terminationFlag(false) {
 		ROS_INFO_STREAM("Starting UIMUInputDriver interface.");
 		imu_names = imuObservationOrder;
 		if (imuObservationOrder.size() == 0)
@@ -44,15 +62,57 @@ UIMUInputDriver::UIMUInputDriver(std::vector<std::string> imuObservationOrder, c
 			wholeObservationOrderStr+=imu_name+",";
 		}
 		ROS_INFO_STREAM("Using observationOrder of:" << wholeObservationOrderStr);
-		ROS_INFO_STREAM("Using tf_frame_prefix: " << tf_frame_prefix);
-		server = new TfServer(imuObservationOrder, tf_frame_prefix);
+
+
 		ros::NodeHandle nh("~");
 		std::string world_tf_reference;
 		nh.param<std::string>("imu_tf_world_reference", world_tf_reference, "/map");
-		//fffs
-		auto bbb = dynamic_cast<TfServer*>(server);
-		bbb->set_world_reference(world_tf_reference);
-		
+
+		//how to set enum though
+		std::string orientation_server_type;
+		nh.param<std::string>("orientation_server_type", orientation_server_type, "tf");
+
+		int server_type = hashit(orientation_server_type); 
+
+		switch (server_type){
+			//case tf_server
+			case eTf:
+				{
+					ROS_INFO_STREAM("Using tf_frame_prefix: " << tf_frame_prefix);
+					server = new TfServer(imuObservationOrder, tf_frame_prefix);
+					//i dont need this...
+					auto bbb = dynamic_cast<TfServer*>(server);
+					if (bbb)
+					{
+						bbb->set_world_reference(world_tf_reference);
+					}
+					break;
+				}
+				//case imusubscriber_server
+			case eSubscriber:
+				{	
+					ROS_INFO_STREAM("Using imu subscriber interface... ");
+					server = new ImuSubscriberServer();
+					auto ccc = dynamic_cast<ImuSubscriberServer*>(server);
+					if (ccc)
+					{
+						ccc->set_world_reference(world_tf_reference);
+					}
+					break;
+				}
+				//case cometa server
+			case eCometa:
+				{
+					ROS_ERROR("cometa interface not implemented");
+					break;
+				}
+			case eUnknown:
+				{
+					ROS_ERROR_STREAM("unknown server type:" << orientation_server_type);
+					break;
+
+				}
+		}
 	}
 
 // i maybe want to start the server!
@@ -95,7 +155,7 @@ void UIMUInputDriver::startListening() {
 					//time = table.getIndependentColumn()[i];
 					time = output[0];
 					SimTK::RowVector newFrame(output.size()-1); 
-					for (int j= 0; j<output.size()-1;j++)
+					for (size_t j= 0; j<output.size()-1;j++)
 						newFrame[j] = output[j+1];
 					frame =  newFrame;
 					//frame = table.getMatrix()[i];

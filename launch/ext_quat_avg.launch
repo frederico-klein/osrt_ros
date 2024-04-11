@@ -20,6 +20,7 @@
 			<param name="imu_ref_frame" value="$(arg tf_prefix)/$(arg imu_body)" />
 			<remap to="/ik/heading_angle"					from="/heading_angle"/>
 			<param name="heading_ref_frame" value="subject_heading" />
+			<param name="heading_pub_frame" value="subject_heading3" />
 			<!-- for positioning AR markers -->
 			<param name="use_marker_origin" value="false" />
 		</node>
@@ -30,11 +31,14 @@
 			<!--param name="parent_frame" value="map"/ -->
 			<param name="parent_frame" value="$(arg parent_frame)"/>
 			<param name="heading_frame" value="subject_heading"/>
+			<param name="negative_heading_frame" value="subject_negative_heading"/>
 			<rosparam param="origin">[0,0,0]</rosparam>	
 			<param name="heading"    type="yaml" value="$(arg heading)" />
 			<rosparam param="opensim_heading">[1,0,0]</rosparam>	
 			<remap to="/ik/$(arg imu_body)/heading_angle"					from="/heading_angle"/>
-			<param name="angle_offset" value="0"/>
+			<!-- FFS there is a -90 degree offset now for some reason, but to make it work, we are going to need to set it to zero and fix this in code! -->
+			<!-- param name="angle_offset" value="-90"/ -->
+			<param name="angle_offset" value="-90"/>
 			<param name="flip_sign" value="false"/>
 			<param name="bypass_everything" value="false"/>
 			<param name="angle_manual" value="0"/>

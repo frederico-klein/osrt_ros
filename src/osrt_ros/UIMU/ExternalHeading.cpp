@@ -41,6 +41,7 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 	nh.param<std::string>("imu_heading_axis",imu_heading_axis, "-z");
 	nh.param<std::string>("imu_base_measured_frame",imu_base_measured_frame_name, "ik/pelvis_imu_raw");
 	nh.param<std::string>("heading_frame",heading_reference_frame, "subject_heading");
+	nh.param<std::string>("negative_heading_frame",negative_heading_reference_frame, "subject_negative_heading");
 	nh.param<std::string>("parent_frame", parent_frame_name, "map");
 	std::vector<double> origin_{0,0,0};
 	nh.param("origin", origin_, {0,0,0});
@@ -75,13 +76,18 @@ ExternalHeading::ExternalHeading(): tfListener(tfBuffer)
 	
 
 }
-
 void ExternalHeading::callback(std_msgs::Float64 msg )
+{
+
+	send_a_heading_to_tf(msg.data, heading_reference_frame);
+
+}
+void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string heading_frame_name )
 {
 	try
 	{
-		ROS_INFO_STREAM(magenta <<"im publi" << imu_base_measured_frame_name << " "  << msg.data*180/3.141592 );
-		auto q_heading = tf::createQuaternionFromYaw(msg.data);
+		ROS_INFO_STREAM(magenta <<"im publi" << imu_base_measured_frame_name << " "  << heading_angle*180/3.141592 );
+		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
 	geometry_msgs::PoseStamped heading_pose;
 		heading_pose.header.stamp = ros::Time::now();
 		heading_pose.pose.position = origin;
@@ -95,7 +101,7 @@ void ExternalHeading::callback(std_msgs::Float64 msg )
 		geometry_msgs::TransformStamped heading_tf;
 		heading_tf.header.stamp = ros::Time::now();
 		heading_tf.header.frame_id = parent_frame_name;
-		heading_tf.child_frame_id = heading_reference_frame;
+		heading_tf.child_frame_id = heading_frame_name;
 
 		heading_tf.transform.translation.x = origin.x;
 		heading_tf.transform.translation.y = origin.y;
@@ -260,6 +266,7 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	debug_markers.push_back(m);
 	debug_point = vector_to_point(imu_heading_axis_vector);
 
+	auto m_zero = getArrowForVector("heading_zero_zero", heading_os_default.getAsVector(), origin);
 	//this is spaghetti, it needs to be based on the difference
 	//TODO: make some class so that this will make sense
 	//
@@ -365,7 +372,10 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		if (is_base_body)
 		{
 			ROS_WARN_STREAM_ONCE("I am using a weird loopback thing to publish this TF, it was easier this way, please change me!");
-			callback(h_msg);
+			//	callback(h_msg);
+			send_a_heading_to_tf(heading_angle,heading_reference_frame);
+			send_a_heading_to_tf(-heading_angle,negative_heading_reference_frame);
+
 		}
 
 	}

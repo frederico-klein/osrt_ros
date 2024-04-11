@@ -15,6 +15,12 @@
 
 	</group>
 
+	<!-- subject heading 3 with only offset so we can see what's going on. -->
+	<node pkg="tf" type="static_transform_publisher" name="subject_heading_for_imus" args="-1.1 1.4 0  0 0 0 subject_heading subject_heading3 10" />
+
+
+
+
 </launch>
 
 
