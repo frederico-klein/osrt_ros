@@ -1,7 +1,7 @@
 /**
- * @author      : frekle (frekle@bml01.mech.kth.se)
+ * @author      : osrruser1 (osrtusr1@docker)
  * @file        : events.cpp
- * @created     : Friday Mar 17, 2023 14:18:52 CET
+ * @date     : Friday Mar 17, 2023 14:18:52 CET
  */
 #include "osrt_ros/events.h"
 

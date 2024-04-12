@@ -1,7 +1,7 @@
 /**
- * @author      : $USER ($USER@cbe0486182c4)
- * @file        : parameters
- * @created     : Wednesday Jul 05, 2023 14:50:53 UTC
+ * @author      : $USER ($USER [at] cbe0486182c4)
+ * @file        : parameters.cpp
+ * @date     : Wednesday Jul 05, 2023 14:50:53 UTC
  */
 
 #include "osrt_ros/parameters.h"

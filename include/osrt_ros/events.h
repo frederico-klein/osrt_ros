@@ -1,7 +1,7 @@
 /**
- * @author      : frekle (frekle@bml01.mech.kth.se)
+ * @author      : osrtuser (osrtusr1@docker)
  * @file        : events.h
- * @created     : Friday Mar 17, 2023 11:37:23 CET
+ * @date     : Friday Mar 17, 2023 11:37:23 CET
  */
 
 #ifndef EVENTS_H17032023

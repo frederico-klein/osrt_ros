@@ -1,7 +1,7 @@
 /**
- * @author      : $USER ($USER@cbe0486182c4)
+ * @author      : $USER (osruser [at]cbe0486182c4)
  * @file        : parameters.h
- * @created     : Wednesday Jul 05, 2023 14:39:41 UTC
+ * @date     : Wednesday Jul 05, 2023 14:39:41 UTC
  */
 
 //this has to be moved to opensimrt_core so that bridge nodes can also use it. 

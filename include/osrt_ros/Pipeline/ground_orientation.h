@@ -1,7 +1,7 @@
 /**
- * @author      : $USER ($USER@f69d3dc1887d)
+ * @author      : $USER (osruser [at]f69d3dc1887d)
  * @file        : ground_orientation.h
- * @created     : Wednesday Jan 03, 2024 09:02:39 UTC
+ * @date     : Wednesday Jan 03, 2024 09:02:39 UTC
  */
 
 #ifndef GROUND_ORIENTATION_H

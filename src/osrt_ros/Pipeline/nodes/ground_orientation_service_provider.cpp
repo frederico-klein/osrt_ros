@@ -1,7 +1,7 @@
 /**
- * @author      : $USER ($USER@f69d3dc1887d)
- * @file        : ground_orientation_service_provider
- * @created     : Wednesday Jan 03, 2024 09:25:14 UTC
+ * @author      : $USER ($USER [at] f69d3dc1887d)
+ * @file        : ground_orientation_service_provider.cpp
+ * @date     : Wednesday Jan 03, 2024 09:25:14 UTC
  */
 
 #include "osrt_ros/Pipeline/ground_orientation.h"

@@ -119,7 +119,7 @@ tf::Quaternion ImuSubscriberServer::calculate_q_from_sensor(const sensor_msgs::I
 
 		//listener.lookupTransform(tf_name, world_tf_reference, ros::Time(0), transform); //flipped, new attempt to try to avoid -w
 	}
-	catch (tf::TransformException ex){
+	catch (tf::TransformException& ex){
 		ROS_ERROR("Transform exception! %s",ex.what());
 		ROS_FATAL("not implemented calculation from buffer!!!!!!!!");
 	}
@@ -194,14 +194,30 @@ std::vector<double> ImuSubscriberServer::readTopicsIntoOpensim(std::string an_im
 	//	ROS_INFO_STREAM("THIS THING" << i);
 	//ROS_INFO_STREAM("THIS THING:" << imu_data_vec.size());
 
-	ROS_ERROR("I don't know the positions! I am setting the IMU data vector for this imu, but it will be wrong");
-	imu_data_vec[5] = last_imu_message.angular_velocity.x;
-	imu_data_vec[6] = last_imu_message.angular_velocity.y;
-	imu_data_vec[7] = last_imu_message.angular_velocity.z;
+	//indexes of the fields can be seen in ./UIMUInputDriver.cpp
+	//ROS isn't very clear on IMUs, or wasnt at least in ROS1, 
+	//see https://answers.ros.org/question/255867/sensor_msgimu-format-specification/
+	//and
+	//https://github.com/ros-infrastructure/rep/pull/95
+	//
+	//apparently linear acceleration is just acceleration, i.e. it has gravity (linear acceleration is supposed to have gravity removes) this would maybe be okay if you always had orientation, but that is not the case and some algorithms use this same message with no orientation for imu_raw and then publish another one with orientation filled out from the results of either dead reckoning or a kalman filter type thing. whatever. 
+	//in this case here, i am going to use meaning it is just
+	//acceleration, i.e. this data will have gravity
+	//
+	//in the case of ximu3 you can set the ahrs to give you the actual linear acceleration values and if you want to be fancy, you have another node publishing the orientation, this way you would have everything albeit paying the cost of needing to run a bunch of nodes fdoing the kalman filter/dead reckoining computations on the host for each imu you have. 
+	//
+	//But all docs about this are rather old, this might have changed in ros2 and it's worth noting for migration
+	//
+	//tl,dr: linear_acceration field here is used to mean accelerometer raw values. This (it seems) is a common way of using sensor_msgs::Imu by the time this was written. 
+	//
+	imu_data_vec[5] = last_imu_message.linear_acceleration.x;
+	imu_data_vec[6] = last_imu_message.linear_acceleration.y;
+	imu_data_vec[7] = last_imu_message.linear_acceleration.z;
+	imu_data_vec[8] = last_imu_message.angular_velocity.x;
+	imu_data_vec[9] = last_imu_message.angular_velocity.y;
+	imu_data_vec[10] = last_imu_message.angular_velocity.z;
 
-	imu_data_vec[8] = last_imu_message.linear_acceleration.x;
-	imu_data_vec[9] = last_imu_message.linear_acceleration.y;
-	imu_data_vec[10] = last_imu_message.linear_acceleration.z;
+
 
 
 	return imu_data_vec;

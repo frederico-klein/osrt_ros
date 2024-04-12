@@ -18,7 +18,7 @@ Eigen::Vector4f quaternionAverage(std::vector<Eigen::Vector4f> quaternions)
 	// first build a 4x4 matrix which is the elementwise sum of the product of each quaternion with itself
 	Eigen::Matrix4f A = Eigen::Matrix4f::Zero();
 
-	for (int q=0; q<quaternions.size(); ++q)
+	for (size_t q=0; q<quaternions.size(); ++q)
 		A += quaternions[q] * quaternions[q].transpose();
 
 	// normalise with the number of quaternions
@@ -31,11 +31,11 @@ Eigen::Vector4f quaternionAverage(std::vector<Eigen::Vector4f> quaternions)
 	Eigen::MatrixXf U = svd.matrixU();
 
 	// find the eigen vector corresponding to the largest eigen value
-	int largestEigenValueIndex;
+	int largestEigenValueIndex = -1; //removes a warning
 	float largestEigenValue;
 	bool first = true;
 
-	for (int i=0; i<singularValues.rows(); ++i)
+	for (int i=0; i<singularValues.rows(); ++i) //not even eigen is consistent with this...
 	{
 		if (first)
 		{

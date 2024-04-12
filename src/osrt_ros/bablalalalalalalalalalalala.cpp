@@ -1,7 +1,7 @@
 /**
- * @author      : $USER ($USER@dbefbc0c19ed)
+ * @author      : $USER (osruser [at]dbefbc0c19ed)
  * @file        : some_tfs
- * @created     : Tuesday Nov 14, 2023 16:01:58 UTC
+ * @date     : Tuesday Nov 14, 2023 16:01:58 UTC
  */
 
 #include "geometry_msgs/Transform.h"
