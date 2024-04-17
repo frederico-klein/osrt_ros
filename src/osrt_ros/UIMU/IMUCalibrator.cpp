@@ -24,6 +24,8 @@
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
+#include "std_srvs/Empty.h"
+#include "std_srvs/EmptyRequest.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include <SimTKcommon/internal/CoordinateAxis.h>
@@ -49,6 +51,11 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
   	nhandle = ros::NodeHandle("~");
     	nhandle.param<string>("debug_reference_frame",debug_reference_frame,"map");
 	
+	ext_heading_srv = nhandle.serviceClient<std_srvs::Empty>("calibrate_heading");
+	for (auto imu_name:imuBodiesObservationOrder) //TODO: this can also be parallelised
+		{
+			calib_clients.push_back(nhandle.serviceClient<std_srvs::Empty>(imu_name+"/pose_average/calibrate_pose"));
+		}
 
 	R_heading = SimTK::Rotation();
     //why?
@@ -72,7 +79,11 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
                     frame->getTransformInGround(state).R(); // R_GB
         }
     }
+
+	auto nh = ros::NodeHandle("~");
+    	nh.param<bool>("send_start_signal_to_external_heading_calibrator",send_start_signal_to_external_heading_calibrator,true); //default should be false here.
 }
+
 
 geometry_msgs::TransformStamped  publish_tf(SimTK::Quaternion simq, double z_offset, double x_offset,string name, string debug_reference_frame)
 {
@@ -153,7 +164,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
         // get initial measurement of base imu
 	//cout << baseBodyIndex << endl;
 	//ROS_DEBUG_STREAM("baseBodyIndex:" << baseBodyIndex );
-	for (int g= 0; g < staticPoseQuaternions.size();g++)
+	for (size_t g= 0; g < staticPoseQuaternions.size();g++)
 	{
 		//cout << staticPoseQuaternions[g] << endl;
 		ROS_DEBUG_STREAM("Quaternion for imu[" << g << "]" << staticPoseQuaternions[g]);
@@ -298,7 +309,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
 void IMUCalibrator::calibrateIMUTasks(
         vector<InverseKinematics::IMUTask>& imuTasks) {
-    for (int i = 0; i < staticPoseQuaternions.size(); ++i) {
+    for (size_t i = 0; i < staticPoseQuaternions.size(); ++i) {
 	ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         const auto& bodyName = imuTasks[i].body;
         
@@ -330,12 +341,32 @@ void IMUCalibrator::calibrateIMUTasks(
     }
 }
 
+void IMUCalibrator::calibrate_ext_signals_sender()
+{
+	std_srvs::Empty a;
+	ext_heading_srv.call(a);
+
+	// I also want to tell every service that they need to start acquiring poses and this needs to be non-blocking!QQ
+	ROS_INFO_STREAM("trying to send calibration signals to my fellas imu Quaternion pose average buddies");
+	for(auto a_calib_src:calib_clients)
+		a_calib_src.call(a);
+}
+
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
+if(send_start_signal_to_external_heading_calibrator)
+{
+	calibrate_ext_signals_sender();
+}
     impl->recordNumOfSamples(numSamples);
 	computeAvgStaticPoseCommon();
 }
 
 void IMUCalibrator::recordTime(const double& timeout) {
+if(send_start_signal_to_external_heading_calibrator)
+{
+	calibrate_ext_signals_sender();
+
+}
     impl->recordTime(timeout);
 	computeAvgStaticPoseCommon();
 }
@@ -445,7 +476,7 @@ const std::string reset("\033[0m");
     }
     //let's compare the results:
     ROS_DEBUG_STREAM("\n===== Calibration results ============");
-    for (int i=0;i<old_avg_response_list.size(); i++)
+    for (size_t i=0;i<old_avg_response_list.size(); i++)
     {
 	ROS_DEBUG_STREAM("\nOLD:" <<old_avg_response_list[i] <<
 			"\nNEW;" <<staticPoseQuaternions[i]);

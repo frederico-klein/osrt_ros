@@ -29,6 +29,7 @@
 #include "InverseKinematics.h"
 //#include "U?->NGIMUInputDriver.h"
 #include "Utils.h"
+#include "ros/service_client.h"
 #include "tf/transform_broadcaster.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -60,11 +61,16 @@ namespace OpenSimRT {
 			tf2_ros::TransformListener tfListener;
 			std::vector<ros::Publisher> pub;
 			ros::NodeHandle nhandle;
+			ros::ServiceClient ext_heading_srv;
+
 			std::string debug_reference_frame;
 			bool old_method_of_getting_averaged = false;
+			bool send_start_signal_to_external_heading_calibrator = false;
 			long baseBodyIndex;
 			//std::vector<ros::Subscriber> avg_pose_subs;
 
+			std::vector<ros::ServiceClient> calib_clients;
+			void calibrate_ext_signals_sender();
 			/**
 			 * Construct a calibrator object. The constructor uses the Type-Erasure
 			 * pattern/idiom that is based on automatic type deduction to remove the
@@ -92,7 +98,7 @@ namespace OpenSimRT {
 			SimTK::Rotation setGroundOrientationSeq(const double& xDegrees,
 					const double& yDegrees,
 					const double& zDegrees);
-			/**
+			/**0
 			 * Compute the transformation for the heading correction based on the
 			 * measurements acquired during the static phase.
 			 */
@@ -157,7 +163,7 @@ namespace OpenSimRT {
 
 			/**
 			 * Type erasure on imu InputDriver types. Erasure class. Automatic type
-			 * deduction of the driver's IMUData type <T>, allows any Input driver to be
+			 * deduction of the driver's IMUData type `<T>`, allows any Input driver to be
 			 * passed in the constructor.
 			 */
 			template <typename T> class DriverErasure : public DriverErasureBase {

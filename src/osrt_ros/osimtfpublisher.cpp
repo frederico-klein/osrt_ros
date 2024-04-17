@@ -1,6 +1,6 @@
 /**
  * @author      : $USER (osruser [at]dbefbc0c19ed)
- * @file        : some_tfs
+ * @file        : osimtfpublisher.cpp
  * @date     : Tuesday Nov 14, 2023 16:01:58 UTC
  */
 
@@ -9,13 +9,14 @@
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include <Actuators/Schutte1993Muscle_Deprecated.h>
+#include "Actuators/Schutte1993Muscle_Deprecated.h"
 #include <Common/Object.h>
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Rotation.h>
 #include <SimTKcommon/internal/State.h>
 #include <SimTKcommon/internal/Transform.h>
 #include <Simulation/Model/Model.h>
+#include <Simulation/Model/ModelVisualizer.h>
 #include <vector>
 #include "OpenSimUtils.h"
 #include "Actuators/Thelen2003Muscle.h"
@@ -46,11 +47,14 @@ class Osim_tf_publisher
 		{
 			ros::NodeHandle nh("~");
 			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-			nh.param<std::string>("model_file", modelFile, "");
+			std::string modelFile;
+			nh.param<std::string>("model_file", modelFile, "/catkin_ws/src/osrt_ros/simple");
 			ROS_INFO_STREAM("Using modelFile:" << modelFile);
-			//OpenSim::Object* muscleModel = new OpenSim::Schutte1993Muscle_Deprecated();
-			//OpenSim::Object::RegisterType(*muscleModel);
-			//OpenSim::Object::RegisterType(OpenSim::Thelen2003Muscle());
+			muscleModel = new OpenSim::Schutte1993Muscle_Deprecated();
+			OpenSim::Object::RegisterType(*muscleModel);
+			model.setUseVisualizer(true);
+			OpenSim::ModelVisualizer::addDirToGeometrySearchPaths("/srv/data/geometry_mobl");
+			model.setAllControllersEnabled(false);
 			model = OpenSim::Model(modelFile);
 			ROS_INFO_STREAM("created model okay");
 			//OpenSimRT::OpenSimUtils::removeActuators(model);
@@ -68,15 +72,18 @@ class Osim_tf_publisher
 			{
 				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
 			}
+			v = new SimTK::Vector(imuBodiesObservationOrder.size());
 		}
 		tf2_ros::TransformBroadcaster tf_broadcaster;
 
 		//lets load a model here
-		std::string modelFile;
 
 		OpenSim::Model model;	
+		OpenSim::Object* muscleModel;
 		SimTK::State state;
 		std::vector<std::string> imuBodiesObservationOrder;
+		SimTK::Vector *v;
+
 		std::string tf_frame_prefix;
 		void callback(const sensor_msgs::JointStateConstPtr msg)
 		{
@@ -84,11 +91,10 @@ class Osim_tf_publisher
 			std::map<std::string, SimTK::Transform> imuBodiesInGround;
 			if (model.isValidSystem())
 			{
-				SimTK::Vector v(msg->position.size());
 				for (int i=0;i<msg->position.size();i++)
 					v[i] =msg->position[i];
-				state.updQ() = v;	
-				model.realizePosition(state);
+				state.updQ() = (const SimTK::Vector)*v;	
+				//model.realizePosition(state);
 				//now publish the tfs, but they will be in opensim frame of reference
 				for (const auto& label : imuBodiesObservationOrder) {
 					const OpenSim::PhysicalFrame* frame = nullptr;
@@ -116,6 +122,8 @@ class Osim_tf_publisher
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "human_joint_state_publisher");
+			//OpenSim::Object::RegisterType(OpenSim::Thelen2003Muscle());
+
 
 	//something like imuBodiesObservation, but not really
 	Osim_tf_publisher op;

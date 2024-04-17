@@ -1,18 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<launch>
-	<arg name="freq" default="100"/>⏎
-	<arg name="run_with_imus" default="true" />
-	<arg name="load_urdf_model" default="true" />
-	<group ns="ik">
-		<node pkg="rviz" type="rviz" name="rviz2" args="-d $(find osrt_ros)/launch/test/t_4/t4.rviz"/>
-
-	</group>
-	
-	<node pkg="tf" type="static_transform_publisher" name="imu_default_orientation_publisher" args="0.5 0.3 0 -0.70711 0.0 0.0 0.70711 map imu_default_frame $(arg freq)" />
-	<!-- node pkg="tf" type="static_transform_publisher" name="t2_subject_heading1" args="1 0.6 0  0 0.70711 0.70711 0 map opensim_default_frame $(arg freq)" / -->
-	<node pkg="tf" type="static_transform_publisher" name="anti_opensim_frame_publisher" args="0.5 -0.3 0 0.5 0.5 0.5 -0.5 map anti_opensim_default_frame $(arg freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="opensim_frame_publisher" args="0.5 -0.3 0  0.5 0.5 0.5 0.5 anti_opensim_default_frame opensim_default_frame $(arg freq)" />
-
-</launch>
-
-
+rviz_heading_and_frames_inspection_and_heading_frames.launch

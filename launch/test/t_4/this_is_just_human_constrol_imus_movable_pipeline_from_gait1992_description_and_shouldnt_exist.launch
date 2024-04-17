@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="load_urdf_model" default="true" />
+	<group ns="ik">
+		<include file="$(find gait1992_description)/launch/human_control_imus_movable_pipeline.launch" if="$(arg load_urdf_model)">
+			<arg name="tf_prefix" value="ik"/>
+
+		</include>
+
+	</group>
+</launch>
+
+

@@ -171,3 +171,15 @@ target_link_libraries(external_average_quaternion_node
   ${catkin_LIBRARIES}
 )
 
+
+add_executable(o_node src/osrt_ros/osimtfpublisher.cpp)
+add_dependencies(o_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+target_link_libraries(o_node
+  ${catkin_LIBRARIES}
+  ${OpenSim_LIBRARIES}
+  ${opensimrt_LIBRARIES}
+)
+
+

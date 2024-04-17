@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<launch>
-	<arg name="load_urdf_model" default="true" />
-	<arg name="base_parent" default="ik/subject_opensim"/>
-	<group ns="ik">
-		<include file="$(find osrt_ros)/launch/custom_filtered.launch" if="$(arg load_urdf_model)">
-			<remap from="/joint_states" to="model_generic/joint_states"/>
-			<!-- arg name="base_parent" value="subject_adds_heading"/ -->
-			<arg name="base_parent" value="$(arg base_parent)"/>
-			<arg name="in_labels" value="/ik/outlabels"/>
-		</include>
-
-
-	</group>
-</launch>
-
-
+this_is_just_custom_filtered_and_shouldnt_exist.launch

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="run_with_imus" 			default="true" />
+	<arg name="visualise" 				default="true" />
+	<arg name="bypass_heading_computation" 		default="false"/>
+	<arg name="heading_debug"			default="0"/>
+	<include file="$(find osrt_ros)/launch/ik_lowerbody_inverted_pelvis.launch" if="$(arg run_with_imus)" >
+		<arg name="bypass_heading_computation" value="$(arg bypass_heading_computation)"/>
+		<arg name="heading_debug"		value="$(arg heading_debug)"/>
+		<arg name="visualise"			value="$(arg visualise)"/>
+		<arg name="tf_prefix" value="ik/" />
+		<!--arg name="tf_frame_prefix" value="imu" /-->
+		<remap from="/output_filtered" to="/ik/output_filtered"/>
+	</include>
+</launch>
+
+

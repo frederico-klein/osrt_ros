@@ -226,7 +226,7 @@ class UIMUnode: Ros::CommonNode
 		}
 		void clearLogger(TimeSeriesTable &t) //TODO: move it somewhere nice. maybe make loggers a wrapper class
 		{
-			for (int iii= 0; iii<t.getNumRows();iii++)
+			for (size_t iii= 0; iii<t.getNumRows();iii++)
 				t.removeRow(0);
 			if (t.getNumRows() == 0)
 				ROS_INFO_STREAM("logger cleared");

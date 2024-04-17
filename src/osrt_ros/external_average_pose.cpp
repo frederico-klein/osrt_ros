@@ -1,4 +1,5 @@
 #include "geometry_msgs/Point.h"
+#include "ros/forwards.h"
 #include "ros/init.h"
 #include "ros/rate.h"
 #include "ros/ros.h"
@@ -8,6 +9,7 @@
 #include "ros/service_client.h"
 #include "ros/spinner.h"
 #include "std_msgs/Float64.h"
+#include "std_srvs/Empty.h"
 #include "tf/LinearMath/Vector3.h"
 #include "tf/exceptions.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -169,13 +171,30 @@ class ExternalAveragePosePublisher
 
 		}
 
-		//service for calibration
-		void calibration_service()
+		void calib_blocking()
 		{
 			//clears poses
 			marker_poses.poses.clear();
 			is_calibrated = false;
 			// then assuming it is running on a loop, this is weird, maybe the loop should be inside the class (threaded?), idk...
+			add_pose_to_stack();
+			resolve_heading();
+
+
+		}
+
+		bool acquiring =false;
+		//service for calibration
+		bool calibrate_srv(std_srvs::EmptyRequest &req, std_srvs::EmptyResponse &res)
+		{
+			ROS_INFO_STREAM(".....ACQTOIJWGEOIJRIIIIING");
+			acquiring= true;
+			
+			if (false) //old blocking way, we dont need this
+			{
+				calib_blocking();
+			}
+			return true;
 		}
 
 
@@ -269,27 +288,65 @@ class ExternalAveragePosePublisher
  
  *
  */
+
+
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "external_average_pose_publisher", ros::init_options::AnonymousName);
 	ExternalAveragePosePublisher eApp;
-	ros::Rate r(100);
-	while(ros::ok())
+	ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
+	bool run_as_service;	
+	ros::Rate rr(100);
+	nh.param<bool>("run_as_service", run_as_service, true); // I was running this in a loop, but I am not sure it makes sense. I just want to calibrate it once and maybe when I have service calls, right?
+	if (run_as_service)
 	{
-		if(!eApp.is_calibrated )
+		ros::ServiceServer serv_calib = nh.advertiseService("calibrate_pose",&ExternalAveragePosePublisher::calibrate_srv, &eApp);
+		while(ros::ok())
 		{
-			eApp.add_pose_to_stack();
-		}
-		else
-		{
-			eApp.resolve_heading();
-			eApp.is_calibrated = false; // makes it run continuously
-			eApp.marker_poses.poses.clear();
+			if (eApp.acquiring)
+			{
+				if(!eApp.is_calibrated )
+				{
+					ROS_INFO_STREAM("adding service pose to stack");
+					eApp.add_pose_to_stack();
+				}
+				else
+				{
+					eApp.resolve_heading();
+					eApp.is_calibrated = false; 
+					eApp.acquiring = false;
+					eApp.marker_poses.poses.clear();
+					rr.sleep();
+					ros::spinOnce();
 
+				}
+			}
+			else
+			{
+				rr.sleep();
+				ros::spinOnce();
+			}
 		}
-		r.sleep();
-		ros::spinOnce();
 	}
+	else
+
+		while(ros::ok())
+		{
+			if(!eApp.is_calibrated )
+			{
+				eApp.add_pose_to_stack();
+			}
+			else
+			{
+				eApp.resolve_heading();
+				eApp.is_calibrated = false; // makes it run continuously
+				eApp.marker_poses.poses.clear();
+				rr.sleep();
+				ros::spinOnce();
+
+			}
+		}
 	return 0;
 }
 
