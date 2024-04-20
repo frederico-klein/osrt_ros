@@ -4,7 +4,7 @@
 	<arg name="run_with_imus" default="true" />
 	<arg name="run_as_service" default="true" />
 	<arg name="load_urdf_model" default="true" />
-	<arg name="sto_file" default="/catkin_ws/Data/02_ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_imus_lower.sto" />
+	<arg name="sto_file" default="/srv/host_data/02_ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_imus_lower.sto" />
 	<arg name="parent_frame" default="map"/>
 	<group ns="ik">
 		<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch">

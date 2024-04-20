@@ -5,7 +5,7 @@ import time
 import subprocess
 import os
 
-glob_string ="/catkin_ws/Data/**/*_imus_lower.sto" 
+glob_string ="/srv/host_data/**/*_imus_lower.sto" 
 #
 #sto_files = glob.glob(glob_string, recursive=True)
 ##sto_files = sorted(glob.glob(glob_string, recursive=True), key=os.path.getmtime) ##doesnt seem to work

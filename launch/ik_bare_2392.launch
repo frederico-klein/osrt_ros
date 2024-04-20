@@ -3,9 +3,9 @@
 
 	<!--arg name="ik_file" 	default="/srv/data/gait1992/inverse_kinematics/task_InverseKinematics.mot" />
 	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" / -->
-	<!-- arg name="ik_file" 	default="/catkin_ws/src/osrt_ros/data/Gait6_ik_clean.mot" /-->
-	<arg name="ik_file" 	default="/catkin_ws/src/osrt_ros/data/Gait6_ik.mot" />
-	<arg name="model_file" 	default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" />
+	<!-- arg name="ik_file" 	default="/srv/host_data/Gait6_ik_clean.mot" /-->
+	<arg name="ik_file" 	default="/srv/host_data/Gait6_ik.mot" />
+	<arg name="model_file" 	default="/srv/host_data/FK scaled model.osim" />
 	<arg name="rate_divider" default="1" />
 	<arg name="simulation_loops" default="1" />
 	<arg name="async_run"    default="false"/>

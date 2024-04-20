@@ -3,7 +3,7 @@
 	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 	<!-- arg name="model_file" 	default="/srv/data/gait1992/model/model_generic.osim" / -->
 	<!-- a gait2392 model is not currently working. we think it has to do with the moment arm library which is done for a 1992 model.-->
-	<!-- arg name="model_file" 	default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" / -->
+	<!-- arg name="model_file" 	default="/srv/host_data/FK scaled model.osim" / -->
 	<arg name="get_second_label" default="true"/>
 	<arg name="left_foot_tf_name" default="left_foot_forceplate" />
 	<arg name="right_foot_tf_name" default="right_foot_forceplate" />

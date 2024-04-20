@@ -3,7 +3,7 @@
 	<arg name="freq" default="100"/>⏎
 	<arg name="run_with_imus" default="true" />
 	<arg name="load_urdf_model" default="true" />
-	<arg name="sto_file" default="/catkin_ws/Data/02_ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_imus_lower.sto" />
+	<arg name="sto_file" default="/srv/host_data/02_ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_imus_lower.sto" />
 	<group ns="ik">
 		<include file="$(find opensimrt_bridge)/launch/imus_from_sto.launch" if="$(arg run_with_imus)" >
 			<arg name="sto_file" value="$(arg sto_file)"/>
