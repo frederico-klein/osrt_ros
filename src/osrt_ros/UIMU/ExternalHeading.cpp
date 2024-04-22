@@ -367,7 +367,7 @@ ROS_WARN_STREAM_ONCE("BYPASSING EVERYTHING!!!!\n");
 		///////////////////////////////////////////////////
 		///////////////////////////////////////////////////
 
-		//ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
+		ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
 		
 		std_msgs::Float64 h_msg;
 		h_msg.data = heading_angle;
