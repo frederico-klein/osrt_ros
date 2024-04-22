@@ -5,7 +5,8 @@
 	<arg name="bypass_heading_computation" 		default="false"/>
 	<arg name="heading_debug"			default="0"/>
 	<arg name="visualise" 				default="true" />
-        <node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
+	<arg name="wait_to_start"	default="true"/>
+	<node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<param name="model_file" 		value="/srv/host_data/FK scaled model.osim" />
 		<!--param name="model_file" 		value="scale/model_scaled.osim" / -->
@@ -13,21 +14,20 @@
 		<rosparam param="imu_observation_order" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam>
 
 		<param name="visualise"			value="$(arg visualise)"/>
-		
 		<!-- OK, this is confusing as hell-->
 		<!-- but let's break it down. the tf_prefix is to allow for multiple skeletons from different parts to be shown-->
 		<!-- OK, this is confusing as hell-->
 		<!-- OK, this is confusing as hell-->
 		<param name="tf_prefix" value="$(arg tf_prefix)"/>
-		
+
 		<!-- OK, this is confusing as hell-->
 		<!-- however tf_frame_prefix is the source of tf, either imu or ar right now, that will be put before the name so we can have both of these at the same time. they could be shared, i think in the future, but this is more flexible.-->
-		
+
 		<param name="imu_tf_world_reference" 		value="map" />
 		<!-- if you setup the next line to be the subject_heading, since currently this is the publication frame for the IMUs as well, then the heading values will not have any effect. -->
 		<!--param name="imu_tf_world_reference" 		value="subject_heading" / -->
 		<param name="tf_frame_prefix" 		value="imu" />
-		
+
 		<param name="imu_direction_axis" 		value="-z" />
 		<param name="imu_ground_rotation_x1" 		value="-90" />
 		<param name="imu_ground_rotation_y1" 		value="0" />
@@ -40,7 +40,6 @@
 		<param name="logger_filename_ik" 		value="_ik_lower" />
 		<param name="logger_filename_imus" 		value="_imus_lower" />
 		<param name="data_save_dir" 		value="/tmp" />
-		
 		<remap from="output" 		to="/ik/output"/>
 		<remap from="output_filtered" 	to="/ik/output_filtered"/>
 		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
@@ -52,12 +51,13 @@
 		<param name="cutoff_freq" 		value="6" />
 		<param name="delay" 			value="14" />
 		<param name="spline_order" 		value="3" />
-		
+
+		<param name="wait_to_start" 	value="$(arg wait_to_start)" />
 		<!-- Debug options -->
 		<param name="bypass_everything" 	value="$(arg bypass_heading_computation)"/>
 		<param name="heading_debug"		value="$(arg heading_debug)"/>
-        </node>
-	
+	</node>
+
 	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch" if="false">
 		<arg name="tf_prefix" value="$(arg tf_prefix)"/>
 	</include>

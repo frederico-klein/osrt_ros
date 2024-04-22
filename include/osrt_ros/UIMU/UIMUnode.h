@@ -48,7 +48,7 @@ class UIMUnode: Ros::CommonNode
 {
 	public:
 		UIMUnode(): Ros::CommonNode(true) //if true debugs
-						  //UIMUnode(): Ros::CommonNode()
+		//UIMUnode(): Ros::CommonNode()
 	{}
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
@@ -61,7 +61,7 @@ class UIMUnode: Ros::CommonNode
 		std::string loggerFileNameIK,loggerFileNameIMUs;
 		std::string tf_frame_prefix;
 		bool use_external_average_calibration_method = true;
-		double sumDelayMS = 0, numFrames = 0; 
+		double sumDelayMS = 0, numFrames = 0;
 		double previousTime = 0;
 		double previousDt = 0;
 		OpenSim::TimeSeriesTable imuLogger, imuCalibrationLogger, qRawLogger, qLogger, qDotLogger, qDDotLogger;
@@ -75,7 +75,7 @@ class UIMUnode: Ros::CommonNode
 		BasicModelVisualizer *visualizer;
 		bool showMarkers;
 		bool visualiseIt= false;
-		//ros::Publisher re_pub; 
+		//ros::Publisher re_pub;
 		//filter parameters
 		double cutoffFreq;
 		int splineOrder, memory, delay;
@@ -83,7 +83,7 @@ class UIMUnode: Ros::CommonNode
 		std::vector<ros::Publisher> plottable_outputs;
 		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig> server;
 		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig>::CallbackType f;
-		OpenSim::Model model;	
+		OpenSim::Model model;
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -131,7 +131,7 @@ class UIMUnode: Ros::CommonNode
 
 			nh.param<bool>("use_external_average_calibration_method", use_external_average_calibration_method, true);
 
-			ROS_DEBUG_STREAM("Finished getting params.");	
+			ROS_DEBUG_STREAM("Finished getting params.");
 
 		}
 		void registerType(Object* muscleModel) //do I even need this?
@@ -161,7 +161,7 @@ class UIMUnode: Ros::CommonNode
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
 			vector<InverseKinematics::MarkerTask> markerTasks;
-			if (showMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here. 
+			if (showMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
 			{
 				vector<string> markerObservationOrder;
 				InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
@@ -211,10 +211,10 @@ class UIMUnode: Ros::CommonNode
 			for (auto q:vv)
 			{
 				ROS_INFO_STREAM(q[0] <<","<<q[1]<<","<<q[2]<<","<<q[3]);
-				serialized.push_back(q[0]);	
-				serialized.push_back(q[1]);	
-				serialized.push_back(q[2]);	
-				serialized.push_back(q[3]);	
+				serialized.push_back(q[0]);
+				serialized.push_back(q[1]);
+				serialized.push_back(q[2]);
+				serialized.push_back(q[3]);
 			}
 
 			SimTK::RowVector serializedv(serialized.size());
@@ -251,15 +251,15 @@ class UIMUnode: Ros::CommonNode
 			start_ik();
 			return true;
 		}
-		void onInit() 
+		void onInit()
 
 		{
 			get_params();
 			//f = boost::bind(&UIMUnode::reconfigure_callback, this, _1,_2);
 			//server.setCallback(f);
 			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
-			time_pub = nh.advertise<std_msgs::Int64>("time",1);		
-			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);		
+			time_pub = nh.advertise<std_msgs::Int64>("time",1);
+			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);
 			calibrationService = nh.advertiseService("calibrate", &UIMUnode::calibrationSrv, this);
 			// setup model
 			ROS_DEBUG_STREAM("Setting up model.");
@@ -355,7 +355,7 @@ class UIMUnode: Ros::CommonNode
 
 					auto pose = ik->solve(
 							{imuData.first, {}, clb->transform(imuData.second)});
-					
+
 					addEvent("ik",msg);
 					chrono::high_resolution_clock::time_point t2;
 					t2 = chrono::high_resolution_clock::now();
