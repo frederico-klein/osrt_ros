@@ -39,6 +39,7 @@ add_custom_target(${PROJECT_NAME}_docs ALL
 
 generate_dynamic_reconfigure_options(
 	cfg/UIMU.cfg
+	cfg/heading.cfg
 )
 
 find_package(opensimrt REQUIRED COMPONENTS

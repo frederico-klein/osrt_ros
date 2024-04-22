@@ -69,6 +69,8 @@ namespace OpenSimRT {
 			long baseBodyIndex;
 			//std::vector<ros::Subscriber> avg_pose_subs;
 
+			double baseHeadingAngle=0;
+
 			std::vector<ros::ServiceClient> calib_clients;
 			void calibrate_ext_signals_sender();
 			/**

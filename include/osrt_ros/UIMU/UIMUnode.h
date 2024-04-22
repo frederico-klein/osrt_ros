@@ -36,6 +36,7 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <osrt_ros/UIMUConfig.h>
+#include <osrt_ros/headingConfig.h>
 #include "osrt_ros/events.h"
 #include "opensimrt_bridge/conversions/message_convs.h"
 
@@ -142,14 +143,28 @@ class UIMUnode: Ros::CommonNode
 		}
 		void reconfigure_callback(osrt_ros::UIMUConfig &config, uint32_t level){
 			ROS_INFO("Reconfigure request %s, (%f, %f, %f)", config.imu_direction_axis_param.c_str(), config.imu_ground_rotation_x, config.imu_ground_rotation_y,config.imu_ground_rotation_z);
+
 			if (clb_is_ready)
 			{
 				imuDirectionAxis = config.imu_direction_axis_param;
 				xGroundRotDeg2 = config.imu_ground_rotation_x;
 				yGroundRotDeg2 = config.imu_ground_rotation_y;
 				zGroundRotDeg2 = config.imu_ground_rotation_z;
-
 				start_ik();
+			}
+			else
+				ROS_WARN("calibrator not yet defined.");
+
+		}
+		void reconfigure_heading_callback(osrt_ros::headingConfig &config, uint32_t level){
+			ROS_INFO("base IMU heading angle:%f", config.base_imu_heading);
+
+			if (clb_is_ready)
+			{
+				clb->baseHeadingAngle = config.base_imu_heading;
+				//I need to change the things that are related to the heading here!
+				start_ik();
+
 			}
 			else
 				ROS_WARN("calibrator not yet defined.");

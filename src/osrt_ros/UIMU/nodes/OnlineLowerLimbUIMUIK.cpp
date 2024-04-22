@@ -1,3 +1,4 @@
+#include "ros/node_handle.h"
 #include <Actuators/Thelen2003Muscle.h>
 
 #include <ros/ros.h>
@@ -7,6 +8,7 @@
 #include <boost/stacktrace.hpp>
 #include "osrt_ros/UIMU/UIMUnode.h"
 #include <osrt_ros/UIMUConfig.h>
+#include <osrt_ros/headingConfig.h>
 
 int main(int argc, char** argv) {
 	try {
@@ -18,12 +20,17 @@ int main(int argc, char** argv) {
 		f = boost::bind(&UIMUnode::reconfigure_callback, &o, _1, _2);
 		server.setCallback(f);
 
+		ros::NodeHandle nh("~");
+		ros::NodeHandle nh1(nh, "heading");
+		dynamic_reconfigure::Server<osrt_ros::headingConfig> heading_server_(nh1);
+		dynamic_reconfigure::Server<osrt_ros::headingConfig>::CallbackType f2;
+		f2 = boost::bind(&UIMUnode::reconfigure_heading_callback, &o, _1, _2);
+		heading_server_.setCallback(f2);
 		// either like this:
 		OpenSim::Object* muscleModel = new OpenSim::Thelen2003Muscle();
 		o.registerType(muscleModel);
 		// or alternatively, more simply:
 		// Object::registerType(Thelen2003Muscle());
-		ros::NodeHandle nh("~");
 		bool wait_to_start = false;
 		nh.getParam("wait_to_start", wait_to_start);
 

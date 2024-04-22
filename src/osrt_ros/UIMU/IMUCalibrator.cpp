@@ -298,10 +298,16 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
     {
     double ext_head;
     nh.param<double>("heading_debug",ext_head,0.0);
-    R_heading = Rotation(3.141592/180.0*ext_head , SimTK::YAxis);
+    ROS_WARN_STREAM("The meaning of external heading has changed!!!\nThe value of "<< ext_head << " will not be used. Use rqt_reconfigure calls instead.");
+
+
+	//R_heading = Rotation(3.141592/180.0*ext_head , SimTK::YAxis);
+    
+    //ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
+    }
+    R_heading = Rotation(3.141592/180.0*baseHeadingAngle , SimTK::YAxis);
     
     ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
-    }
     tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
     return R_heading;
 }
