@@ -9,6 +9,7 @@
 	<arg name="heading" 	default="[0.0,0.0,-1.0]"/>
 	<arg name="run_as_service" default="true"/>
 	<arg name="parent_frame" 	default="map"/>
+	<arg name="heading_frame" 	default="subject_heading"/>
 
 	<group ns="$(arg imu_body)">
 		<node name="pose_average" type="external_average_quaternion_node" pkg="osrt_ros" output="screen">
@@ -19,7 +20,9 @@
 			<param name="imu_cal_frame" value="$(arg tf_prefix)/$(arg imu_body)_imu" />
 			<param name="imu_ref_frame" value="$(arg tf_prefix)/$(arg imu_body)" />
 			<remap to="/ik/heading_angle"					from="/heading_angle"/>
-			<param name="heading_ref_frame" value="subject_heading" />
+			<!-- but then ik/subject_opensim has to have a parent which is subject_heading -->
+			<param name="calibrated_heading_refence_frame" value="ik/subject_opensim" />
+			<param name="heading_ref_frame" value="$(arg parent_frame)" />
 			<param name="heading_pub_frame" value="subject_heading3" />
 			<!-- for positioning AR markers -->
 			<param name="use_marker_origin" value="false" />
@@ -30,7 +33,7 @@
 			<param name="imu_base_measured_frame" value="imu/$(arg imu_body)_0"/>
 			<!--param name="parent_frame" value="map"/ -->
 			<param name="parent_frame" value="$(arg parent_frame)"/>
-			<param name="heading_frame" value="subject_heading"/>
+			<param name="heading_frame" value="$(arg heading_frame)"/>
 			<param name="negative_heading_frame" value="subject_negative_heading"/>
 			<rosparam param="origin">[0,0,0]</rosparam>	
 			<param name="heading"    type="yaml" value="$(arg heading)" />

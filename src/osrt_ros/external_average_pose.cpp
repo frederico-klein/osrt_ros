@@ -74,10 +74,12 @@ class ExternalAveragePosePublisher
 		ros::NodeHandle nh = ros::NodeHandle("~"); //local nodehandle for params, I dont want to ruin the rest of the remaps.
 		nh.param<std::string>("imu_raw",imu_raw, "imu/pelvis");
 		nh.param<std::string>("imu_cal_frame",imu_cal_frame, "_imu");
-		nh.param<std::string>("so_many_heading_transformations",calibration_reference_frame, "ik/subject_opensim"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
-		nh.param<std::string>("heading_pub_frame",heading_publication_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
-		nh.param<std::string>("heading_ref_frame",heading_reference_frame, "subject_adds_heading"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
-		nh.param<std::string>("imu_ref_frame",body_frame, "map");
+		nh.param<std::string>("calibrated_heading_reference_frame",calibration_reference_frame, "ik/subject_opensim"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
+
+		//NOTE: the only reason why heading pub frame and ref frame are not the same is that I may want to displace them so that I can visualize this a bit better. They should both be map, i think 
+		nh.param<std::string>("heading_pub_frame",heading_publication_frame, "displaced_map"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
+		nh.param<std::string>("heading_ref_frame",heading_reference_frame, "map"); //TODO: THIS IS THE DEFAULT FOR TESTING. THE DEFAULT FOR MOST CASES SHOULD BE MAP, I THINK.
+		nh.param<std::string>("imu_ref_frame",body_frame, "ik/pelvis");
 		nh.param<bool>("use_marker_origin",use_marker_origin, false);
 		nh.param("origin", origin, {0,0,0});
 		std::stringstream origin_str;
@@ -163,7 +165,7 @@ class ExternalAveragePosePublisher
 			catch (tf2::TransformException &ex)
 
 			{
-				ROS_ERROR_STREAM("Could not get imu_raw to subject heading.\nAre you publishing IMU/AR values?\n\t" << ex.what());
+				ROS_ERROR_STREAM("Could not get imu_raw:("<< imu_raw <<") to heading_reference_frame:(" << heading_reference_frame << ").\nAre you publishing IMU/AR values?\n\t" << ex.what());
 			}
 			ros::spinOnce();
 			r.sleep();
@@ -184,10 +186,11 @@ class ExternalAveragePosePublisher
 		}
 
 		bool acquiring =false;
+		bool resolving_heading = false;
 		//service for calibration
 		bool calibrate_srv(std_srvs::EmptyRequest &req, std_srvs::EmptyResponse &res)
 		{
-			ROS_INFO_STREAM(".....ACQTOIJWGEOIJRIIIIING");
+			ROS_INFO_STREAM("Called calibrate_srv non_blocking");
 			acquiring= true;
 			
 			if (false) //old blocking way, we dont need this
@@ -196,12 +199,21 @@ class ExternalAveragePosePublisher
 			}
 			return true;
 		}
+		bool resolve_heading_srv(std_srvs::EmptyRequest &req, std_srvs::EmptyResponse &res)
+		{
+			ROS_INFO_STREAM("Called resolve_heading_srv");
+			resolving_heading= true;
+			
+			return true;
+		}
 
 
 		// the name resolve heading is maybe not the best, but this guy is responsible for publishing the calculated average pose (orientation + translation) to the TF system with a parent frame which is a parameter saved on calibration_reference_frame
 
 		void resolve_heading()
 		{
+		
+			ROS_INFO_STREAM("will try to find " << calibration_reference_frame << " to " << imu_raw+"_0\nAnd I will publish from"<<body_frame<<" to "<<imu_cal_frame);
 			try
 			{
 
@@ -231,6 +243,7 @@ class ExternalAveragePosePublisher
 				is_heading_corrected = true;
 			} catch (tf::TransformException &ex)
 			{
+				ROS_WARN_STREAM("failed while resolving heading:" <<ex.what());
 			}
 
 
@@ -302,6 +315,7 @@ int main(int argc, char **argv)
 	if (run_as_service)
 	{
 		ros::ServiceServer serv_calib = nh.advertiseService("calibrate_pose",&ExternalAveragePosePublisher::calibrate_srv, &eApp);
+		ros::ServiceServer serv_heading = nh.advertiseService("resolve_heading",&ExternalAveragePosePublisher::resolve_heading_srv, &eApp);
 		while(ros::ok())
 		{
 			if (eApp.acquiring)
@@ -313,20 +327,26 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					eApp.resolve_heading();
-					eApp.is_calibrated = false; 
 					eApp.acquiring = false;
-					eApp.marker_poses.poses.clear();
 					rr.sleep();
 					ros::spinOnce();
 
 				}
 			}
-			else
+			else if (eApp.resolving_heading)
 			{
-				rr.sleep();
-				ros::spinOnce();
+				if(!eApp.is_calibrated )
+					ROS_ERROR_STREAM("cannot resolve heading, need to be calibrated first");
+				else
+				{
+					eApp.resolve_heading();
+					eApp.is_calibrated = false; 
+					eApp.marker_poses.poses.clear();
+					eApp.resolving_heading = false;
+				}
 			}
+			rr.sleep();
+			ros::spinOnce();
 		}
 	}
 	else

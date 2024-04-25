@@ -220,6 +220,7 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "human_joint_state_publisher");
 	// publishes the subject_opensim frame of reference
 	OpenSimBaseTfPublisher otf;
+	otf.publish_opensim_base_tf();	
 	// starts custom_joints publisher
 	qJointPublisher qJ;
 	qJ.onInit();
@@ -230,7 +231,6 @@ int main(int argc, char **argv)
 
 	// publish initial zero pose:
 	//qJ.pub_zero();
-	otf.publish_opensim_base_tf();	
 	ros::spin();
 	return 0;
 }

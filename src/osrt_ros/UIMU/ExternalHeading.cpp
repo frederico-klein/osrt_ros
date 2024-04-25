@@ -87,7 +87,8 @@ void ExternalHeading::callback(std_msgs::Float64 msg )
 }
 void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string heading_frame_name )
 {
-	try
+	ROS_INFO_STREAM("I am sending a tf for heading here from: " << parent_frame_name <<" to "<< heading_frame_name);
+	try	
 	{
 		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
 	geometry_msgs::PoseStamped heading_pose;
@@ -123,6 +124,7 @@ void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string hea
 
 bool ExternalHeading::calibrate_srv(std_srvs::EmptyRequest & req, std_srvs::EmptyResponse & res)
 {
+	ROS_INFO_STREAM("calibrate service callled");
 	calibrate();
 	return true;
 }
@@ -324,6 +326,8 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 
 geometry_msgs::PoseStamped ExternalHeading::calibrate()
 {
+	
+	ROS_INFO_STREAM("arrived in calibrate");
 	geometry_msgs::TransformStamped transformStamped;
 
 	//get the imu default frame, the opensim default frame and the current imu base measured frame:
@@ -342,12 +346,21 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 
 		ROS_DEBUG_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
 		ROS_DEBUG_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
+	ROS_INFO_STREAM("got calibrate reference transforms ok (imu_default_frame and opensim_default_frame)");
 
 
 		//now the important part, calculate this damn angle
 
 		//double heading_angle = calculate_angle(imu_default_frame.transform, imu_base_measured_frame.transform, heading);
-		double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
+		geometry_msgs::Transform null_tf;
+		null_tf.rotation.w =1;
+		double heading_angle = calculate_angle(null_tf, imu_base_measured_frame.transform, heading);
+		ROS_INFO_STREAM("calculate_angle (between empty transform and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
+		if(false)
+		{
+			double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
+			ROS_INFO_STREAM("calculate_angle (between opensim_default_frame"<< opensim_base_default_frame_name <<" and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
+		}
 		if (abs(angle_offset) > 0.1 )
 		{
 			ROS_WARN_STREAM_ONCE("adding "<< angle_offset <<" degrees, because maybe, idk");
@@ -372,6 +385,7 @@ ROS_WARN_STREAM_ONCE("BYPASSING EVERYTHING!!!!\n");
 		std_msgs::Float64 h_msg;
 		h_msg.data = heading_angle;
 		heading_angle_publisher.publish(h_msg);
+	ROS_INFO_STREAM("published heading angle with a Float64 publisher okay.");
 		if (is_base_body)
 		{
 			ROS_WARN_STREAM_ONCE("I am using a weird loopback thing to publish this TF, it was easier this way, please change me!");
@@ -380,11 +394,11 @@ ROS_WARN_STREAM_ONCE("BYPASSING EVERYTHING!!!!\n");
 			send_a_heading_to_tf(-heading_angle,negative_heading_reference_frame);
 
 		}
-
+		ROS_INFO_STREAM("sent heading tfs okay");
 	}
 	catch(tf2::TransformException &ex) 
 	{
-			ROS_WARN_STREAM("oops:" << ex.what());
+			ROS_WARN_STREAM("Failed to calibrate heading! oops:" << ex.what());
 	}
 	
 	//I just broke this
