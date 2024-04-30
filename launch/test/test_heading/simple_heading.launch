@@ -8,8 +8,6 @@
 		<arg name="is_base_body" value="true"/>
 
 	</include>
-	<node pkg="tf" type="static_transform_publisher" name="imu_default_frame_broadcaster" args="0 0 0 0 0 0 map imu_default_frame 10" />
-	<node pkg="tf" type="static_transform_publisher" name="opensim_default_frame_broadcaster" args="0 0 0 0 0 0 map opensim_default_frame 10" />
 
 
 </launch>
