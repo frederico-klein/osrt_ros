@@ -336,17 +336,17 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(opensim_base_default_frame_name, parent_frame_name, ros::Time(0));
 		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(imu_base_measured_frame_name, parent_frame_name, ros::Time(0));
 		*/
-		geometry_msgs::TransformStamped imu_default_frame = tfBuffer.lookupTransform(parent_frame_name, imu_default_frame_name, ros::Time(0));
-		geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(parent_frame_name, opensim_base_default_frame_name, ros::Time(0));
+		//geometry_msgs::TransformStamped imu_default_frame = tfBuffer.lookupTransform(parent_frame_name, imu_default_frame_name, ros::Time(0));
+		//geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(parent_frame_name, opensim_base_default_frame_name, ros::Time(0));
 		
 
-		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(heading_reference_frame, imu_base_measured_frame_name, ros::Time(0));
+		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(parent_frame_name, imu_base_measured_frame_name, ros::Time(0));
 
 		
 
-		ROS_DEBUG_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
-		ROS_DEBUG_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
-	ROS_INFO_STREAM("got calibrate reference transforms ok (imu_default_frame and opensim_default_frame)");
+//		ROS_DEBUG_STREAM(green << "imu_default_frame"<<imu_default_frame.transform.rotation <<reset);
+//		ROS_DEBUG_STREAM("imu_base_measured_frame"<< imu_base_measured_frame.transform.rotation);
+//	ROS_INFO_STREAM("got calibrate reference transforms ok (imu_default_frame and opensim_default_frame)");
 
 
 		//now the important part, calculate this damn angle
@@ -358,7 +358,7 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		ROS_INFO_STREAM("calculate_angle (between empty transform and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
 		if(false)
 		{
-			double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
+			//double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
 			ROS_INFO_STREAM("calculate_angle (between opensim_default_frame"<< opensim_base_default_frame_name <<" and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
 		}
 		if (abs(angle_offset) > 0.1 )

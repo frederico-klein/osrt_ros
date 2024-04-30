@@ -29,16 +29,12 @@ using namespace std;
 class OpenSimBaseTfPublisher
 {
 	public:
-		OpenSimBaseTfPublisher()
+		OpenSimBaseTfPublisher(geometry_msgs::Quaternion opensim_rotation_,std::string frame_name): opensim_rotation(opensim_rotation_), opensim_frame(frame_name)
 		{
 			ros::NodeHandle nh("~");
 			nh.param<std::string>("opensim_parent_base_frame", opensim_parent_base_frame, "map");
 
-			nh.param<std::string>("opensim_frame", opensim_frame, "subject_opensim");
-			opensim_rotation.w = 0.7071067811865476;
-			opensim_rotation.x = 0;
-			opensim_rotation.y = 0;
-			opensim_rotation.z = -0.7071067811865476;
+			
 			t.header.frame_id = opensim_parent_base_frame;
 			t.child_frame_id = opensim_frame;
 			t.transform.rotation = opensim_rotation;
@@ -219,8 +215,29 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "human_joint_state_publisher");
 	// publishes the subject_opensim frame of reference
-	OpenSimBaseTfPublisher otf;
+	
+	ros::NodeHandle nh("~");
+	std::string opensim_frame;
+	nh.param<std::string>("opensim_frame", opensim_frame, "subject_opensim");
+	ROS_ERROR_STREAM(opensim_frame);
+	geometry_msgs::Quaternion opensim_rotation;
+	opensim_rotation.w = 0.7071067811865476;
+	opensim_rotation.x = 0;
+	opensim_rotation.y = 0;
+	opensim_rotation.z = -0.7071067811865476;
+	
+	OpenSimBaseTfPublisher otf(opensim_rotation, opensim_frame);
 	otf.publish_opensim_base_tf();	
+
+	geometry_msgs::Quaternion other_opensim_rotation;
+	other_opensim_rotation.w = 0.7071067811865476;
+	other_opensim_rotation.x = 0.7071067811865476;
+	other_opensim_rotation.y = 0.;
+	other_opensim_rotation.z = 0.;
+	
+	OpenSimBaseTfPublisher otf2(other_opensim_rotation, opensim_frame+"_other");
+	otf2.publish_opensim_base_tf();	
+
 	// starts custom_joints publisher
 	qJointPublisher qJ;
 	qJ.onInit();

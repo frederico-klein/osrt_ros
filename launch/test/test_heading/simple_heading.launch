@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<launch>
+	<include file="$(find ximu3_ros)/launch/show_urdf_posable.launch"/>
+
+	<include file="$(find osrt_ros)/launch/test/test_heading/ext_test.launch">
+		<arg name="imu_body" value="ximu3_test"/>
+		<arg name="is_base_body" value="true"/>
+
+	</include>
+	<node pkg="tf" type="static_transform_publisher" name="imu_default_frame_broadcaster" args="0 0 0 0 0 0 map imu_default_frame 10" />
+	<node pkg="tf" type="static_transform_publisher" name="opensim_default_frame_broadcaster" args="0 0 0 0 0 0 map opensim_default_frame 10" />
+
+
+</launch>
+
