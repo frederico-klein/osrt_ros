@@ -4,15 +4,16 @@
 	<arg name="visualise" 				default="true" />
 	<arg name="bypass_heading_computation" 		default="false"/>
 	<arg name="heading_debug"			default="0"/>
+	<arg name="heading_offset"			default="0"/>
 	<arg name="wait_to_start"			default="true"/>
 	<include file="$(find osrt_ros)/launch/ik_lowerbody_inverted_pelvis.launch" if="$(arg run_with_imus)" >
 		<arg name="bypass_heading_computation" value="$(arg bypass_heading_computation)"/>
+		<arg name="heading_offset"		value="$(arg heading_offset)"/>
 		<arg name="heading_debug"		value="$(arg heading_debug)"/>
 		<arg name="visualise"			value="$(arg visualise)"/>
 		<arg name="wait_to_start" 		value="$(arg wait_to_start)" />
 		<arg name="tf_prefix" value="ik/" />
 		<!--arg name="tf_frame_prefix" value="imu" /-->
-		<remap from="/output_filtered" to="/ik/output_filtered"/>
 	</include>
 </launch>
 

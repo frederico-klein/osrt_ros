@@ -17,6 +17,7 @@ find_package(Eigen3 3.3 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
 	dynamic_reconfigure
 	message_runtime
+	message_generation
 	opensimrt
 	opensimrt_msgs
 	opensimrt_bridge
@@ -41,6 +42,16 @@ generate_dynamic_reconfigure_options(
 	cfg/UIMU.cfg
 	cfg/heading.cfg
 )
+
+add_service_files(
+	DIRECTORY srv
+	FILES
+	Float.srv
+	)
+generate_messages(
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
+   )
 
 find_package(opensimrt REQUIRED COMPONENTS
 	Common

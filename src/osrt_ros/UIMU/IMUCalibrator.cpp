@@ -21,11 +21,14 @@
 #include "Exception.h"
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/Vector3.h"
+#include "osrt_ros/FloatRequest.h"
+#include "osrt_ros/FloatResponse.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
 #include "std_srvs/Empty.h"
 #include "std_srvs/EmptyRequest.h"
+#include "osrt_ros/Float.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include <SimTKcommon/internal/CoordinateAxis.h>
@@ -49,13 +52,12 @@ const std::string reset("\033[0m");
 void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 //	ros::NodeHandle n("~");
   	nhandle = ros::NodeHandle("~");
+  	auto ghandle = ros::NodeHandle();
     	nhandle.param<string>("debug_reference_frame",debug_reference_frame,"map");
+	std::string tf_prefix;
+	nhandle.param<string>("tf_prefix",tf_prefix,"");
 	
-	ext_heading_srv = nhandle.serviceClient<std_srvs::Empty>("calibrate_heading");
-	for (auto imu_name:imuBodiesObservationOrder) //TODO: this can also be parallelised
-		{
-			calib_clients.push_back(nhandle.serviceClient<std_srvs::Empty>(imu_name+"/pose_average/calibrate_pose"));
-		}
+	ext_heading_srv = ghandle.serviceClient<osrt_ros::Float>("calibrate_heading");
 
 	R_heading = SimTK::Rotation();
     //why?
@@ -66,6 +68,12 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
     imuBodiesObservationOrder = std::vector<std::string>(
             observationOrder.begin(), observationOrder.end());
 
+	for (auto imu_name:imuBodiesObservationOrder) //TODO: this can also be parallelised
+		{
+			std::string calib_serv_name =tf_prefix+imu_name+"/pose_average/calibrate_pose"; 
+			ROS_WARN_STREAM("calibration service name:"<< calib_serv_name);
+			calib_clients.push_back(ghandle.serviceClient<std_srvs::Empty>(calib_serv_name));
+		}
     // initialize system
     state = model.initSystem();
     model.realizePosition(state);
@@ -133,6 +141,7 @@ SimTK::Rotation IMUCalibrator::setGroundOrientationSeq(const double& xDegrees,
 SimTK::Rotation
 IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
                                       const std::string& imuDirectionAxis) {
+	bool negate = false;
     if (!imuDirectionAxis.empty() && !baseImuName.empty()) {
         // set coordinate direction based on given imu direction axis given as
         // string
@@ -256,7 +265,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
         // compute sign
         auto xproduct = baseFrameXInGround % baseSegmentXheading;
-        if (xproduct.get(1) > 0) { angularDifference *= -1; }
+        if (xproduct.get(1) > 0) { angularDifference *= -1; negate=true; }
 
 	ROS_WARN_STREAM("angularDifference: " << angularDifference << " ( " << angularDifference/3.14159205*180.0 <<")");
         // set heading rotation (rotation about Y axis)
@@ -293,6 +302,9 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
     ros::NodeHandle nh("~");
     bool bypass_everything;
     nh.param<bool>("bypass_everything",bypass_everything,false);
+    
+    double ext_head_offset;
+    nh.param<double>("heading_offset",ext_head_offset,0.0);
 
     if (bypass_everything)
     {
@@ -305,7 +317,23 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
     
     //ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
     }
-    R_heading = Rotation(3.141592/180.0*baseHeadingAngle , SimTK::YAxis);
+    
+	if (abs(ext_head_offset) > 0.1)
+		ROS_WARN_STREAM("adding external heading offset of (this should be in degrees btw) " << ext_head_offset);
+    
+	///fff.. my angle sign calculation is wrong, so i will use this from opensimrt...
+	///this  is awful, i hate it
+	if (negate)
+	{
+		baseHeadingAngle = -abs(baseHeadingAngle);
+	}
+	else
+	{
+		baseHeadingAngle = abs(baseHeadingAngle);
+	}
+	auto full_heading = baseHeadingAngle+ext_head_offset;
+	ROS_INFO_STREAM(cyan << "full heading: "<< full_heading<<reset);
+	R_heading = Rotation(3.141592/180.0*(full_heading) , SimTK::YAxis);
     
     ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
     tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
@@ -350,12 +378,32 @@ void IMUCalibrator::calibrateIMUTasks(
 void IMUCalibrator::calibrate_ext_signals_sender()
 {
 	std_srvs::Empty a;
-	ext_heading_srv.call(a);
 
+	osrt_ros::Float b;
 	// I also want to tell every service that they need to start acquiring poses and this needs to be non-blocking!QQ
 	ROS_INFO_STREAM("trying to send calibration signals to my fellas imu Quaternion pose average buddies");
 	for(auto a_calib_src:calib_clients)
+	{
+		if(!a_calib_src.exists())
+			ROS_WARN_STREAM("srv:" << a_calib_src.getService() << " does not exist!!!!!!");
+		else
+		{
+		ROS_INFO_STREAM("trying to call" << a_calib_src.getService());
 		a_calib_src.call(a);
+		}
+	}
+		if(!ext_heading_srv.exists())
+			ROS_WARN_STREAM("srv:" <<ext_heading_srv.getService() << " does not exist!!!!!!");
+		else
+		{
+		ROS_INFO_STREAM("trying to call" << ext_heading_srv.getService());
+		ext_heading_srv.call(b);
+		ROS_INFO_STREAM("got heading angle " << b.response.data);
+		baseHeadingAngle = -b.response.data*180.0/3.141592;
+		ROS_INFO_STREAM("setting heading angle to minus that much, " << baseHeadingAngle);
+
+		}
+	
 }
 
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
@@ -439,12 +487,6 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 
 				if(res_q)	
 				{
-					const std::string red("\033[0;31m");
-const std::string green("\033[1;32m");
-const std::string yellow("\033[1;33m");
-const std::string cyan("\033[0;36m");
-const std::string magenta("\033[0;35m");
-const std::string reset("\033[0m");
 
 				auto res_q_tf = imu_calib_from_tf.transform.rotation;
 				ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");

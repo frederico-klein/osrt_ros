@@ -3,6 +3,9 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/Transform.h"
 #include "geometry_msgs/Vector3.h"
+#include "osrt_ros/Float.h"
+#include "osrt_ros/FloatResponse.h"
+#include "ros/duration.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
 #include "std_msgs/Float64.h"
@@ -15,6 +18,7 @@
 #include "visualization_msgs/Marker.h"
 #include <ostream>
 #include <vector>
+#include "tf/transform_listener.h"
 
 
 bivector3 PLANEXY{0,0,1};
@@ -122,10 +126,10 @@ void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string hea
 }
 
 
-bool ExternalHeading::calibrate_srv(std_srvs::EmptyRequest & req, std_srvs::EmptyResponse & res)
+bool ExternalHeading::calibrate_srv(osrt_ros::FloatRequest & req, osrt_ros::FloatResponse & res)
 {
 	ROS_INFO_STREAM("calibrate service callled");
-	calibrate();
+	res.data = calibrate();
 	return true;
 }
 
@@ -355,10 +359,11 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	//	return angle_between_vectors(projected_measured_heading.v,heading_os_default.v);
 }
 
-geometry_msgs::PoseStamped ExternalHeading::calibrate()
+double ExternalHeading::calibrate()
 {
 
 	ROS_INFO_STREAM("arrived in calibrate");
+	double heading_angle = 0;
 	geometry_msgs::TransformStamped transformStamped;
 
 	//get the imu default frame, the opensim default frame and the current imu base measured frame:
@@ -369,9 +374,10 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		*/
 		//geometry_msgs::TransformStamped imu_default_frame = tfBuffer.lookupTransform(parent_frame_name, imu_default_frame_name, ros::Time(0));
 		//geometry_msgs::TransformStamped opensim_default_frame = tfBuffer.lookupTransform(parent_frame_name, opensim_base_default_frame_name, ros::Time(0));
+		tf::TransformListener tf1Listener;
 
-
-		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(parent_frame_name, imu_base_measured_frame_name, ros::Time(0));
+		tf1Listener.waitForTransform(heading_reference_frame, imu_base_measured_frame_name, ros::Time(0), ros::Duration(2));
+		geometry_msgs::TransformStamped imu_base_measured_frame = tfBuffer.lookupTransform(heading_reference_frame, imu_base_measured_frame_name, ros::Time(0));
 
 
 
@@ -385,7 +391,8 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 		//double heading_angle = calculate_angle(imu_default_frame.transform, imu_base_measured_frame.transform, heading);
 		geometry_msgs::Transform null_tf;
 		null_tf.rotation.w =1;
-		double heading_angle = calculate_angle(null_tf, imu_base_measured_frame.transform, heading);
+		heading_angle = calculate_angle(null_tf, imu_base_measured_frame.transform, heading);
+
 		ROS_INFO_STREAM("calculate_angle (between empty transform and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
 		if(false)
 		{
@@ -433,7 +440,6 @@ geometry_msgs::PoseStamped ExternalHeading::calibrate()
 	}
 
 	//I just broke this
-	geometry_msgs::PoseStamped heading_pose;
-	return heading_pose;
+	return heading_angle;
 
 }

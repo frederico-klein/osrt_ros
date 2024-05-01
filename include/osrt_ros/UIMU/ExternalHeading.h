@@ -5,6 +5,8 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
 #include "geometry_msgs/Transform.h"
+#include "osrt_ros/Float.h"
+#include "osrt_ros/FloatResponse.h"
 #include "ros/subscriber.h"
 #include "std_msgs/Float64.h"
 #include "tf/LinearMath/Vector3.h"
@@ -101,13 +103,13 @@ class ExternalHeading
 		geometry_msgs::Point origin,debug_point ;
 		geometry_msgs::Vector3 heading, opensim_heading;
 		ExternalHeading();
-		bool calibrate_srv(std_srvs::EmptyRequest & req, std_srvs::EmptyResponse & res);
+		bool calibrate_srv(osrt_ros::FloatRequest & req, osrt_ros::FloatResponse & res);
 
 		double calculate_angle(geometry_msgs::Transform default_measure_frame, geometry_msgs::Transform measured_frame, geometry_msgs::Vector3 imu_heading_axis_vector);
 
 		void callback(std_msgs::Float64 msg);
 		void send_a_heading_to_tf(double heading_angle, std::string heading_frame_name );
-		geometry_msgs::PoseStamped calibrate();
+		double calibrate();
 
 		visualization_msgs::Marker getArrowForVector(std::string name, geometry_msgs::Vector3, geometry_msgs::Point origin_);
 		visualization_msgs::Marker getArrowForVector(std::string name, geometry_msgs::Vector3);

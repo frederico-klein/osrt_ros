@@ -18,19 +18,22 @@ sto_files = sorted(glob.glob(glob_string, recursive=True), key=os.path.basename)
 timeout_time = 60
 
 #print(sto_files)
-
+i = 0
+#angles_opensimrt = [63.02, -117.72]
+angles =[-60.87,-120.2]
+## it said -60 now!! 120.15
 for a_file in sto_files:
     print(a_file)
-    if False and "02_ruoli" in a_file:
+    if True and "ruoli" in a_file:
         print("skipped")
         continue
 
-    if True and not "2023-03-03-11-56-24walking012_imus_lower" in a_file:
+    if False and not "2023-03-03-11-56-24walking012_imus_lower" in a_file:
         print("skipped")
         continue
     
     time.sleep(3) ## give you time to cancel this for loop
-    command=["%s/launch/test/t_4/a.bash"%osrt_pkg_path,a_file]
+    command=["%s/launch/test/t_4/a.bash"%osrt_pkg_path,a_file, str(angles[0])]
     
     proc =  subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
@@ -42,4 +45,6 @@ for a_file in sto_files:
         outs, errs = proc.communicate()
 
     print(outs)
-
+    i+=1
+    if i>10:
+        break
