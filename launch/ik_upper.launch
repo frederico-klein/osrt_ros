@@ -32,7 +32,7 @@
 		<remap from="/in_labels" to="/inverse_kinematics_from_file/out_labels"/ -->
 		<remap from="/ik_upperbody_node/output" 		to="/ik/output"/>
 		<remap from="/ik_upperbody_node/output_filtered" 	to="/ik/output_filtered"/>
-		<remap from="/ik_upperbody_node/out_labels" 		to="/ik/outlabels"/>
+		<remap from="/ik_upperbody_node/out_labels" 		to="/ik/out_labels"/>
 
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />

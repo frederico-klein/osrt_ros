@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<arg name="freq" 				default="100" />
+	<arg name="ik_node_name" 			default="ik_lowerbody_node"/>
 	<arg name="tf_prefix" 				default=""/>
 	<arg name="bypass_heading_computation" 		default="false"/>
 	<arg name="heading_debug"			default="0"/>
 	<arg name="heading_offset"			default="0"/>
 	<arg name="visualise" 				default="true" />
 	<arg name="wait_to_start"	default="true"/>
-	<node pkg="osrt_ros" type="OnlineLowerLimb" 	name="ik_lowerbody_node" output="screen" >
+	<arg name="model_file" 		default="/srv/host_data/FK scaled model.osim" />
+	<node pkg="osrt_ros" type="OnlineLowerLimb" 	name="$(arg ik_node_name)" output="screen" >
 		<!-- param name="resample_period" 		value="0.01" / -->
-		<param name="model_file" 		value="/srv/host_data/FK scaled model.osim" />
+		<param name="model_file" 		value="$(arg model_file)" />
 		<!--param name="model_file" 		value="scale/model_scaled.osim" / -->
 		<param name="imu_base_body" 		value="pelvis" />
 		<rosparam param="imu_observation_order" >['torso','pelvis','femur_r','femur_l','tibia_r','tibia_l','talus_r','talus_l']</rosparam>
@@ -43,7 +45,8 @@
 		<param name="data_save_dir" 		value="/tmp" />
 		<remap from="output" 		to="/ik/output"/>
 		<remap from="output_filtered" 	to="/ik/output_filtered"/>
-		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
+		<!--remap from="$(arg ik_node_name)/out_labels" 		to="/ik/out_labels"/ -->
+		
 		<remap from="calibrate_heading" to="/ik/pelvis/wtfh/calibrate_heading"/>
 		<param name="use_external_average_calibration_method" value="false"/>
 		<param name="debug_reference_frame" 		value="opensim_default_frame"/>

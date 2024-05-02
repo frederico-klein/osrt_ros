@@ -22,6 +22,10 @@ i = 0
 #angles_opensimrt = [63.02, -117.72]
 angles =[-60.87,-120.2]
 ## it said -60 now!! 120.15
+
+file_to_run="b"
+#file_to_run="a"
+
 for a_file in sto_files:
     print(a_file)
     if True and "ruoli" in a_file:
@@ -33,7 +37,7 @@ for a_file in sto_files:
         continue
     
     time.sleep(3) ## give you time to cancel this for loop
-    command=["%s/launch/test/t_4/a.bash"%osrt_pkg_path,a_file, str(angles[0])]
+    command=["%s/launch/test/t_4/%s.bash"%(osrt_pkg_path,file_to_run),a_file, str(angles[0])]
     
     proc =  subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     

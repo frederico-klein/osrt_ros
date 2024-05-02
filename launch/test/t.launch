@@ -14,7 +14,7 @@
 			<remap from="/joint_states" to="model_generic/joint_states"/>
 			<!-- arg name="base_parent" value="subject_adds_heading"/ -->
 			<arg name="base_parent" value="map"/>
-			<arg name="in_labels" value="/ik/outlabels"/>
+			<arg name="in_labels" value="/ik/out_labels"/>
 		</include>
 
 		<include file="$(find gait1992_description)/launch/human_control_imus_movable_pipeline.launch" if="$(arg load_urdf_model)">

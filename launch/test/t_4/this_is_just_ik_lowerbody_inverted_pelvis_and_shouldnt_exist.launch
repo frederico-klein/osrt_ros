@@ -13,6 +13,7 @@
 		<arg name="visualise"			value="$(arg visualise)"/>
 		<arg name="wait_to_start" 		value="$(arg wait_to_start)" />
 		<arg name="tf_prefix" value="ik/" />
+		<arg name="ik_node_name" value="ik" />
 		<!--arg name="tf_frame_prefix" value="imu" /-->
 	</include>
 </launch>

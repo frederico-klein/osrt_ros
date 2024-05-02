@@ -6,7 +6,7 @@
 	<arg name="right_foot_tf_name" 		default="right_foot_forceplate" />
 	<arg name="use_exact_sync"		default="false"/>
 	<arg name="max_buffer_length"		default="100"/>
-
+	<arg name="ik_delay"			default="0.26"/>
 	<!-- If no_rotation is true then I will neglect the reference rotation transformation -->
 	<arg name="grf_no_rotation"		default="true"/>
 
@@ -50,7 +50,7 @@
 		<param name="delay" 			value="14" />
 		<param name="spline_order" 		value="3" />
 
-		<param name="ik_delay"			value="0.26" />
+		<param name="ik_delay"			value="$(arg ik_delay)" />
 		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
 
 		<!-- TODO: if I really want to generalize the number of wrenches i also need to change how async gets called-->

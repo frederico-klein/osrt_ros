@@ -8,7 +8,7 @@
 		<param name="which_model_1_2" 		value="2" />
 
 		<remap from="/ik_visualization/input_filtered" to="/ik/output_filtered"/>
-		<remap from="/in_labels" to="/ik/outlabels"/>
+		<remap from="/in_labels" to="/ik/out_labels"/>
 		
         </node>
 

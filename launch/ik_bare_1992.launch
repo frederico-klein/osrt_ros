@@ -26,7 +26,7 @@
 
 		<remap from="/inverse_kinematics_from_file/output" to="/ik/output"/>
 		<remap from="/inverse_kinematics_from_file/output_filtered" to="/ik/output_filtered"/>
-		<remap from="/inverse_kinematics_from_file/out_labels" to="/ik/outlabels"/>
+		<remap from="/inverse_kinematics_from_file/out_labels" to="/ik/out_labels"/>
 
 		<param name="async_run" 			value="$(arg async_run)"/>
         </node>

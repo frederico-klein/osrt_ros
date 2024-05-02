@@ -361,7 +361,7 @@ void IMUCalibrator::calibrateIMUTasks(
 	Rotation RR ;
 
 	//if (i==baseBodyIndex)
-		RR = R_heading;
+		RR = R_heading; //maybe this should be calculated per imu?
 	const auto R_BS = RR * ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO
         //const auto R_BS = ~imuBodiesInGround[bodyName]* RR * R0; // ~R_GB * R_GO
         //const auto R_BS = ~imuBodiesInGround[bodyName] * R0; // ~R_GB * R_GO

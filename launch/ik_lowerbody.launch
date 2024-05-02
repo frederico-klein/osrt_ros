@@ -21,7 +21,7 @@
 		
 		<remap from="/ik_lowerbody_node/output" 		to="/ik/output"/>
 		<remap from="/ik_lowerbody_node/output_filtered" 	to="/ik/output_filtered"/>
-		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/outlabels"/>
+		<remap from="/ik_lowerbody_node/out_labels" 		to="/ik/out_labels"/>
 
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />

@@ -7,7 +7,7 @@
 			<remap from="/joint_states" to="model_generic/joint_states"/>
 			<!-- arg name="base_parent" value="subject_adds_heading"/ -->
 			<arg name="base_parent" value="$(arg base_parent)"/>
-			<arg name="in_labels" value="/ik/outlabels"/>
+			<arg name="in_labels" value="/ik/out_labels"/>
 		</include>
 
 

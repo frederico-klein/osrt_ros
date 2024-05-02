@@ -91,10 +91,10 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
 		if (wrenchBuffer.front().header.stamp >timestamp || wrenchBuffer.back().header.stamp < timestamp)
 		{
-			ROS_FATAL_STREAM("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
-			ROS_INFO_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
-			ROS_INFO_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
-			ROS_INFO_STREAM("desired time 		:" <<timestamp);
+			ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
+			ROS_INFO_STREAM_ONCE("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
+			ROS_INFO_STREAM_ONCE("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
+			ROS_INFO_STREAM_ONCE("desired time 		:" <<timestamp);
 		}
 	}
 	else
@@ -204,7 +204,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 
 	}
 	catch (tf2::TransformException &ex) {
-		ROS_ERROR("Could not find a transform: parse_message transform exception: %s",ex.what());
+		ROS_ERROR_THROTTLE(1,"Could not find a transform: parse_message transform exception: %s",ex.what());
 		//ros::Duration(1.0).sleep();
 		return false;
 	}
@@ -229,7 +229,7 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	if(wsR.get_wrench(timestamp, gRw))
 		grfRightWrench = *gRw;
 	else
-		ROS_ERROR("did not find right wrench. using nullWrench!");
+		ROS_ERROR_THROTTLE(1,"did not find right wrench. using nullWrench!");
 	//cout << "left wrench.";
 	//ROS_DEBUG_STREAM("rw");
 	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
@@ -237,7 +237,7 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	if(wsL.get_wrench(timestamp, gLw))
 		grfLeftWrench = *gLw;
 	else
-		ROS_ERROR("did not find left wrench. using nullWrench!");
+		ROS_ERROR_THROTTLE(1,"did not find left wrench. using nullWrench!");
 	//ROS_DEBUG_STREAM("lw");
 	//	return;
 
