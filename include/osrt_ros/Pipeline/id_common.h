@@ -50,6 +50,7 @@ namespace Pipeline
 			boost::array<int,9> grfLeftIndexes, grfRightIndexes;
 
 			bool use_grfm_filter;
+			bool use_visualizer=true;
 			int memory, delay, splineOrder;
 			double cutoffFreq;
 

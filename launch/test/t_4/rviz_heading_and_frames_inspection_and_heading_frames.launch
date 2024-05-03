@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<arg name="freq" default="100"/>⏎
-	<arg name="run_with_imus" default="true" />
-	<arg name="load_urdf_model" default="true" />
+	<arg name="vis" default="true" />
 	<group ns="ik">
-		<node pkg="rviz" type="rviz" name="rviz2" args="-d $(find osrt_ros)/launch/test/t_4/t4.rviz"/>
+		<node pkg="rviz" type="rviz" name="rviz2" args="-d $(find osrt_ros)/launch/test/t_4/t4.rviz" if="$(arg vis)"/>
 
 	</group>
 	

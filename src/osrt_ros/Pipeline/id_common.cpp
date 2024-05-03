@@ -133,6 +133,7 @@ void Pipeline::IdCommon::onInit() {
 	sub1.registerCallback(&Pipeline::IdCommon::callback1,this);
 
 
+	nh.getParam("visualise", use_visualizer);
 	// when i am running this it is already initialized, so i have to add the loggers to the list I want to save afterwards
 	// TODO: set the column labels, or it will break when you try to use them!
 	message_filters::TimeSynchronizer<opensimrt_msgs::CommonTimed, opensimrt_msgs::CommonTimed> sync(sub, sub2, 500);
@@ -282,7 +283,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
 
 	// visualization
-	if (true)
+	if (usesVisualizarFromIdCommon() && use_visualizer)
 	{
 		try {
 			visualizer->update(q);
