@@ -14,6 +14,7 @@ void Visualizers::SoVis::before_vis()
 void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 {
 	ROS_INFO_STREAM("callback sovis reached received message:" << message);
+	set_delay_from_header(message->q.header.stamp);
 	//initialize q
 	SimTK::Vector q(message->q.data.size()), soOutput_am(message->tau.data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (size_t i=0;i<message->q.data.size(); i++)
@@ -37,6 +38,7 @@ void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstPtr &message)
 {
 	ROS_DEBUG_STREAM("callback sovis multi reached received message:" << message);
+	set_delay_from_header(message->header.stamp);
 	//initialize q
 	SimTK::Vector q(message->ik.data.size()), soOutput_am(message->other[0].data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (size_t i=0;i<message->ik.data.size(); i++)
@@ -60,6 +62,7 @@ void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 void Visualizers::SoVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr &message)
 {
 	ROS_INFO_STREAM("callback sovis filtered reached received message:" << message);
+	set_delay_from_header(message->qqq.header.stamp);
 	//initialize q
 	SimTK::Vector q(message->qqq.d0_data.size()), soOutput_am(message->tau.data.size()); //TODO: its not tau the name of the message is unfortunate change it, so that this reads better
 	for (size_t i=0;i<message->qqq.d0_data.size(); i++)

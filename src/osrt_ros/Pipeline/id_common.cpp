@@ -3,6 +3,8 @@
 #include "geometry_msgs/Wrench.h"
 #include "geometry_msgs/WrenchStamped.h"
 #include "opensimrt_msgs/Events.h"
+#include "opensimrt_msgs/MultiMessage.h"
+#include "opensimrt_msgs/OpenSimData.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/Pipeline/dualsink_pipe.h"
 #include "message_filters/time_synchronizer.h"
@@ -32,6 +34,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 #include "ros/service_server.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
@@ -156,7 +159,7 @@ void Pipeline::IdCommon::onInit() {
 		grfRightIndexes = Osb::generateIndexes(grfRightLabels, input2_labels);
 	}
 	// visualizer
-	if (usesVisualizarFromIdCommon())
+	if (usesVisualizarFromIdCommon()&& use_visualizer)
 	{
 		ROS_WARN_STREAM("CREATING VISUALIZER FROM ID!");
 		visualizer = new BasicModelVisualizer(*model);
@@ -317,12 +320,28 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 
 
 		publish_additional_topics(h, q, wV );
+
+		std::vector<opensimrt_msgs::OpenSimData> osdv;
+		opensimrt_msgs::OpenSimData ik_data, tau_data;
+		
+		ik_data.data.insert(ik_data.data.end(), iks[0].begin(), iks[0].end());
+		osdv.push_back(ik_data);
+		tau_data.data.insert(tau_data.data.end(), idOutput.tau.begin(), idOutput.tau.end());
+		osdv.push_back(tau_data);
+		osdv.push_back(Osb::reverse_parse_wrench(grfLeftWrench));
+		osdv.push_back(Osb::reverse_parse_wrench(grfRightWrench));
+		
+
+		addEvent("id_common: before publish multi",e);
+		opensimrt_msgs::MultiMessage more_complete= Osb::get_as_Multi(h,osdv,e.list);
+		more_complete.time = t;
 		/*pub_grf_left.publish(conv_grf_to_msg(h, grfLeftWrench));
 		pub_grf_right.publish(conv_grf_to_msg(h, grfRightWrench));
 		pub_ik.publish(conv_ik_to_msg(h, q));
 		last_received_ik_stamp = msg.header.stamp;*/
-		addEvent("id_common: before publish multi",e);
-		sync_output_multi.publish(Osb::get_as_Multi(h,t,q,idOutput.tau,e.list));
+		////old version
+		//sync_output_multi.publish(Osb::get_as_Multi(h,t,q,idOutput.tau,e.list));
+		sync_output_multi.publish(more_complete);
 	}
 	catch (ros::Exception& e)
 	{

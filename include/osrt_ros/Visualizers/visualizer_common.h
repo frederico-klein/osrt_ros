@@ -10,6 +10,7 @@
 #include <Actuators/Schutte1993Muscle_Deprecated.h>
 #include "OpenSimUtils.h"
 #include "ros/init.h"
+#include "ros/message_traits.h"
 #include "ros/ros.h"
 #include "ros/subscriber.h"
 #include "ros/time.h"
@@ -36,6 +37,13 @@ namespace Visualizers
 			int m; // 1 is upper 2 is under...
 			ros::Subscriber sub, sub_filtered;
 			Ros::Reshuffler input;
+
+			void set_delay_from_header(ros::Time t)
+			{
+				if (visualizer)
+				visualizer->fps->actual_delay = (ros::Time::now().toSec() - t.toSec())*1000; // this is in ms
+
+			}
 			void get_params()
 			{
 				// subject data
@@ -88,16 +96,16 @@ namespace Visualizers
 			}
 			virtual void before_vis()
 			{
-				ROS_WARN("Not implemented for VisualizerCommon. initial setup of the thing");
+				ROS_WARN_ONCE("Not implemented for VisualizerCommon. initial setup of the thing");
 			}
 			virtual void after_vis()
 			{
-				ROS_WARN("Not implemented for VisualizerCommon. post-setup of the thing");
+				ROS_WARN_ONCE("Not implemented for VisualizerCommon. post-setup of the thing");
 			}
 
 			virtual void after_callback()
 			{
-				ROS_WARN("Not implemented. does something after the callbacks.");
+				//ROS_WARN("Not implemented. does something after the callbacks.");
 			}
 			void callback(const opensimrt_msgs::CommonTimedConstPtr &msg_ik ) {
 				try { // main loop
@@ -108,7 +116,7 @@ namespace Visualizers
 						q[i] = msg_ik->data[i];
 					}
 					visualizer->update(q);
-					visualizer->fps->actual_delay = (ros::Time::now().toSec() - msg_ik->header.stamp.toSec())*1000; // this is in ms
+					set_delay_from_header(msg_ik->header.stamp);
 					after_callback();
 				} catch (std::exception& e) {
 					std::cout << e.what() << std::endl;
@@ -123,7 +131,7 @@ namespace Visualizers
 						q[i] = msg_ik->d0_data[i];
 					}
 					visualizer->update(q);
-					visualizer->fps->actual_delay = (ros::Time::now().toSec() - msg_ik->header.stamp.toSec())*1000; // this is in ms
+					set_delay_from_header(msg_ik->header.stamp);
 					after_callback();
 
 				} catch (std::exception& e) {
