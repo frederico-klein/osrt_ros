@@ -27,6 +27,7 @@
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Quaternion.h>
 #include <SimTKcommon/internal/ReinitOnCopy.h>
+#include <chrono>
 #include <exception>
 #include "osrt_ros/UIMU/TfServer.h"
 #include "Ros/include/common_node.h"
@@ -44,6 +45,15 @@ using namespace std;
 using namespace OpenSim;
 using namespace OpenSimRT;
 using namespace SimTK;
+
+const std::string red("\033[0;31m");
+const std::string green("\033[1;32m");
+const std::string yellow("\033[1;33m");
+const std::string cyan("\033[0;36m");
+const std::string magenta("\033[0;35m");
+const std::string reset("\033[0m");
+
+const std::string bar("\n======================================================\n");
 
 class UIMUnode: Ros::CommonNode
 {
@@ -172,6 +182,7 @@ class UIMUnode: Ros::CommonNode
 		}
 		void start_ik()
 		{
+	chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
 
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
@@ -217,6 +228,9 @@ class UIMUnode: Ros::CommonNode
 			//TODO: publish correct ROS topics
 			output.labels = qRawLogger.getColumnLabels();
 			ROS_INFO_STREAM("done with start_ik");
+	chrono::high_resolution_clock::time_point t2=chrono::high_resolution_clock::now() ;
+
+	ROS_WARN_STREAM(bar << "start_ik call duration in ms:"<<magenta<<chrono::duration_cast<chrono::milliseconds>(t2-t1).count()<<bar <<reset);
 		}
 
 		SimTK::RowVector fromVectorOfSimTKQuaternionsToARowVector(std::vector<SimTK::Quaternion> vv)
@@ -272,7 +286,6 @@ class UIMUnode: Ros::CommonNode
 			get_params();
 			//f = boost::bind(&UIMUnode::reconfigure_callback, this, _1,_2);
 			//server.setCallback(f);
-			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
 			time_pub = nh.advertise<std_msgs::Int64>("time",1);
 			time_ik_pub = nh.advertise<std_msgs::Int64>("time_ik",1);
 			calibrationService = nh.advertiseService("calibrate", &UIMUnode::calibrationSrv, this);
@@ -306,6 +319,8 @@ class UIMUnode: Ros::CommonNode
 				all_labels+=l+",";
 			}
 			ROS_INFO_STREAM("Publisher labels: "<<all_labels);
+			//I want to start the service after we set the labels, otherwise it might reply with an empty message.
+			Ros::CommonNode::onInit(0); //we are not reading from anything, we are a source
 
 			// visualizer
 			if (visualiseIt)

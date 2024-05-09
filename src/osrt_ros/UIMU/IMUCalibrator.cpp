@@ -23,6 +23,8 @@
 #include "geometry_msgs/Vector3.h"
 #include "osrt_ros/FloatRequest.h"
 #include "osrt_ros/FloatResponse.h"
+#include "ros/datatypes.h"
+#include "ros/init.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
@@ -34,8 +36,11 @@
 #include <SimTKcommon/internal/CoordinateAxis.h>
 #include <SimTKcommon/internal/Quaternion.h>
 #include <SimTKcommon/internal/Rotation.h>
+#include <chrono>
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
+#include <thread>
+#include <vector>
 
 using namespace OpenSimRT;
 using namespace OpenSim;
@@ -72,7 +77,10 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 		{
 			std::string calib_serv_name =tf_prefix+imu_name+"/pose_average/calibrate_pose"; 
 			ROS_WARN_STREAM("calibration service name:"<< calib_serv_name);
-			calib_clients.push_back(ghandle.serviceClient<std_srvs::Empty>(calib_serv_name));
+			autosrv this_srv;
+			this_srv.imu = imu_name;
+			this_srv.calib_client = ghandle.serviceClient<std_srvs::Empty>(calib_serv_name);
+			calib_srv.push_back(this_srv);
 		}
     // initialize system
     state = model.initSystem();
@@ -337,6 +345,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
     
     ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
     tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
+	ros::spinOnce();
     return R_heading;
 }
 
@@ -377,51 +386,60 @@ void IMUCalibrator::calibrateIMUTasks(
 
 void IMUCalibrator::calibrate_ext_signals_sender()
 {
-	std_srvs::Empty a;
 
 	osrt_ros::Float b;
 	// I also want to tell every service that they need to start acquiring poses and this needs to be non-blocking!QQ
 	ROS_INFO_STREAM("trying to send calibration signals to my fellas imu Quaternion pose average buddies");
-	for(auto a_calib_src:calib_clients)
+
+
+	//is this faster? this is 13ms without the spin.
+	chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
+	std::vector<std::thread> tts;
+	for(autosrv& a_calib_src:calib_srv)
 	{
-		if(!a_calib_src.exists())
-			ROS_WARN_STREAM("srv:" << a_calib_src.getService() << " does not exist!!!!!!");
-		else
-		{
-		ROS_INFO_STREAM("trying to call" << a_calib_src.getService());
-		a_calib_src.call(a);
-		}
+		auto ff = [&](){a_calib_src.calib();};
+		tts.push_back(std::thread(ff));
 	}
-		if(!ext_heading_srv.exists())
-			ROS_WARN_STREAM("srv:" <<ext_heading_srv.getService() << " does not exist!!!!!!");
-		else
-		{
+	for (std::thread& t : tts)
+            if (t.joinable())
+                t.join();
+	chrono::high_resolution_clock::time_point t2=chrono::high_resolution_clock::now() ;
+
+	ROS_WARN_STREAM("multiple srv call duration in ms:"<<magenta<<chrono::duration_cast<chrono::milliseconds>(t2-t1).count());
+
+	if(!ext_heading_srv.exists())
+		ROS_WARN_STREAM("srv:" <<ext_heading_srv.getService() << " does not exist!!!!!!");
+	else
+	{
 		ROS_INFO_STREAM("trying to call" << ext_heading_srv.getService());
 		ext_heading_srv.call(b);
 		ROS_INFO_STREAM("got heading angle " << b.response.data);
 		baseHeadingAngle = -b.response.data*180.0/3.141592;
 		ROS_INFO_STREAM("setting heading angle to minus that much, " << baseHeadingAngle);
 
-		}
-	
+	}
+	chrono::high_resolution_clock::time_point t3=chrono::high_resolution_clock::now() ;
+
+	ROS_WARN_STREAM("heading srv call duration in ms:"<<cyan<<chrono::duration_cast<chrono::milliseconds>(t3-t2).count());
+
 }
 
 void IMUCalibrator::recordNumOfSamples(const size_t& numSamples) {
-if(send_start_signal_to_external_heading_calibrator)
-{
-	calibrate_ext_signals_sender();
-}
-    impl->recordNumOfSamples(numSamples);
+	if(send_start_signal_to_external_heading_calibrator)
+	{
+		calibrate_ext_signals_sender();
+	}
+	impl->recordNumOfSamples(numSamples);
 	computeAvgStaticPoseCommon();
 }
 
 void IMUCalibrator::recordTime(const double& timeout) {
-if(send_start_signal_to_external_heading_calibrator)
-{
-	calibrate_ext_signals_sender();
+	if(send_start_signal_to_external_heading_calibrator)
+	{
+		calibrate_ext_signals_sender();
 
-}
-    impl->recordTime(timeout);
+	}
+	impl->recordTime(timeout);
 	computeAvgStaticPoseCommon();
 }
 
@@ -429,25 +447,25 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 {
 	//TODO: this is sort of slow, check which are the slow bits to parallelize, it is like a mutex and thread join thing for each of the bits below. 
 	//i think maybe the waitformessage is the slow part.
-    publishCalibrationData(); //TODO: this can be parallelised
-    std::vector<SimTK::Quaternion> old_avg_response_list = impl->computeAvgStaticPose();;
+	publishCalibrationData(); //TODO: this can be parallelised
+	std::vector<SimTK::Quaternion> old_avg_response_list = impl->computeAvgStaticPose();;
 
-    ROS_INFO_STREAM("Now calculating average static pose");
-    if (externalAveragingMethod) //this should be a service call, but service don't get saved in rosbags
-    {
+	ROS_INFO_STREAM("Now calculating average static pose");
+	if (externalAveragingMethod) //this should be a service call, but service don't get saved in rosbags
+	{
 		ROS_INFO_STREAM("using external averagingMethod!");
-    		//ROS_WARN("not yet implemented, using normal method");
+		//ROS_WARN("not yet implemented, using normal method");
 		std::vector<SimTK::Quaternion> avg_response_list;
 		for (auto imu_name:imuBodiesObservationOrder) //TODO: this can also be parallelised
 		{
 			geometry_msgs::QuaternionConstPtr res_q;
 			geometry_msgs::Quaternion q;
-			
-				
+
+
 			//janky af, this waits for the avg to be available, even though in the new method, we do nothing with this info
 			auto topic_name = nhandle.resolveName(imu_name+"/avg_pose");
-				ROS_DEBUG_STREAM("trying to read: " <<topic_name);
-				res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
+			ROS_DEBUG_STREAM("trying to read: " <<topic_name);
+			res_q = ros::topic::waitForMessage<geometry_msgs::Quaternion>(imu_name+"/avg_pose", nhandle);
 			if (old_method_of_getting_averaged)
 			{
 				if (res_q)
@@ -461,7 +479,7 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 					//Quaternion 	( 		 )  	[inline]
 
 					//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
-					
+
 					SimTK::Quaternion si_q;
 					si_q[0] = q.w;
 					si_q[1] = q.x;
@@ -482,54 +500,54 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 				// and the source of input are different things, or maybe they arent idk. this is like this for now
 				string tf_prefix;
 				nhandle.param<string>("tf_prefix",tf_prefix,"");
-			string imu_calib_name = tf_prefix+imu_name+"_imu"; // this is probably wrong, i make like a complicated name...
-			auto imu_calib_from_tf = tfBuffer.lookupTransform(imu_calib_name,tf_prefix+imu_name,ros::Time(0));
+				string imu_calib_name = tf_prefix+imu_name+"_imu"; // this is probably wrong, i make like a complicated name...
+				auto imu_calib_from_tf = tfBuffer.lookupTransform(imu_calib_name,tf_prefix+imu_name,ros::Time(0));
 
 				if(res_q)	
 				{
 
-				auto res_q_tf = imu_calib_from_tf.transform.rotation;
-				ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-				
-				//just in case you are wondering, if no heading is given, these two give the same quaternion. 
-				//or almost the same, the tf one is -q, which should be the same, the inverse would be the conjugate (inverted w), 
-				//but I repeat, THIS IS NOT THE CASE, if the heading is zero. 
-				ROS_INFO_STREAM(magenta <<"[" << res_q->w <<","<< res_q->x <<","<< res_q->y <<","<< res_q->z << "] (w,x,y,z) this if from avg_pose_nonsense!!"<< reset);
-				ROS_INFO_STREAM(cyan <<"[" << res_q_tf.w <<","<< res_q_tf.x <<","<< res_q_tf.y <<","<< res_q_tf.z << "] (w,x,y,z) this if from tf!!"<< reset);
-				q = imu_calib_from_tf.transform.rotation;
-				ROS_DEBUG_STREAM(q);
-				ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-				//the first term of the quaternion is w in simtk:
-				//Quaternion 	( 		 )  	[inline]
+					auto res_q_tf = imu_calib_from_tf.transform.rotation;
+					ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-				//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
-				
-				SimTK::Quaternion si_q;
-				si_q[0] = q.w;
-				si_q[1] = q.x;
-				si_q[2] = q.y;
-				si_q[3] = q.z;
-				//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
-				//SimTK::Quaternion one;
-				//avg_response_list.push_back(one);
-				avg_response_list.push_back(si_q);
+					//just in case you are wondering, if no heading is given, these two give the same quaternion. 
+					//or almost the same, the tf one is -q, which should be the same, the inverse would be the conjugate (inverted w), 
+					//but I repeat, THIS IS NOT THE CASE, if the heading is zero. 
+					ROS_INFO_STREAM(magenta <<"[" << res_q->w <<","<< res_q->x <<","<< res_q->y <<","<< res_q->z << "] (w,x,y,z) this if from avg_pose_nonsense!!"<< reset);
+					ROS_INFO_STREAM(cyan <<"[" << res_q_tf.w <<","<< res_q_tf.x <<","<< res_q_tf.y <<","<< res_q_tf.z << "] (w,x,y,z) this if from tf!!"<< reset);
+					q = imu_calib_from_tf.transform.rotation;
+					ROS_DEBUG_STREAM(q);
+					ROS_DEBUG_STREAM(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+					//the first term of the quaternion is w in simtk:
+					//Quaternion 	( 		 )  	[inline]
+
+					//Default constructor produces the ZeroRotation quaternion [1 0 0 0] (not NaN - even in debug mode). 
+
+					SimTK::Quaternion si_q;
+					si_q[0] = q.w;
+					si_q[1] = q.x;
+					si_q[2] = q.y;
+					si_q[3] = q.z;
+					//ROS_WARN("quaternionAverage disabled using one, which should result in an identity matrix rotation");
+					//SimTK::Quaternion one;
+					//avg_response_list.push_back(one);
+					avg_response_list.push_back(si_q);
 				}
 			}
 		}
 		//staticPoseQuaternions = impl->computeAvgStaticPose();
 		staticPoseQuaternions = avg_response_list;
-    }
-    else {
-    	staticPoseQuaternions = impl->computeAvgStaticPose();
-    }
-    //let's compare the results:
-    ROS_DEBUG_STREAM("\n===== Calibration results ============");
-    for (size_t i=0;i<old_avg_response_list.size(); i++)
-    {
-	ROS_DEBUG_STREAM("\nOLD:" <<old_avg_response_list[i] <<
-			"\nNEW;" <<staticPoseQuaternions[i]);
-    }
-    ROS_DEBUG_STREAM("\n===== End of calibration results =====");
+	}
+	else {
+		staticPoseQuaternions = impl->computeAvgStaticPose();
+	}
+	//let's compare the results:
+	ROS_DEBUG_STREAM("\n===== Calibration results ============");
+	for (size_t i=0;i<old_avg_response_list.size(); i++)
+	{
+		ROS_DEBUG_STREAM("\nOLD:" <<old_avg_response_list[i] <<
+				"\nNEW;" <<staticPoseQuaternions[i]);
+	}
+	ROS_DEBUG_STREAM("\n===== End of calibration results =====");
 }
 void IMUCalibrator::setMethod(bool method) {
 	ROS_INFO_STREAM("setting calibration method");
@@ -538,27 +556,27 @@ void IMUCalibrator::setMethod(bool method) {
 
 void IMUCalibrator::publishCalibrationData()
 {
-    auto ans =  impl->getTableData();
-    int i = 0;
-    for (auto qT:ans) // so this is not necessarily aligned. it should be a smart thing, like a map
-    { 	
-	    ROS_DEBUG_STREAM("iterating over imus[" << i << "]: " << imuBodiesObservationOrder[i] );
-	    geometry_msgs::PoseArray p_msg;
-	    
-	    for (auto q:qT)
-	    {
-		    //ROS_DEBUG_STREAM_ONCE("Is the Quaternion order correct? The SVD method shouldn't care, but maybe that could be wrong?");
-		    geometry_msgs::Pose pp;
-		    pp.orientation.w = q[0];
-		    pp.orientation.x = q[1];
-		    pp.orientation.y = q[2];
-		    pp.orientation.z = q[3];
-		    ROS_DEBUG_STREAM(q);
-		    p_msg.poses.push_back(pp);
-	    }
-	    pub[i].publish(p_msg);
-	    i++;
-    }
+	auto ans =  impl->getTableData();
+	int i = 0;
+	for (auto qT:ans) // so this is not necessarily aligned. it should be a smart thing, like a map
+	{ 	
+		ROS_DEBUG_STREAM("iterating over imus[" << i << "]: " << imuBodiesObservationOrder[i] );
+		geometry_msgs::PoseArray p_msg;
+
+		for (auto q:qT)
+		{
+			//ROS_DEBUG_STREAM_ONCE("Is the Quaternion order correct? The SVD method shouldn't care, but maybe that could be wrong?");
+			geometry_msgs::Pose pp;
+			pp.orientation.w = q[0];
+			pp.orientation.x = q[1];
+			pp.orientation.y = q[2];
+			pp.orientation.z = q[3];
+			ROS_DEBUG_STREAM(q);
+			p_msg.poses.push_back(pp);
+		}
+		pub[i].publish(p_msg);
+		i++;
+	}
 
 
 }

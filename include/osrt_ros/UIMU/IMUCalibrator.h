@@ -30,16 +30,40 @@
 //#include "U?->NGIMUInputDriver.h"
 #include "Utils.h"
 #include "ros/service_client.h"
+#include "std_srvs/Empty.h"
 #include "tf/transform_broadcaster.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include <Simulation/Model/Model.h>
+#include <boost/function/function_fwd.hpp>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <ros/ros.h>
+#include <vector>
 namespace OpenSimRT {
+
+	class autosrv
+	{
+	public:
+			ros::ServiceClient calib_client;
+			void calib()
+			{
+				auto a = std_srvs::Empty();
+				if(!calib_client.exists())
+					ROS_WARN_STREAM("srv:" << calib_client.getService() << " does not exist!!!!!!");
+				else
+				{
+					ROS_INFO_STREAM("trying to call" << calib_client.getService());
+					calib_client.call(a);
+					ros::spinOnce();
+				}
+			}
+			std::string imu;
+
+	};
 
 	/**
 	 * Class used to calibrate IMUData for solving the IK module with orientation
@@ -71,7 +95,7 @@ namespace OpenSimRT {
 
 			double baseHeadingAngle=0;
 
-			std::vector<ros::ServiceClient> calib_clients;
+			std::vector<autosrv> calib_srv;
 			void calibrate_ext_signals_sender();
 			/**
 			 * Construct a calibrator object. The constructor uses the Type-Erasure
