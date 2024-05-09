@@ -13,6 +13,14 @@ using namespace OpenSim;
 using namespace SimTK;
 using namespace OpenSimRT;
 
+const std::string red("\033[0;31m");
+const std::string green("\033[1;32m");
+const std::string yellow("\033[1;33m");
+const std::string cyan("\033[0;36m");
+const std::string magenta("\033[0;35m");
+const std::string blue("\033[0;34m");
+const std::string reset("\033[0m");
+
 Pipeline::WrenchSubscriber::WrenchSubscriber(std::string wrench_name_prefix_, std::string calcn_frame_):
 	tfListener(tfBuffer), calcn_frame(calcn_frame_), wrench_name_prefix(wrench_name_prefix_)
 {
@@ -56,8 +64,9 @@ void Pipeline::WrenchSubscriber::callback(const geometry_msgs::WrenchStampedCons
 	//places the wrench in the buffer
 	geometry_msgs::WrenchStamped my_wrench = *msg.get();
 	wrenchBuffer.push_back(my_wrench);
-	ROS_DEBUG_STREAM("what i think i am saving" << my_wrench);
-	ROS_DEBUG_STREAM("buffer size" <<wrenchBuffer.size());
+	ROS_DEBUG_STREAM(wrench_name_prefix+": what i think i am saving" << my_wrench);
+	//ROS_INFO_STREAM(wrench_name_prefix+": wrench time:" << my_wrench.header.stamp);
+	ROS_DEBUG_STREAM(wrench_name_prefix+": buffer size" <<wrenchBuffer.size());
 	while (wrenchBuffer.size()>max_buffer_length)
 	{
 		wrenchBuffer.pop_front();
@@ -69,6 +78,8 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 	auto best_wrench = geometry_msgs::WrenchStamped();
 	double old_best_wrench_time_offset = 3000;
 	double this_wrench_time = 3000;
+	static size_t too_fast_counter = 0;
+	static size_t too_slow_counter = 0;
 	if (!wrenchBuffer.empty())
 	{
 		//int i = -1;
@@ -89,17 +100,29 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		//ROS_DEBUG_STREAM("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
 		//ROS_DEBUG_STREAM("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
 		//ROS_DEBUG_STREAM("desired time 		:" <<timestamp);
-		if (wrenchBuffer.front().header.stamp >timestamp || wrenchBuffer.back().header.stamp < timestamp)
+		bool ik_too_slow = wrenchBuffer.front().header.stamp >timestamp;
+		bool ik_too_fast = wrenchBuffer.back().header.stamp < timestamp;
+			
+		
+		if (ik_too_fast)
 		{
-			ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp. IK is too fast! Or too slow? Idk..");
-			ROS_INFO_STREAM_ONCE("first time in buffer	:" <<wrenchBuffer.front().header.stamp);
-			ROS_INFO_STREAM_ONCE("last time in buffer	:" <<wrenchBuffer.back().header.stamp);
-			ROS_INFO_STREAM_ONCE("desired time 		:" <<timestamp);
+			ROS_FATAL_STREAM_THROTTLE(1,"Could not find a wrench that matched the desired timestamp." << blue <<" IK is too fast!\ncounts: "<< too_fast_counter << reset);
+			too_fast_counter++;
 		}
+
+		if (ik_too_slow)
+		{	
+			ROS_FATAL_STREAM_THROTTLE(1,"Could not find a wrench that matched the desired timestamp."<< green <<" IK too slow!\ncounts: " << too_slow_counter <<reset);
+			too_fast_counter++;
+		}
+		if (ik_too_fast || ik_too_slow)
+			ROS_INFO_STREAM_THROTTLE(1,	"\nfirst time in buffer	:" <<wrenchBuffer.front().header.stamp <<
+							"\nlast time in buffer	:" <<wrenchBuffer.back().header.stamp <<
+							"\ndesired time		:" <<timestamp);
 	}
 	else
 	{
-		ROS_FATAL_STREAM("Wrench Buffer is empty!");
+		ROS_FATAL_STREAM_THROTTLE(1,"Wrench Buffer is empty!");
 	}
 	return best_wrench;
 }
@@ -110,7 +133,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 	auto now = ros::Time::now();
 	if (w.header.frame_id == "")
 	{
-		ROS_WARN_STREAM("header frame_id is empty!!!");
+		ROS_WARN_STREAM_THROTTLE(1,"header frame_id is empty!!!");
 		return false;
 	}
 	ROS_DEBUG_STREAM("timing information:\nIK stamp: "<< timestamp <<"\nfound wrench header stamp:"<< w.header.stamp << "\nnow: "<< now <<"\nDelay of this node:" << now-timestamp );
@@ -224,6 +247,13 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	nullWrench.torque = Vec3{0,0,0};
 	nullWrench.point = Vec3{0,0,0};
 
+	//sanity check
+	//
+	//ROS_INFO_STREAM("this: \n" <<ros::Time::now()-timestamp<<"\nshould be the same delay as this:\n" <<ik_delay);
+	// currently it works
+	//ROS_INFO_STREAM("ik being evaluated now: "<< timestamp);
+
+
 	static OpenSimRT::ExternalWrench::Input grfRightWrench=nullWrench;
 	OpenSimRT::ExternalWrench::Input* gRw(&grfRightWrench); 
 	if(wsR.get_wrench(timestamp, gRw))
@@ -321,7 +351,7 @@ void Pipeline::IdAsync::onInit() {
 }
 ros::Time Pipeline::IdAsync::convert_time_stamp_to_the_past(const ros::Time timestamp0)
 {
-	ROS_FATAL_STREAM("not ncessary, do not use!!!");
+	ROS_FATAL_STREAM("not necessary, do not use!!!");
 	auto t0secs = timestamp0.toSec();
 	ROS_WARN_STREAM("this is the IK header time that is in the callback!!!!\n" << timestamp0);
 	auto converted_time = ros::Time(t0secs - ik_delay);
