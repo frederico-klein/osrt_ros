@@ -62,7 +62,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 	std::string tf_prefix;
 	nhandle.param<string>("tf_prefix",tf_prefix,"");
 	
-	ext_heading_srv = ghandle.serviceClient<osrt_ros::Float>("calibrate_heading");
+	ext_heading_srv = ghandle.serviceClient<osrt_ros::Float>("calibrate_heading", true);
 
 	R_heading = SimTK::Rotation();
     //why?
@@ -79,7 +79,7 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 			ROS_WARN_STREAM("calibration service name:"<< calib_serv_name);
 			autosrv this_srv;
 			this_srv.imu = imu_name;
-			this_srv.calib_client = ghandle.serviceClient<std_srvs::Empty>(calib_serv_name);
+			this_srv.calib_client = ghandle.serviceClient<std_srvs::Empty>(calib_serv_name, true);
 			calib_srv.push_back(this_srv);
 		}
     // initialize system
@@ -412,7 +412,15 @@ void IMUCalibrator::calibrate_ext_signals_sender()
 	else
 	{
 		ROS_INFO_STREAM("trying to call" << ext_heading_srv.getService());
+			chrono::high_resolution_clock::time_point tsrv1=chrono::high_resolution_clock::now() ;
 		ext_heading_srv.call(b);
+			chrono::high_resolution_clock::time_point tsrv2=chrono::high_resolution_clock::now() ;
+		ros::spinOnce();
+			chrono::high_resolution_clock::time_point tsrv3=chrono::high_resolution_clock::now() ;
+	
+
+			ROS_WARN_STREAM("blames:: service call:"<<green<<chrono::duration_cast<chrono::milliseconds>(tsrv2-tsrv1).count()<<" spinning once"<<chrono::duration_cast<chrono::milliseconds>(tsrv3-tsrv2).count());
+			
 		ROS_INFO_STREAM("got heading angle " << b.response.data);
 		baseHeadingAngle = -b.response.data*180.0/3.141592;
 		ROS_INFO_STREAM("setting heading angle to minus that much, " << baseHeadingAngle);

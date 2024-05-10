@@ -85,7 +85,7 @@ class ExternalAveragePosePublisher
 		std::stringstream origin_str;
 		for (auto v:origin)
 			origin_str << v << ",";
-		ROS_WARN_STREAM("Using origin" << origin_str.str() <<" for ExternalAveragePosePublisher" << own_name);
+		ROS_INFO_STREAM("Using origin: " << origin_str.str() <<" for ExternalAveragePosePublisher: " << own_name);
 		ROS_INFO_STREAM("started avg_pose publisher reading from node: " << own_name);
 
 	}
@@ -322,15 +322,12 @@ int main(int argc, char **argv)
 			{
 				if(!eApp.is_calibrated )
 				{
-					ROS_INFO_STREAM("adding service pose to stack");
+					ROS_DEBUG_STREAM(eApp.imu_raw<<": adding service pose to stack");
 					eApp.add_pose_to_stack();
 				}
 				else
 				{
 					eApp.acquiring = false;
-					rr.sleep();
-					ros::spinOnce();
-
 				}
 			}
 			else if (eApp.resolving_heading)
@@ -345,8 +342,8 @@ int main(int argc, char **argv)
 					eApp.resolving_heading = false;
 				}
 			}
-			rr.sleep();
 			ros::spinOnce();
+			rr.sleep();
 		}
 	}
 	else

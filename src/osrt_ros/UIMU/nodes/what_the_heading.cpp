@@ -21,46 +21,50 @@ int main(int argc, char **argv)
 
 	//ros::Publisher pub = nh.advertise<geometry_msgs::PoseStamped>("pppppppp",10,false);
 	ros::Publisher pub2 = nh.advertise<visualization_msgs::Marker>("visualization_marker",10,true);
-	ros::Rate r(1);
-	while(ros::ok())
+	ros::Rate r(5);
+	if (!run_as_service)
 	{
-		/*
-		   geometry_msgs::Quaternion q1,q2;
-		   q1.w =1;q1.x =0;q1.y =0;q1.z =0;
-		   q2.w =1;q2.x =0;q2.y =0;q2.z =0;
-		   geometry_msgs::Vector3 v;
-		   v.x = 0;
-		   v.y = 0;
-		   v.z = -1;
-		   double heading_angle = eApp.calculate_angle(q1,q2,v);
-		   geometry_msgs::PoseStamped pp;
-		   pp.header.stamp = ros::Time::now();
-		   pp.header.frame_id = "map";
-		   tf::Quaternion g = tf::createQuaternionFromYaw(heading_angle);
-		   pp.pose.orientation.w =g.w();
-		   pp.pose.orientation.x =g.x();
-		   pp.pose.orientation.y =g.y();
-		   pp.pose.orientation.z =g.z();
-		   pp.pose.position = eApp.origin;
-		   pub.publish(pp);
-		*/
-		if (!run_as_service)
+		while(ros::ok())
 		{
+			/*
+			   geometry_msgs::Quaternion q1,q2;
+			   q1.w =1;q1.x =0;q1.y =0;q1.z =0;
+			   q2.w =1;q2.x =0;q2.y =0;q2.z =0;
+			   geometry_msgs::Vector3 v;
+			   v.x = 0;
+			   v.y = 0;
+			   v.z = -1;
+			   double heading_angle = eApp.calculate_angle(q1,q2,v);
+			   geometry_msgs::PoseStamped pp;
+			   pp.header.stamp = ros::Time::now();
+			   pp.header.frame_id = "map";
+			   tf::Quaternion g = tf::createQuaternionFromYaw(heading_angle);
+			   pp.pose.orientation.w =g.w();
+			   pp.pose.orientation.x =g.x();
+			   pp.pose.orientation.y =g.y();
+			   pp.pose.orientation.z =g.z();
+			   pp.pose.position = eApp.origin;
+			   pub.publish(pp);
+			*/
+			if (!run_as_service)
+			{
 
-			eApp.calibrate();
+				eApp.calibrate();
 
+			}
+			// creates marker arrow. color is axis heading, right
+			//auto m = eApp.getArrowForVector("imu_heading_axis",eApp.heading);
+			// but we should place the imu heading on the imu
+			//m.header.frame_id = eApp.imu_default_frame_name;
+			for (auto m:eApp.debug_markers)
+				pub2.publish(m);
+
+			ros::spinOnce();
+			r.sleep();
 		}
-		// creates marker arrow. color is axis heading, right
-		//auto m = eApp.getArrowForVector("imu_heading_axis",eApp.heading);
-		// but we should place the imu heading on the imu
-		//m.header.frame_id = eApp.imu_default_frame_name;
-		for (auto m:eApp.debug_markers)
-			pub2.publish(m);
-
-		ros::spinOnce();
-		r.sleep();
 	}
-
+	else
+		ros::spin(); //wont publish the markers just yet, but there is less lag in the service call it seems
 	return 0;
 }
 

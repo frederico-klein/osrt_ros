@@ -2,10 +2,12 @@
 <launch>
 	<arg name="load_urdf_model" default="true" />
 	<arg name="show_rviz"   default="true"/>
+	<arg name="urdf_model_scale"   default="1"/>
 	<group ns="ik">
 		<include file="$(find gait1992_description)/launch/human_control_imus_movable_pipeline.launch" if="$(arg load_urdf_model)">
 			<arg name="tf_prefix" value="ik"/>
 			<arg name="show_rviz"   value="$(arg show_rviz)"/>
+			<arg name="urdf_model_scale"   value="$(arg urdf_model_scale)"/>
 
 		</include>
 

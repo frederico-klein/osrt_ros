@@ -6,6 +6,8 @@
 #include "osrt_ros/Float.h"
 #include "osrt_ros/FloatResponse.h"
 #include "ros/duration.h"
+#include "ros/forwards.h"
+#include "ros/init.h"
 #include "ros/node_handle.h"
 #include "ros/time.h"
 #include "std_msgs/Float64.h"
@@ -19,7 +21,6 @@
 #include <ostream>
 #include <vector>
 #include "tf/transform_listener.h"
-
 
 bivector3 PLANEXY{0,0,1};
 
@@ -91,7 +92,7 @@ void ExternalHeading::callback(std_msgs::Float64 msg )
 }
 void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string heading_frame_name )
 {
-	ROS_INFO_STREAM("I am sending a tf for heading here from: " << parent_frame_name <<" to "<< heading_frame_name);
+	ROS_DEBUG_STREAM("I am sending a tf for heading here from: " << parent_frame_name <<" to "<< heading_frame_name);
 	try
 	{
 		auto q_heading = tf::createQuaternionFromYaw(heading_angle);
@@ -116,6 +117,8 @@ void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string hea
 
 		heading_tf.transform.rotation = heading_pose.pose.orientation;
 		br.sendTransform(heading_tf);
+		//lets_try spinning it
+		ros::spinOnce();
 	}
 	catch(tf2::TransformException &ex)
 	{
@@ -128,8 +131,12 @@ void ExternalHeading::send_a_heading_to_tf(double heading_angle, std::string hea
 
 bool ExternalHeading::calibrate_srv(osrt_ros::FloatRequest & req, osrt_ros::FloatResponse & res)
 {
-	ROS_INFO_STREAM("calibrate service callled");
+	std::chrono::high_resolution_clock::time_point t1=std::chrono::high_resolution_clock::now() ;
+	ROS_DEBUG_STREAM("calibrate service called");
 	res.data = calibrate();
+	std::chrono::high_resolution_clock::time_point t2=std::chrono::high_resolution_clock::now() ;
+
+	ROS_WARN_STREAM("multiple srv call duration in ms:"<<magenta<<std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count());
 	return true;
 }
 
@@ -263,7 +270,7 @@ double other_angle_between_vectors(geometry_msgs::Vector3 a, geometry_msgs::Vect
 	// Va . Vb
 	double second = a.x*b.x + a.y*b.y + a.z*b.z;
 
-	ROS_INFO_STREAM("fist" << first << " second" << second);
+	//ROS_INFO_STREAM("other_angle_between_vectors\nfirst: " << first << " second: " << second);
 	
 	double angle_mag = atan2(first, second);
 
@@ -350,7 +357,9 @@ double ExternalHeading::calculate_angle(geometry_msgs::Transform default_measure
 	//ROS_INFO_STREAM("yaw,,," << aa*180/3.1415);
 
 	//im too stupid for this.
-	ROS_INFO_STREAM(" old:"<< angle_between_vectors(heading_os_default.v,projected_measured_heading.v)/3.1415*180);
+	
+	if (false)
+		ROS_INFO_STREAM(" old:"<< angle_between_vectors(heading_os_default.v,projected_measured_heading.v)/3.1415*180);
 	return other_angle_between_vectors(heading_os_default.v,projected_measured_heading.v);
 
 
@@ -392,8 +401,11 @@ double ExternalHeading::calibrate()
 		geometry_msgs::Transform null_tf;
 		null_tf.rotation.w =1;
 		heading_angle = calculate_angle(null_tf, imu_base_measured_frame.transform, heading);
+		if(false)
+		{
 
 		ROS_INFO_STREAM("calculate_angle (between empty transform and imu_base_measured_frame"<< imu_default_frame_name <<")  worked out okay.");
+		}
 		if(false)
 		{
 			//double heading_angle = calculate_angle(opensim_default_frame.transform, imu_base_measured_frame.transform, heading);
@@ -419,11 +431,13 @@ double ExternalHeading::calibrate()
 		///////////////////////////////////////////////////
 
 		ROS_INFO_STREAM(cyan << heading_angle*180/3.1415 <<red <<" degrees"<< reset);
-
-		std_msgs::Float64 h_msg;
+		if(false)
+		{std_msgs::Float64 h_msg;
 		h_msg.data = heading_angle;
 		heading_angle_publisher.publish(h_msg);
 		ROS_INFO_STREAM("published heading angle with a Float64 publisher okay.");
+		}
+
 		if (is_base_body)
 		{
 			ROS_WARN_STREAM_ONCE("I am using a weird loopback thing to publish this TF, it was easier this way, please change me!");

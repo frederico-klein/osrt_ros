@@ -35,7 +35,7 @@ void Visualizers::GrfVis::callback(const DualConstPtr &msg) {
 		leftGRFDecorator->update(grfmOutput.left.point, grfmOutput.left.force);
 		ROS_DEBUG_STREAM("visualizer ran ok.");
 	} catch (std::exception &e) {
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" << std::endl
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" << std::endl
 				<< e.what());
 	}
 }

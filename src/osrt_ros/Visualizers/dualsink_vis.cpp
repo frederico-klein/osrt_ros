@@ -17,7 +17,7 @@ void Visualizers::DualSinkVis::callback(const opensimrt_msgs::DualConstPtr &mess
 	}
 	catch (std::exception& e)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
 }
 void Visualizers::DualSinkVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr &message)
@@ -37,6 +37,6 @@ void Visualizers::DualSinkVis::callback_filtered(const opensimrt_msgs::DualPosCo
 	}
 	catch (std::exception& e)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
 }

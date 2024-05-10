@@ -32,7 +32,7 @@ void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 	}
 	catch (std::exception& e)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
 }
 void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstPtr &message)
@@ -56,7 +56,7 @@ void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 	}
 	catch (std::exception& e)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
 }
 void Visualizers::SoVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr &message)
@@ -81,6 +81,6 @@ void Visualizers::SoVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr
 	}
 	catch (std::exception& e)
 	{
-		ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
 	}
 }
