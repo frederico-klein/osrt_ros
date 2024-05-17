@@ -4,6 +4,8 @@
 #include "opensimrt_msgs/GroundProjectionOrientationAtTimeSrv.h"
 #include "ros/duration.h"
 #include "ros/time.h"
+#include "tf/LinearMath/Vector3.h"
+#include "tf2/LinearMath/Vector3.h"
 #include <exception>
 #include <memory>
 #include <stdexcept>
@@ -42,7 +44,7 @@ void Pipeline::WrenchSubscriber::onInit()
 	nh.param<bool>(wrench_name_prefix+"_get_external_orientation", get_external_orientation, false);
 
 	if(no_rotation)
-		ROS_ERROR_STREAM("no_rotation to be applied to: "<< wrench_name_prefix);
+		ROS_WARN_STREAM("no_rotation to be applied to: "<< wrench_name_prefix);
 	else
 		ROS_INFO_STREAM("Applying rotation to" << wrench_name_prefix);
 
@@ -92,6 +94,7 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 				//ROS_DEBUG_STREAM("I found a better wrench:\n" << w) ;
 				//ROS_DEBUG_STREAM("The wrench just before it was: "<< best_wrench.header.stamp );
 				best_wrench = w;
+				
 				//i++;
 			}
 		}
@@ -103,29 +106,85 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		bool ik_too_slow = wrenchBuffer.front().header.stamp >timestamp;
 		bool ik_too_fast = wrenchBuffer.back().header.stamp < timestamp;
 			
-		
 		if (ik_too_fast)
 		{
-			ROS_FATAL_STREAM_THROTTLE(1,"Could not find a wrench that matched the desired timestamp." << blue <<" IK is too fast!\ncounts: "<< too_fast_counter << reset);
-			too_fast_counter++;
+				ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp.\n\t" << blue <<"IK is too fast!\n\tcounts: "<< too_fast_counter << reset);
+				too_fast_counter++;
 		}
 
 		if (ik_too_slow)
 		{	
-			ROS_FATAL_STREAM_THROTTLE(1,"Could not find a wrench that matched the desired timestamp."<< green <<" IK too slow!\ncounts: " << too_slow_counter <<reset);
-			too_fast_counter++;
+				ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp.\n\t"<< green <<"IK too slow!\n\tcounts: " << too_slow_counter <<reset);
 		}
 		if (ik_too_fast || ik_too_slow)
-			ROS_INFO_STREAM_THROTTLE(1,	"\nfirst time in buffer	:" <<wrenchBuffer.front().header.stamp <<
+		{
+			if ((timestamp-wrenchBuffer.back().header.stamp).toSec() > 4)
+			{
+				ROS_WARN_STREAM_ONCE("IK delay is larger than " << 4 << "seconds. Did the trial end?"); // the condition here for ending is that i am not receiving any more wrenches
+			}
+			else
+			{	ROS_INFO_STREAM_THROTTLE(2,	"\nfirst time in buffer	:" <<wrenchBuffer.front().header.stamp <<
 							"\nlast time in buffer	:" <<wrenchBuffer.back().header.stamp <<
 							"\ndesired time		:" <<timestamp);
+			}
+		}
 	}
 	else
-	{
-		ROS_FATAL_STREAM_THROTTLE(1,"Wrench Buffer is empty!");
+	{ //This should never happen
+		ROS_FATAL_STREAM_ONCE("Wrench Buffer is empty!");
+		too_fast_counter++;
 	}
 	return best_wrench;
 }
+
+double magnitude(tf2::Vector3 v)
+{
+	double x =v.getX(); 
+	double y =v.getY(); 
+	double z =v.getZ(); 
+	double mag = sqrt(x*x+y*y+z*z);
+	return mag;
+}
+
+void show_diff(std::string what,tf2::Vector3 v0, tf2::Vector3 v1)
+{
+	static int count = 0;
+	static double max_diff = 0;
+	static double diff_sum = 0;
+
+	static double relative_avg_error_sum = 0;
+
+		double init_mag = magnitude(v0); 
+
+		double end_mag = magnitude(v1); 
+
+		double diff = init_mag-end_mag;
+		
+		diff_sum+=diff;
+
+		double relative_error = diff/init_mag;
+
+		relative_avg_error_sum+=relative_error;
+
+		ROS_INFO_STREAM("relative_error percentage :" << relative_error * 100 << "% " );
+		ROS_INFO_STREAM("initial " << what <<" mag: " << init_mag << " mag after rotation: "<< end_mag <<" diff:" << diff );
+
+	if (max_diff < diff)
+	{
+		max_diff = diff;
+	}
+
+		ROS_WARN_STREAM("max diff: " << max_diff);
+
+		ROS_WARN_STREAM("avg_diff: " << diff_sum/count );
+
+		ROS_WARN_STREAM("relative_error " << relative_avg_error_sum /count);
+
+		count++;
+}
+
+
+
 bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type timestamp, ExternalWrench::Input* wO )
 {
 	//find the actual wrench I need based on timestamp
@@ -133,7 +192,7 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 	auto now = ros::Time::now();
 	if (w.header.frame_id == "")
 	{
-		ROS_WARN_STREAM_THROTTLE(1,"header frame_id is empty!!!");
+		ROS_DEBUG_STREAM("header frame_id is empty!!!");
 		return false;
 	}
 	ROS_DEBUG_STREAM("timing information:\nIK stamp: "<< timestamp <<"\nfound wrench header stamp:"<< w.header.stamp << "\nnow: "<< now <<"\nDelay of this node:" << now-timestamp );
@@ -220,6 +279,8 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		wO->force[0] =v_force_new.x();
 		wO->force[1] =v_force_new.y();
 		wO->force[2] =v_force_new.z();
+		show_diff("force", v_force_orig,v_force_new);
+
 		tf2::Vector3 v_torque_new = quatRotate(q, v_torque_orig);
 		wO->torque[0] =v_torque_new.x();
 		wO->torque[1] =v_torque_new.y();
@@ -236,6 +297,9 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 	return true;
 
 }
+
+
+
 std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(const std_msgs::Header::_stamp_type timestamp)
 
 {
@@ -253,13 +317,16 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	// currently it works
 	//ROS_INFO_STREAM("ik being evaluated now: "<< timestamp);
 
-
+	static int num_sync_errors = 0;
 	static OpenSimRT::ExternalWrench::Input grfRightWrench=nullWrench;
 	OpenSimRT::ExternalWrench::Input* gRw(&grfRightWrench); 
 	if(wsR.get_wrench(timestamp, gRw))
 		grfRightWrench = *gRw;
 	else
-		ROS_ERROR_THROTTLE(1,"did not find right wrench. using nullWrench!");
+	{
+		ROS_ERROR_THROTTLE(5,"did not find right wrench. using nullWrench! sync error count %d",num_sync_errors);
+		num_sync_errors++;
+	}
 	//cout << "left wrench.";
 	//ROS_DEBUG_STREAM("rw");
 	static OpenSimRT::ExternalWrench::Input grfLeftWrench=nullWrench;
@@ -267,7 +334,10 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 	if(wsL.get_wrench(timestamp, gLw))
 		grfLeftWrench = *gLw;
 	else
-		ROS_ERROR_THROTTLE(1,"did not find left wrench. using nullWrench!");
+	{
+		ROS_ERROR_THROTTLE(5,"did not find left wrench. using nullWrench! sync error count %d", num_sync_errors);
+		num_sync_errors++;
+	}
 	//ROS_DEBUG_STREAM("lw");
 	//	return;
 
@@ -369,7 +439,7 @@ void Pipeline::IdAsync::callback1(const opensimrt_msgs::CommonTimedConstPtr& mes
 void Pipeline::IdAsync::callback0(const opensimrt_msgs::CommonTimedConstPtr& message_ik)
 {
 	ROS_DEBUG_STREAM("callback ik called");
-	auto newEvents1 = addEvent("id received ik & wrenches",message_ik);
+	auto newEvents1 = addEvent("id received ik ",message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id loop callback_real_wrenches"); 
 	double filtered_t;
 	addEvent("id: getting iks", newEvents1);
@@ -390,7 +460,7 @@ void Pipeline::IdAsync::callback_filtered(const opensimrt_msgs::PosVelAccTimedCo
 
 {
 	ROS_DEBUG_STREAM("reached ik filtered subscriber. good news");
-	auto newEvents1 = addEvent("id received ik filtered & wrenches", message_ik);
+	auto newEvents1 = addEvent("id received ik filtered ", message_ik);
 	ROS_DEBUG_STREAM("Received message. Running Id filtered loop callback_real_wrenches_filtered"); 
 	//cant find the right copy constructor syntax. will for loop it
 	addEvent("id: getting iks already filtered.", newEvents1);

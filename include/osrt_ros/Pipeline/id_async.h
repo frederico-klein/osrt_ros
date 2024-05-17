@@ -45,7 +45,7 @@ namespace Pipeline
 			//double add_additional_wrench_delay;//TODO:This should be done at wrench creation or republishing, I think, to make more sense
 			//do I need this?
 			bool use_grfm_filter;
-			bool apply_tf, no_rotation, get_external_orientation;
+			bool no_rotation, get_external_orientation;
 			int memory, delay, splineOrder;
 			double cutoffFreq;
     			ros::ServiceClient ground_orientation_client;
