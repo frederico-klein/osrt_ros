@@ -279,7 +279,8 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 		wO->force[0] =v_force_new.x();
 		wO->force[1] =v_force_new.y();
 		wO->force[2] =v_force_new.z();
-		show_diff("force", v_force_orig,v_force_new);
+
+		//show_diff("force", v_force_orig,v_force_new);
 
 		tf2::Vector3 v_torque_new = quatRotate(q, v_torque_orig);
 		wO->torque[0] =v_torque_new.x();
