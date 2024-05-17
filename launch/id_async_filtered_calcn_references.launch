@@ -14,9 +14,12 @@
 	<node pkg="osrt_ros" type="id_async" 	name="id_node" output="screen">
 		<param name="model_file" 		value="$(arg model_file)" />
 		<param name="get_second_label" 		value="$(arg get_second_label)" />
+
+		<!-- this is the distal part of the tf -->
 		<param name="left_foot_tf_name"		value="$(arg left_foot_tf_name)" />
 		<param name="right_foot_tf_name"	value="$(arg right_foot_tf_name)" />
-
+		
+		<!-- this is the proximal part of the tf -->
 		<param name="left_reference_frame"        value="ik/calcn_l"/>
 		<param name="right_reference_frame"        value="ik/calcn_r"/>
 
@@ -60,5 +63,7 @@
 		<param name="visualise"			value="$(arg visualise)"/>
 
 	</node>
+	<node pkg="tf" type="static_transform_publisher" name="left_calcn_insole_thingy" args="0 0 0  0.0 0.707 0.707 0.0 ik/calcn_l calcn_l_rot 100" />
+	<node pkg="tf" type="static_transform_publisher" name="right_calcn_insole_thingy" args="0 0 0  0.0 0.707 0.707 0.0 ik/calcn_r calcn_r_rot 100" />
 
 </launch>
