@@ -33,7 +33,7 @@ namespace Visualizers
 			ros::NodeHandle nh{"~"};
 			std::string modelFile, geometryPath;
 			OpenSimRT::BasicModelVisualizer *visualizer;
-			OpenSim::Model model;	
+			OpenSim::Model* model;	
 			int m; // 1 is upper 2 is under...
 			ros::Subscriber sub, sub_filtered;
 			Ros::Reshuffler input;
@@ -81,7 +81,7 @@ namespace Visualizers
 					default:
 						throw std::invalid_argument( "I can use 1, upper or 2, lower. this is hardcoded." );
 				}
-				model = OpenSim::Model(modelFile);
+				model = new OpenSim::Model(modelFile);
 
 				nh.param<std::string>("geometry_path", geometryPath, "/srv/data/geometry_mobl");	
 				// visualizer
@@ -89,13 +89,20 @@ namespace Visualizers
 				//TODO: remove!
 				OpenSim::ModelVisualizer::addDirToGeometrySearchPaths(DATA_DIR + "/geometry_mobl/");
 				before_vis();
-				visualizer = new OpenSimRT::BasicModelVisualizer(model);
+				if (!model->isValidSystem())
+				{
+					ROS_WARN_STREAM("model is not valid yet for some reason, trying to make it valid");
+					model->initSystem();
+				}
+				visualizer = new OpenSimRT::BasicModelVisualizer(*model);
 				after_vis();	
 
 				ROS_DEBUG_STREAM("onInit finished just fine.");
 			}
 			virtual void before_vis()
 			{
+				OpenSimRT::OpenSimUtils::removeActuators(*model);
+				model->initSystem();
 				ROS_WARN_ONCE("Not implemented for VisualizerCommon. initial setup of the thing");
 			}
 			virtual void after_vis()

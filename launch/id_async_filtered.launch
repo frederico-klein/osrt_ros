@@ -9,7 +9,7 @@
 	<arg name="ik_delay"			default="0.26"/>
 	<!-- If no_rotation is true then I will neglect the reference rotation transformation -->
 	<arg name="grf_no_rotation"		default="true"/>
-<arg name="visualise" 				default="false" />
+<arg name="visualise" 				default="true" />
 
         <node pkg="osrt_ros" type="id_async" 	name="id_node" output="screen">
                 <param name="model_file" 		value="$(arg model_file)" />

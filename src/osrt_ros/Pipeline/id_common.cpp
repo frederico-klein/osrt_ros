@@ -30,6 +30,9 @@
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Vec.h>
 #include <SimTKcommon/internal/Vector_.h>
+#include <Simulation/Model/BodySet.h>
+#include <Simulation/Model/PhysicalFrame.h>
+#include <Simulation/SimbodyEngine/Body.h>
 #include <exception>
 #include <numeric>
 #include <stdexcept>
@@ -68,13 +71,12 @@ Pipeline::IdCommon::IdCommon(): Pipeline::DualSink::DualSink(false)
 	// setup external forces
 	//Storage grfMotion(grfMotFile);
 
-	ExternalWrench::Parameters grfRightFootPar = pars::getparamWrench(nh, "grf_right");
+	grfRightFootPar = pars::getparamWrench(nh, "grf_right");
 	grfRightLabels = pars::getparamGRFMLabels(nh, "grf_right");
 
-	ExternalWrench::Parameters grfLeftFootPar = pars::getparamWrench(nh, "grf_left");
+	grfLeftFootPar = pars::getparamWrench(nh, "grf_left");
 	grfLeftLabels = pars::getparamGRFMLabels(nh, "grf_left");
 	
-	vector<ExternalWrench::Parameters> wrenchParameters;
 	wrenchParameters.push_back(grfRightFootPar);
 	wrenchParameters.push_back(grfLeftFootPar);
 
@@ -163,9 +165,19 @@ void Pipeline::IdCommon::onInit() {
 	{
 		ROS_WARN_STREAM("CREATING VISUALIZER FROM ID!");
 		visualizer = new BasicModelVisualizer(*model);
-		rightGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+		rightGRFDecorator = new ForceDecorator(Blue, 0.001, 3);
+		//Now if the reference isnt ground I need to set the body index here. 
+		//rightGRFDecorator->setOriginByName(*model, grfRightFooitPar.pointExpressedInBody);
+		//
+
+
+		//TODO:: this is wrong, i need to add the bodyset thing for it to find it, but here it doesnt like it,  so i need to change something
+		rightGRFDecorator->setOriginByName(*model, grfRightFootPar.appliedToBody);
 		visualizer->addDecorationGenerator(rightGRFDecorator);
-		leftGRFDecorator = new ForceDecorator(Green, 0.001, 3);
+		leftGRFDecorator = new ForceDecorator(Red, 0.02, 50);
+		//leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.pointExpressedInBody);
+		leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.appliedToBody);
+		
 		visualizer->addDecorationGenerator(leftGRFDecorator);
 	}
 	//CRAZY DEBUG
@@ -250,6 +262,7 @@ void Pipeline::IdCommon::callback_filtered(const opensimrt_msgs::PosVelAccTimedC
 void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<SimTK::Vector> iks, std::vector<ExternalWrench::Input> grfs, opensimrt_msgs::Events e ) 
 
 {
+	//ROS_INFO_STREAM("here0");;
 	ROS_DEBUG_STREAM("Received run call. Running Id run loop.");	    
 	//ROS_INFO_STREAM("time diff" << h.stamp-last_received_ik_stamp);
 	//ROS_INFO_STREAM("this stamp" << h.stamp << "last_received_ik_stamp" << last_received_ik_stamp);
@@ -278,18 +291,24 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 	chrono::high_resolution_clock::time_point t1;
 	t1 = chrono::high_resolution_clock::now();
 	addEvent("id_normal before id", e);
+
+	//ROS_INFO_STREAM("here1");;
 	auto idOutput = id->solve(
 			{t, q, qDot, qDDot,
 			vector<ExternalWrench::Input>{grfRightWrench, grfLeftWrench}});
 	addEvent("id_normal after id",e);
 
 	ROS_DEBUG_STREAM("inverse dynamics ran ok");
+	//ROS_INFO_STREAM("here2");;
 
 	// visualization
 	if (usesVisualizarFromIdCommon() && use_visualizer)
 	{
 		try {
+	//ROS_INFO_STREAM("here3");;
+
 			visualizer->update(q);
+			// this expects the point to be in global coordinates since the decorator does not have an origin variable.
 			rightGRFDecorator->update(grfRightWrench.point,
 					grfRightWrench.force);
 			leftGRFDecorator->update(grfLeftWrench.point, grfLeftWrench.force);
@@ -297,11 +316,14 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		}
 		catch (std::exception& e)
 		{
-			ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" <<std::endl << e.what());
+			ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" << e.what());
 		}
 	}
 	try
 	{
+	//ROS_INFO_STREAM("here4");;
+	
+
 		//TODO: this is common for everyone that uses common messages, make it a class
 		//I need the header!!!
 		opensimrt_msgs::CommonTimed msg;
@@ -361,6 +383,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 	{
 		ROS_WARN_STREAM("Error while updating loggers, data will not be saved" <<std::endl << e.what());
 	}
+	//ROS_INFO_STREAM("here5");;
 	//if (counter > 720)
 	//	write_();
 	//}

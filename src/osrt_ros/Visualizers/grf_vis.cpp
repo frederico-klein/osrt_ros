@@ -3,16 +3,35 @@
 #include "opensimrt_msgs/Dual.h"
 #include <SimTKcommon/internal/BigMatrix.h>
 #include "opensimrt_bridge/conversions/message_convs.h"
+#include "osrt_ros/Visualizers/dualsink_vis.h"
 
 using opensimrt_msgs::DualConstPtr;
 
+void Visualizers::GrfVis::before_vis()
+			{
+				OpenSimRT::OpenSimUtils::removeActuators(*model);
+
+				model->initSystem();
+				Visualizers::DualSinkVis::before_vis();
+			}
 void Visualizers::GrfVis::after_vis()
 {
-	rightGRFDecorator = new OpenSimRT::ForceDecorator(SimTK::Green, 0.001, 3);
+	ROS_INFO("after_vis calledi!!");
+	rightGRFDecorator = new OpenSimRT::ForceDecorator(SimTK::Blue, 0.001, 3);
+	nh.param<std::string>("grf_right_point", right_body_name, "");
+	if (!right_body_name.empty())
+		rightGRFDecorator->setOriginByName(*model, right_body_name);
 	visualizer->addDecorationGenerator(rightGRFDecorator);
-	leftGRFDecorator = new OpenSimRT::ForceDecorator(SimTK::Green, 0.001, 3);
-	visualizer->addDecorationGenerator(leftGRFDecorator);
+	
 
+	leftGRFDecorator = new OpenSimRT::ForceDecorator(SimTK::Red, 0.001, 3);
+	nh.param<std::string>("grf_left_point", left_body_name, "");
+	if (!left_body_name.empty())
+		leftGRFDecorator->setOriginByName(*model, left_body_name);
+	visualizer->addDecorationGenerator(leftGRFDecorator);
+				model->initSystem();
+	
+	//visualizer->refreshModel();
 
 }
 

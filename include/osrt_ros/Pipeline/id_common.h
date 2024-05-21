@@ -47,6 +47,7 @@ namespace Pipeline
 			OpenSimRT::LowPassSmoothFilter* ikfilter;
 			std::vector<std::string> grfRightLabels, grfLeftLabels;
 			
+			OpenSimRT::ExternalWrench::Parameters grfRightFootPar, grfLeftFootPar;
 			boost::array<int,9> grfLeftIndexes, grfRightIndexes;
 
 			bool use_grfm_filter;
@@ -63,7 +64,7 @@ namespace Pipeline
 			void print_vec(std::vector<std::string> vs);
 			virtual void publish_additional_topics(std_msgs::Header h, SimTK::Vector q, std::vector<OpenSimRT::ExternalWrench::Input> wV)
 			{ ROS_ERROR_STREAM("publish additional topics not implemented");}
-	};
-
-}
+			std::vector<OpenSimRT::ExternalWrench::Parameters> wrenchParameters;
+	}; //end class IdCommon
+} // end namespace Pipeline
 #endif

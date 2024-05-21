@@ -9,7 +9,7 @@
 	<arg name="ik_delay"			default="0.26"/>
 	<!-- If no_rotation is true then I will neglect the reference rotation transformation -->
 	<arg name="grf_no_rotation"		default="true"/>
-	<arg name="visualise" 				default="false" />
+	<arg name="visualise" 				default="true" />
 
 	<node pkg="osrt_ros" type="id_async" 	name="id_node" output="screen">
 		<param name="model_file" 		value="$(arg model_file)" />
@@ -21,7 +21,7 @@
 		
 		<!-- this is the proximal part of the tf -->
 		<param name="left_reference_frame"        value="ik/calcn_l"/>
-		<param name="right_reference_frame"        value="ik/calcn_r"/>
+		<param name="right_reference_frame"        value="calcn_r_rot"/>
 
 		<param name="use_exact_sync"		value="$(arg use_exact_sync)"/>
 		<remap from="/id_node/input_filtered" 		to="/ik/output_filtered"/>

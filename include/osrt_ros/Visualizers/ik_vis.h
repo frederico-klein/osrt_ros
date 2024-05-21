@@ -13,7 +13,7 @@ namespace Visualizers
 		void callback(const opensimrt_msgs::CommonTimedConstPtr &msg_ik ); 
 		void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr &msg_ik );
 		void before_vis() {
-			OpenSimRT::OpenSimUtils::removeActuators(model);
+			OpenSimRT::OpenSimUtils::removeActuators(*model);
 			//Subscribers.
 			sub = nh.subscribe<opensimrt_msgs::CommonTimed>("input", 1 ,&Visualizers::IkVis::callback, this);
 			sub_filtered = nh.subscribe<opensimrt_msgs::PosVelAccTimed>("input_filtered",1, &Visualizers::IkVis::callback_filtered, this);

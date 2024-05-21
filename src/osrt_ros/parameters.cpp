@@ -109,6 +109,11 @@ OpenSimRT::ExternalWrench::Parameters pars::getparamWrench(ros::NodeHandle nh, s
 	nh.param<std::string>(grf_name_prefix + "_force_expressed_in_body", grfForceExpressed, "");
 	std::string grfPointExpressed;
 	nh.param<std::string>(grf_name_prefix + "_point_expressed_in_body", grfPointExpressed, "");
+	ROS_WARN_STREAM(grf_name_prefix <<
+			"\ngrf_params:"<< 
+			"\n\tapply body"<<grfApplyBody <<
+			"\n\tforce expressed"<<grfForceExpressed <<
+			"\n\tpoint expressed"<<grfPointExpressed);
 	return OpenSimRT::ExternalWrench::Parameters{grfApplyBody, grfForceExpressed,  grfPointExpressed};
 }
 

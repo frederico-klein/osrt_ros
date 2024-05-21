@@ -14,9 +14,14 @@ namespace Visualizers
 			OpenSimRT::ForceDecorator* rightGRFDecorator;
 			OpenSimRT::ForceDecorator* leftGRFDecorator;
 			void callback(const opensimrt_msgs::DualConstPtr& message);
-			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 
+			void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message);
 			void after_vis();
+
+			std::string right_body_name;
+			std::string left_body_name;
 			//void after_callback(); //this doesnt work because we need to pass information for the things after the callback...
+			//
+			void before_vis();
 	};
 }
 #endif

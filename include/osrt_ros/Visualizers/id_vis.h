@@ -7,10 +7,6 @@ namespace Visualizers
 {
 	class IdVis:public Visualizers::GrfVis
 	{
-		void before_vis() {
-			DualSinkVis::before_vis();
-			OpenSimRT::OpenSimUtils::removeActuators(model);
-		};
 		
 		void callback_multi(const opensimrt_msgs::MultiMessageConstPtr& message);
 		void after_callback() {};

@@ -10,6 +10,11 @@ void Visualizers::IdVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 	set_delay_from_header(message->header.stamp);
 	//simtk vector doesnt have insert...
 	SimTK::Vector q(message->ik.data.size()), idOutput_tau(message->other[0].data.size()), grfmLeft(9), grfmRight(9); 
+	if(message->other.size()<3)
+	{
+		ROS_ERROR_STREAM_ONCE("other field has incorrect size " << message->other.size());
+	}
+
 	for (size_t i=0;i<message->ik.data.size(); i++)
 	{
 		q[i] = message->ik.data[i];
@@ -41,7 +46,8 @@ void Visualizers::IdVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 		ROS_DEBUG_STREAM("updated visuals ok");
 		rightGRFDecorator->update(grfmOutput.right.point, grfmOutput.right.force);
 		leftGRFDecorator->update(grfmOutput.left.point, grfmOutput.left.force);
-		ROS_DEBUG_STREAM("visualizer ran ok.");
+		//ROS_INFO_STREAM("visualizer ran ok.");
+		
 	} catch (std::exception &e) {
 		ROS_ERROR_STREAM_ONCE("Error in visualizer. cannot show data!!!!!" << std::endl
 				<< e.what());
