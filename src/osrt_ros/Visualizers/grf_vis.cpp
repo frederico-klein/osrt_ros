@@ -21,6 +21,8 @@ void Visualizers::GrfVis::after_vis()
 	nh.param<std::string>("grf_right_point", right_body_name, "");
 	if (!right_body_name.empty())
 		rightGRFDecorator->setOriginByName(*model, right_body_name);
+	else
+		ROS_WARN_STREAM("grf right application point not set!");
 	visualizer->addDecorationGenerator(rightGRFDecorator);
 	
 
@@ -28,6 +30,8 @@ void Visualizers::GrfVis::after_vis()
 	nh.param<std::string>("grf_left_point", left_body_name, "");
 	if (!left_body_name.empty())
 		leftGRFDecorator->setOriginByName(*model, left_body_name);
+	else
+		ROS_WARN_STREAM("grf right application point not set!");
 	visualizer->addDecorationGenerator(leftGRFDecorator);
 				model->initSystem();
 	

@@ -106,6 +106,7 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		bool ik_too_slow = wrenchBuffer.front().header.stamp >timestamp;
 		bool ik_too_fast = wrenchBuffer.back().header.stamp < timestamp;
 			
+		static bool keep_showing_errors = true;
 		if (ik_too_fast)
 		{
 				ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp.\n\t" << blue <<"IK is too fast!\n\tcounts: "<< too_fast_counter << reset);
@@ -116,12 +117,14 @@ const geometry_msgs::WrenchStamped Pipeline::WrenchSubscriber::find_wrench_in_bu
 		{	
 				ROS_FATAL_STREAM_ONCE("Could not find a wrench that matched the desired timestamp.\n\t"<< green <<"IK too slow!\n\tcounts: " << too_slow_counter <<reset);
 		}
-		if (ik_too_fast || ik_too_slow)
+		if ((ik_too_fast || ik_too_slow)&& keep_showing_errors)
 		{
 			if ((timestamp-wrenchBuffer.back().header.stamp).toSec() > 4)
 			{
 				ROS_WARN_STREAM_ONCE("IK delay is larger than " << 4 << "seconds. Did the trial end?"); // the condition here for ending is that i am not receiving any more wrenches
+				keep_showing_errors = false;
 			}
+
 			else
 			{	ROS_INFO_STREAM_THROTTLE(2,	"\nfirst time in buffer	:" <<wrenchBuffer.front().header.stamp <<
 							"\nlast time in buffer	:" <<wrenchBuffer.back().header.stamp <<
@@ -289,7 +292,8 @@ bool Pipeline::WrenchSubscriber::get_wrench(const std_msgs::Header::_stamp_type 
 
 	}
 	catch (tf2::TransformException &ex) {
-		ROS_ERROR_THROTTLE(1,"Could not find a transform: parse_message transform exception: %s",ex.what());
+		ROS_DEBUG("Could not find a transform: parse_message transform exception: %s",ex.what());
+		ROS_ERROR_ONCE("Could not find a transform: parse_message transform exception: %s",ex.what());
 		//ros::Duration(1.0).sleep();
 		return false;
 	}
@@ -325,7 +329,8 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 		grfRightWrench = *gRw;
 	else
 	{
-		ROS_ERROR_THROTTLE(5,"did not find right wrench. using nullWrench! sync error count %d",num_sync_errors);
+		ROS_DEBUG("did not find right wrench. using nullWrench! sync error count %d",num_sync_errors);
+		ROS_WARN_ONCE("did not find right wrench. using nullWrench! trial will contain sync errors");
 		num_sync_errors++;
 	}
 	//cout << "left wrench.";
@@ -336,7 +341,8 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 		grfLeftWrench = *gLw;
 	else
 	{
-		ROS_ERROR_THROTTLE(5,"did not find left wrench. using nullWrench! sync error count %d", num_sync_errors);
+		ROS_WARN_ONCE("did not left right wrench. using nullWrench! trial will contain sync errors");
+		ROS_DEBUG("did not find left wrench. using nullWrench! sync error count %d", num_sync_errors);
 		num_sync_errors++;
 	}
 	//ROS_DEBUG_STREAM("lw");
@@ -358,7 +364,7 @@ Pipeline::IdAsync::IdAsync():
 	wsL("left", "calcn_l"), 
 	wsR("right", "calcn_r")
 {
-	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay????????????????????????????????????????????????????????????????????????????????????");
+	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay?");
 	ik_delay = 0.3;
 }
 

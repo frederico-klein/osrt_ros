@@ -39,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include "ros/service_server.h"
+#include "ros/time.h"
 #include "signal.h"
 #include "std_srvs/Empty.h"
 
@@ -167,16 +168,16 @@ void Pipeline::IdCommon::onInit() {
 		visualizer = new BasicModelVisualizer(*model);
 		rightGRFDecorator = new ForceDecorator(Blue, 0.001, 3);
 		//Now if the reference isnt ground I need to set the body index here. 
-		//rightGRFDecorator->setOriginByName(*model, grfRightFooitPar.pointExpressedInBody);
+		//TODO:: this is wrong, i need to add the bodyset thing for it to find it, but here it doesnt like it,  so i need to change something
+		rightGRFDecorator->setOriginByName(*model, grfRightFootPar.pointExpressedInBody);
 		//
 
 
-		//TODO:: this is wrong, i need to add the bodyset thing for it to find it, but here it doesnt like it,  so i need to change something
-		rightGRFDecorator->setOriginByName(*model, grfRightFootPar.appliedToBody);
+		//rightGRFDecorator->setOriginByName(*model, grfRightFootPar.appliedToBody);
 		visualizer->addDecorationGenerator(rightGRFDecorator);
 		leftGRFDecorator = new ForceDecorator(Red, 0.02, 50);
-		//leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.pointExpressedInBody);
-		leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.appliedToBody);
+		leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.pointExpressedInBody);
+		//leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.appliedToBody);
 		
 		visualizer->addDecorationGenerator(leftGRFDecorator);
 	}
@@ -307,6 +308,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		try {
 	//ROS_INFO_STREAM("here3");;
 
+			visualizer->fps->actual_delay = (ros::Time::now().toSec() -h.stamp.toSec())*1000;
 			visualizer->update(q);
 			// this expects the point to be in global coordinates since the decorator does not have an origin variable.
 			rightGRFDecorator->update(grfRightWrench.point,
@@ -317,6 +319,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 		catch (std::exception& e)
 		{
 			ROS_ERROR_STREAM("Error in visualizer. cannot show data!!!!!" << e.what());
+			use_visualizer = false;
 		}
 	}
 	try
