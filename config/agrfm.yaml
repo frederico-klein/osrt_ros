@@ -1,0 +1,19 @@
+window_size: 2
+heel_acc_threshold: 5
+toe_acc_threshold: 5
+grf_origin: [0,-0.0075,0]
+
+r_heel_location_in_foot: [0,0,-0.001]
+l_heel_location_in_foot: [0,0,0.001]
+r_toe_location_in_foot: [0.24,0,-0.001]
+l_toe_location_in_foot: [0.24,0,0.001]
+acc_lp_filter_freq: 20
+vel_lp_filter_freq: 20
+pos_lp_filter_freq: 20
+acc_lp_filter_order: 1
+vel_lp_filter_order: 1
+pos_lp_filter_order: 1
+pos_diff_order: 2
+vel_diff_order: 2
+sampling_frequency: 100
+

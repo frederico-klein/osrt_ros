@@ -4,61 +4,16 @@
 	<arg name="model_file" 	default="/srv/host_data/FK scaled model.osim" />
 	<node pkg="osrt_ros" type="agrf" 	name="agrf_node" output="screen">
 		<param name="model_file" 		value="$(arg model_file)" />
-		<param name="grf_right_point_identifier" 		value="ground_force_p" />
-		<param name="grf_right_force_identifier" 		value="ground_force_v" />
-		<param name="grf_right_torque_identifier" 		value="ground_torque_" />
-		<param name="grf_right_apply_to_body" 			value="calcn_r" />
-		<param name="grf_right_force_expressed_in_body" 	value="ground" />
-		<param name="grf_right_point_expressed_in_body" 	value="ground" />
-
-		<param name="grf_left_point_identifier" 		value="1_ground_force_p" />
-		<param name="grf_left_force_identifier" 		value="1_ground_force_v" />
-		<param name="grf_left_torque_identifier" 		value="1_ground_torque_" />
-		<param name="grf_left_apply_to_body" 			value="calcn_l" />
-		<param name="grf_left_force_expressed_in_body" 		value="ground" />
-		<param name="grf_left_point_expressed_in_body" 		value="ground" />
-
-		<param name="method" 					value="Newton-Euler" />
-		<param name="pelvis_body_name" 				value="pelvis" />
-		<param name="r_foot_body_name" 				value="calcn_r" />
-		<param name="l_foot_body_name" 				value="calcn_l" />
-		<rosparam param="r_heel_cop_location">[0.014,-0.0168,-0.0055]</rosparam>
-		<rosparam param="l_heel_cop_location">[0.014,-0.0168,0.0055]</rosparam>
-		<rosparam param="r_toe_cop_location">[0.24,-0.0168,-0.00117]</rosparam>
-		<rosparam param="l_toe_cop_location">[0.24,-0.0168,0.00117]</rosparam>
-		<param name="direction_window_size" 			value="10" />
+		<rosparam command="load" file="$(find osrt_ros)/config/grf.yaml"/>
+		<rosparam command="load" file="$(find osrt_ros)/config/grf_identifiers.yaml"/>
 
 		<!-- Filter values for filtering ik in cases where we don't use the filtered input -->
-		<param name="memory" 			value="35" />
-		<param name="cutoff_freq" 		value="6" />
-		<param name="delay" 			value="14" />
-		<param name="spline_order" 		value="3" />
+		<rosparam command="load" file="$(find osrt_ros)/config/filter.yaml"/>
 
 		<!--	PLUS ADDITIONAL PARAMETER WHICH ARE SPECIFIC TO EACH TYPE OF DETECTOR	 -->
-		<param name="window_size" 			value="2" />
-		<param name="heel_acc_threshold" 			value="5" />
-		<param name="toe_acc_threshold" 			value="5" />
-		<rosparam param="grf_origin">[0,-0.0075,0]</rosparam>
+		<rosparam command="load" file="$(find osrt_ros)/config/agrf.yaml"/>
 
-		<rosparam param="r_heel_location_in_foot">[0,0,-0.001]</rosparam>
-		<rosparam param="l_heel_location_in_foot">[0,0,0.001]</rosparam>
-		<rosparam param="r_toe_location_in_foot">[0.24,0,-0.001]</rosparam>
-		<rosparam param="l_toe_location_in_foot">[0.24,0,0.001]</rosparam>
-		<param name="acc_lp_filter_freq" 			value="20" />
-		<param name="vel_lp_filter_freq" 			value="20" />
-		<param name="pos_lp_filter_freq" 			value="20" />
-		<param name="acc_lp_filter_order" 			value="1" />
-		<param name="vel_lp_filter_order" 			value="1" />
-		<param name="pos_lp_filter_order" 			value="1" />
-		<param name="pos_diff_order" 			value="2" />
-		<param name="vel_diff_order" 			value="2" />
-		<param name="sampling_frequency" 		value="100" / -->
-
-
-		<!-- I can simplify this if I put the reader in the global namespace. it won't be because it's remmapped, but it will make it easier to write. Unsure, consider-->
 		<remap from="/agrf_node/input" to="/ik/output"/>
-		<!-- so this is weird, since it is a standalone service call, it is in the global namespace (or so thinks the node)  -->
 		<remap from="/in_labels" to="/ik/out_labels"/>
 	</node>
-
 </launch>

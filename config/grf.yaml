@@ -1,0 +1,10 @@
+method: Newton-Euler
+pelvis_body_name: pelvis
+r_foot_body_name: calcn_r
+l_foot_body_name: calcn_l
+r_heel_cop_location: [0.014,-0.0168,-0.0055]
+l_heel_cop_location: [0.014,-0.0168,0.0055]
+r_toe_cop_location: [0.24,-0.0168,-0.00117]
+l_toe_cop_location: [0.24,-0.0168,0.00117]
+direction_window_size: 10
+

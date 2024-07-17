@@ -1,0 +1,5 @@
+memory: 35
+cutoff_freq: 6
+delay: 14
+spline_order: 3
+

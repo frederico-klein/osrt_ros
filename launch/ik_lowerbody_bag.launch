@@ -26,10 +26,7 @@
 
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />
-		<param name="memory" 			value="35" />
-		<param name="cutoff_freq" 		value="6" />
-		<param name="delay" 			value="14" />
-		<param name="spline_order" 		value="3" />
+		<rosparam command="load" file="$(find osrt_ros)/config/filter.yaml"/>
 
         </node>
 

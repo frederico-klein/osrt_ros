@@ -30,25 +30,10 @@
 		
 		<remap from="/id_node/left/wrench" 	to="/left/wrench"/>
 		<remap from="/id_node/right/wrench" 	to="/right/wrench"/>
-		<param name="grf_right_point_identifier" 		value="ground_force_p" />
-                <param name="grf_right_force_identifier" 		value="ground_force_v" />
-                <param name="grf_right_torque_identifier" 		value="ground_torque_" />
-                <param name="grf_right_apply_to_body" 			value="calcn_r" />
-                <param name="grf_right_force_expressed_in_body" 	value="ground" />
-                <param name="grf_right_point_expressed_in_body" 	value="ground" />
-		
-		<param name="grf_left_point_identifier" 		value="1_ground_force_p" />
-                <param name="grf_left_force_identifier" 		value="1_ground_force_v" />
-                <param name="grf_left_torque_identifier" 		value="1_ground_torque_" />
-                <param name="grf_left_apply_to_body" 			value="calcn_l" />
-                <param name="grf_left_force_expressed_in_body" 		value="ground" />
-		<param name="grf_left_point_expressed_in_body" 		value="ground" />
+		<rosparam command="load" file="$(find osrt_ros)/config/grf_identifiers.yaml"/>
 		
 		<!-- Filter values for filtering ik (and grfm, the values are currently shared) in cases where we don't use the filtered input -->
-		<param name="memory" 			value="35" />
-		<param name="cutoff_freq" 		value="6" />
-		<param name="delay" 			value="14" />
-		<param name="spline_order" 		value="3" />
+		<rosparam command="load" file="$(find osrt_ros)/config/filter.yaml"/>
 
 		<param name="ik_delay"			value="$(arg ik_delay)" />
 		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
