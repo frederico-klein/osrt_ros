@@ -6,7 +6,7 @@
 	<arg name="heading_debug"			default="0"/>
 	<arg name="heading_offset"			default="0"/>
 	<arg name="wait_to_start"			default="true"/>
-	<arg name="model_file" 		default="/srv/host_data/FK scaled model.osim" />
+	<arg name="model_file" 		default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 	<include file="$(find osrt_ros)/launch/ik_lowerbody_inverted_pelvis.launch" if="$(arg run_with_imus)" >
 		<arg name="model_file" 		value="$(arg model_file)" />
 		<arg name="bypass_heading_computation" value="$(arg bypass_heading_computation)"/>

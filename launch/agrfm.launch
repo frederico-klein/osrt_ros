@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
 	<!-- arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" / -->
-	<arg name="model_file" 	default="/srv/host_data/FK scaled model.osim" />
+	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
 	<node pkg="osrt_ros" type="agrf" 	name="agrf_node" output="screen">
 		<param name="model_file" 		value="$(arg model_file)" />
 		<rosparam command="load" file="$(find osrt_ros)/config/grf.yaml"/>
