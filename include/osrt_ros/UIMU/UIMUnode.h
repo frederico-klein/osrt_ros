@@ -435,7 +435,7 @@ class UIMUnode: Ros::CommonNode
 							ROS_DEBUG_STREAM("not showing visuals.");
 						}
 						//adding the data to the loggers
-						if (recording)
+						if (isRecording())
 						{
 							qLogger.appendRow(pose.t,~q);
 							qDotLogger.appendRow(pose.t,~qDot);
@@ -454,7 +454,7 @@ class UIMUnode: Ros::CommonNode
 						}
 					}
 					// record
-					if (recording)
+					if (isRecording())
 					{
 						ROS_WARN_ONCE("Recording!");
 						imuLogger.appendRow(pose.t, driver->frame);//

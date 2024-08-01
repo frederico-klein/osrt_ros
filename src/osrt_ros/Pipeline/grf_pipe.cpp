@@ -195,7 +195,7 @@ void Pipeline::Grf::run(double t, SimTK::Vector q,SimTK::Vector qDot, SimTK::Vec
 	//added publisher for the already synchronized msgs.
 	try{
 		// log data (use filter time to align with delay)
-		if(recording)
+		if(isRecording())
 		{
 			//ROS_WARN_STREAM("THIS SHOULDNT BE RUNNING");
 			grfRightLogger->appendRow(grfmOutput.t, ~grfmOutput.right.toVector());
