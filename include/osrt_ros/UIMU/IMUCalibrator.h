@@ -92,6 +92,9 @@ namespace OpenSimRT {
 			bool send_start_signal_to_external_heading_calibrator = false;
 			long baseBodyIndex;
 			//std::vector<ros::Subscriber> avg_pose_subs;
+			
+			SimTK::Quaternion getAvgQuaternionFromTopics(std::string imu_name);
+			SimTK::Quaternion getAvgQuaternionFromTF(std::string imu_resolved_name);
 
 			double baseHeadingAngle=0;
 
