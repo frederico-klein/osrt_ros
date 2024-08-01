@@ -375,7 +375,7 @@ void Pipeline::IdCommon::run(const std_msgs::Header h , double t, std::vector<Si
 	try{
 
 		// log data (use filter time to align with delay)
-		if(recording)
+		if(isRecording())
 		{
 			tauLogger->appendRow(t, ~idOutput.tau);
 			ikLogger->appendRow(t,~q);

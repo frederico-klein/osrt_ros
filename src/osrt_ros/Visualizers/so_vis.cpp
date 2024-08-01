@@ -26,7 +26,7 @@ void Visualizers::SoVis::callback(const opensimrt_msgs::DualConstPtr &message)
 		soOutput_am[i] = message->tau.data[i];
 	}
 	try {
-		if(recording)
+		if(isRecording())
 			soLogger->appendRow(message->q.time, soOutput_am.begin(), soOutput_am.end());
 		visualizer->update(q, soOutput_am);
 	}
@@ -50,7 +50,7 @@ void Visualizers::SoVis::callback_multi(const opensimrt_msgs::MultiMessageConstP
 		soOutput_am[i] = message->other[0].data[i];
 	}
 	try {
-		if(recording) 
+		if(isRecording()) 
 			soLogger->appendRow(message->time, soOutput_am.begin(), soOutput_am.end());
 		visualizer->update(q, soOutput_am);
 	}
@@ -74,7 +74,7 @@ void Visualizers::SoVis::callback_filtered(const opensimrt_msgs::DualPosConstPtr
 		soOutput_am[i] = message->tau.data[i];
 	}
 	try {
-		if(recording)
+		if(isRecording())
 			soLogger->appendRow(message->qqq.time, soOutput_am.begin(), soOutput_am.end());
 
 		visualizer->update(q, soOutput_am);
