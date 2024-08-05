@@ -152,7 +152,6 @@ namespace OpenSimRT {
 			/**
 			 * Calibrate NGIMU data acquired from stream and create the IK input.
 			 */
-			void setMethod(bool method);
 			void publishCalibrationData();
 			void computeAvgStaticPoseCommon();
 			template <typename T>

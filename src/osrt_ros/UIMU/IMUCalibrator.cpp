@@ -112,7 +112,8 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 	}
 
 	auto nh = ros::NodeHandle("~");
-	nh.param<bool>("send_start_signal_to_external_heading_calibrator",send_start_signal_to_external_heading_calibrator,true); //default should be false here.
+
+	nh.param<bool>("send_start_signal_to_external_heading_calibrator",send_start_signal_to_external_heading_calibrator,false); //. this is incorrect. we should use the string from the_method to match this and start the actual services. I can also bypass a ton of stuff here, which would also make sense for this to be different classes, but well..
 }
 
 
@@ -165,6 +166,7 @@ SimTK::Rotation
 IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 		const std::string& imuDirectionAxis) {
 	bool negate = false;
+	double angularDifference = 0.0;
 	if (!imuDirectionAxis.empty() && !baseImuName.empty()) {
 		// set coordinate direction based on given imu direction axis given as
 		// string
@@ -268,8 +270,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 
 		auto baseTF_R = publish_tf(base_R,0.1,.1,"wtf_base_measured",debug_reference_frame);
 		tb.sendTransform(baseTF_R);
-		auto angularDifference =
-			acos(~baseSegmentXheading * baseFrameXInGround);
+		angularDifference = acos(~baseSegmentXheading * baseFrameXInGround);
 
 		// compute sign
 		auto xproduct = baseFrameXInGround % baseSegmentXheading;
@@ -313,8 +314,12 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	}
 
 	if (abs(ext_head_offset) > 0.1)
+	{
 		ROS_WARN_STREAM("adding external heading offset of (this should be in degrees btw) " << ext_head_offset);
-
+		R_heading = Rotation(3.141592/180.0*(ext_head_offset) + angularDifference , SimTK::YAxis);
+	
+		
+	}
 	///fff.. my angle sign calculation is wrong, so i will use this from opensimrt...
 	///this  is awful, i hate it
 	if (negate)
@@ -328,6 +333,7 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 	auto full_heading = baseHeadingAngle+ext_head_offset;
 	//ROS_INFO_STREAM(cyan << "full heading: "<< full_heading<<reset);
 	//R_heading = Rotation(3.141592/180.0*(full_heading) , SimTK::YAxis);
+
 
 	ROS_INFO_STREAM("heading orientation matrix:\n" << R_heading);
 	tb.sendTransform(publish_tf(R_heading,-0.1,.1,"R_heading",debug_reference_frame));
@@ -552,10 +558,6 @@ void IMUCalibrator::computeAvgStaticPoseCommon()
 		}
 		ROS_DEBUG_STREAM("\n===== End of calibration results =====");
 	}
-}
-void IMUCalibrator::setMethod(bool method) {
-	ROS_INFO_STREAM("setting calibration method");
-	externalAveragingMethod = method;
 }
 
 void IMUCalibrator::publishCalibrationData()

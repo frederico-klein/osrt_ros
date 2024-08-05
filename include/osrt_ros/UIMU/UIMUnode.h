@@ -71,7 +71,6 @@ class UIMUnode: Ros::CommonNode
 		std::string modelFile;
 		std::string loggerFileNameIK,loggerFileNameIMUs;
 		std::string tf_frame_prefix;
-		bool use_external_average_calibration_method = true;
 		double sumDelayMS = 0, numFrames = 0;
 		double previousTime = 0;
 		double previousDt = 0;
@@ -140,7 +139,6 @@ class UIMUnode: Ros::CommonNode
 			nh.param<int>("spline_order", splineOrder, 0);
 			nh.param<int>("delay", delay, 0);
 
-			nh.param<bool>("use_external_average_calibration_method", use_external_average_calibration_method, true);
 
 			ROS_DEBUG_STREAM("Finished getting params.");
 
@@ -264,7 +262,6 @@ class UIMUnode: Ros::CommonNode
 		}
 		void doCalibrate()
 		{
-			;			clb->setMethod(use_external_average_calibration_method);
 			ROS_DEBUG_STREAM("clb samples");
 			clb->recordNumOfSamples(10);
 			clb_is_ready = true;

@@ -48,7 +48,7 @@
 		<!--remap from="$(arg ik_node_name)/out_labels" 		to="/ik/out_labels"/ -->
 		
 		<remap from="calibrate_heading" to="/ik/pelvis/wtfh/calibrate_heading"/>
-		<param name="use_external_average_calibration_method" value="false"/>
+		<param name="the_method" value="old"/>
 		<param name="debug_reference_frame" 		value="opensim_default_frame"/>
 		<!-- Filter values for filtered output -->
 		<param name="filter_output" 		value="true" />
