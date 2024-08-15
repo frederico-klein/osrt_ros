@@ -238,6 +238,14 @@ int main(int argc, char **argv)
 	OpenSimBaseTfPublisher otf2(other_opensim_rotation, opensim_frame+"_other");
 	otf2.publish_opensim_base_tf();	
 
+	geometry_msgs::Quaternion opensim_default_frame;
+	opensim_default_frame.w = 0.5;
+	opensim_default_frame.x = 0.5;
+	opensim_default_frame.y = 0.5;
+	opensim_default_frame.z = 0.5;
+	
+	OpenSimBaseTfPublisher otf3(opensim_default_frame, "opensim_default_frame");
+	otf3.publish_opensim_base_tf();	
 	// starts custom_joints publisher
 	qJointPublisher qJ;
 	qJ.onInit();
