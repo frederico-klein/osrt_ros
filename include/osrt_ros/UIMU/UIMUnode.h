@@ -312,7 +312,7 @@ class UIMUnode: Ros::CommonNode
 			for (auto l:output.labels)
 			{
 
-				plottable_outputs.push_back(nh.advertise<std_msgs::Float64>("ik/joints/"+l,1));
+				plottable_outputs.push_back(nh.advertise<std_msgs::Float64>("joints/"+l,1));
 				all_labels+=l+",";
 			}
 			ROS_INFO_STREAM("Publisher labels: "<<all_labels);
@@ -404,7 +404,7 @@ class UIMUnode: Ros::CommonNode
 					{
 						ROS_DEBUG_STREAM("some joint_angle:"<<joint_angle);
 						std_msgs::Float64 j_msg;
-						j_msg.data = joint_angle;
+						j_msg.data = joint_angle*180/3.14159265;
 						plottable_outputs[i].publish(j_msg);
 						i++;
 					}

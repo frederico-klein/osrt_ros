@@ -24,6 +24,7 @@
 		<remap from="/id_node/input_filtered" 		to="/ik/output_filtered"/>
 		<remap from="in_labels" 			to="/ik/out_labels"/>
 		<remap from="out_labels" 			to="/id_node/out_labels"/>
+		<remap from="output_multi" 			to="/id_node/output_multi"/>
 		<remap from="/id_node/input2" 	to="/grf_node/output"/>
 		<remap from="/in_labels2" 	to="/grf_node/out_labels"/>
 		
