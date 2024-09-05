@@ -28,6 +28,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include "opensimrt_bridge/conversions/message_convs.h"
+#include <osrt_ros/delayConfig.h>
 
 namespace Pipeline
 {
@@ -105,6 +106,7 @@ namespace Pipeline
 			
 			ros::Publisher pub_ik;
 
+			void reconfigure_delay_callback(osrt_ros::delayConfig &config, uint32_t level);
 
 	};
 

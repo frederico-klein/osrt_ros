@@ -41,6 +41,7 @@ add_custom_target(${PROJECT_NAME}_docs ALL
 generate_dynamic_reconfigure_options(
 	cfg/UIMU.cfg
 	cfg/heading.cfg
+	cfg/delay.cfg
 )
 
 add_service_files(

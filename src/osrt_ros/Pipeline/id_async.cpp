@@ -384,6 +384,13 @@ Pipeline::IdAsync::~IdAsync()
 	ROS_INFO_STREAM("Shutting down Id");
 }
 
+void Pipeline::IdAsync::reconfigure_delay_callback(osrt_ros::delayConfig &config, uint32_t level)
+{
+	ROS_INFO("attempt to set delay to:%f", config.global_delay);
+	ROS_WARN("not implemented yet");
+
+	ik_delay = std::make_shared<ros::Duration>(config.global_delay);
+}
 
 void Pipeline::IdAsync::onInit() {
 	//TODO: this is technically wrong. if I am subscribing to the version with CommonTimed version, then I definetely want the second label as well, but it will fail if I am not subscribing to this, so this flag needs to be set only in that case

@@ -6,6 +6,7 @@
 #include "signal.h"
 #include <memory>
 #include "osrt_ros/Pipeline/id_async.h"
+#include <dynamic_reconfigure/server.h>
 
 void mySigintHandler(int sig)
 {
@@ -21,7 +22,15 @@ int main(int argc, char **argv) {
 	double delay;
 	nh.param("ik_delay", delay, 0.5);
 	auto Delay = std::make_shared<ros::Duration>(delay);
+	
+
 	Pipeline::IdAsync perenial(Delay);
+
+		ros::NodeHandle nh1(nh, "heading");
+		dynamic_reconfigure::Server<osrt_ros::delayConfig> delay_server_(nh1);
+		dynamic_reconfigure::Server<osrt_ros::delayConfig>::CallbackType f;
+		f = boost::bind(&Pipeline::IdAsync::reconfigure_delay_callback, &perenial, _1, _2);
+	delay_server_.setCallback(f);
 
 	//	signal(SIGINT, mySigintHandler);
 	perenial.onInit();		
