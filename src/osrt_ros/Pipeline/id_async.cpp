@@ -359,23 +359,23 @@ std::vector<OpenSimRT::ExternalWrench::Input> Pipeline::IdAsync::get_wrench(cons
 #define READING_TIMEOUT 0.002
 
 Pipeline::IdAsync::IdAsync(): 
-	seq__(sub__, ros::Duration(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
-	seq_filtered__(sub_filtered__, ros::Duration(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	seq__(sub__, std::make_shared<ros::Duration>(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	seq_filtered__(sub_filtered__, std::make_shared<ros::Duration>(0.3),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
 	wsL("left", "calcn_l"), 
 	wsR("right", "calcn_r")
 {
 	ROS_WARN_STREAM("Are you sure you dont want to set up a custom delay?");
-	ik_delay = 0.3;
+	*ik_delay = ros::Duration(0.3);
 }
 
-Pipeline::IdAsync::IdAsync(double delay__): 
-	seq__(sub__, ros::Duration(delay__), ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
-	seq_filtered__(sub_filtered__, ros::Duration(delay__),ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+Pipeline::IdAsync::IdAsync(std::shared_ptr<ros::Duration> ik_delay_): 
+	ik_delay(ik_delay_),
+	seq__(sub__, ik_delay, ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
+	seq_filtered__(sub_filtered__, ik_delay,ros::Duration(READING_TIMEOUT),BUFFER_LENGTH), 
 	wsL("left", "calcn_l"), 
 	wsR("right", "calcn_r")
 {
-	ROS_INFO_STREAM("subscribing with a delay of: "<<delay__<<"s.");
-	ik_delay = delay__;
+	ROS_INFO_STREAM("subscribing with a delay of: "<<ik_delay->toSec()<<"s.");
 }
 
 
@@ -431,7 +431,7 @@ ros::Time Pipeline::IdAsync::convert_time_stamp_to_the_past(const ros::Time time
 	ROS_FATAL_STREAM("not necessary, do not use!!!");
 	auto t0secs = timestamp0.toSec();
 	ROS_WARN_STREAM("this is the IK header time that is in the callback!!!!\n" << timestamp0);
-	auto converted_time = ros::Time(t0secs - ik_delay);
+	auto converted_time = ros::Time(t0secs - ik_delay->toSec());
 	ROS_INFO_STREAM("converted_time" << converted_time);
 	return converted_time;
 }

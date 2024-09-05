@@ -7,7 +7,8 @@
 #include "ros/node_handle.h"
 #include "opensimrt_msgs/MultiMessage.h"
 #include "message_filters/subscriber.h"
-#include "message_filters/time_sequencer.h"
+#include "changeable_time_sequencer.h"
+#include <memory>
 
 namespace Visualizers
 {
@@ -15,10 +16,10 @@ namespace Visualizers
 	class DualSinkVis:public Visualizers::VisualizerCommon
 	{
 		public:
-			DualSinkVis(): seq(sub_multi, ros::Duration(0.5), ros::Duration(0.01), 1000) {}
+			DualSinkVis(): seq(sub_multi, std::make_shared<ros::Duration>(0.5), ros::Duration(0.01), 1000) {}
 			virtual ~DualSinkVis() {}
 			message_filters::Subscriber<opensimrt_msgs::MultiMessage> sub_multi;
-			message_filters::TimeSequencer<opensimrt_msgs::MultiMessage> seq;
+			message_filters::ChangeableTimeSequencer<opensimrt_msgs::MultiMessage> seq;
 			virtual void callback_multi(const opensimrt_msgs::MultiMessageConstPtr& message) {};
 			virtual void callback(const opensimrt_msgs::DualConstPtr& message);
 			virtual void callback_filtered(const opensimrt_msgs::DualPosConstPtr& message); 

@@ -2,7 +2,7 @@
 #define PIPELINE_ID_ASYNC_HEADER_FBK_27072022
 
 #include "message_filters/subscriber.h"
-#include "message_filters/time_sequencer.h"
+#include "changeable_time_sequencer.h"
 #include "opensimrt_msgs/CommonTimed.h"
 #include "osrt_ros/Pipeline/id_common.h"
 #include "Ros/include/common_node.h"
@@ -11,6 +11,7 @@
 #include "geometry_msgs/Wrench.h"
 #include "opensimrt_msgs/Events.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
+#include "ros/duration.h"
 #include "ros/message_traits.h"
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
@@ -69,17 +70,17 @@ namespace Pipeline
 	{
 		public:
 			IdAsync();
-			IdAsync(double delay__);
+			IdAsync(std::shared_ptr<ros::Duration> delay__);
 			~IdAsync();
+			std::shared_ptr<ros::Duration> ik_delay;
 			std_msgs::Header::_stamp_type last_received_ik_stamp;
 			std::string left_foot_tf_name, right_foot_tf_name, grf_reference_frame;
-			double ik_delay;	
 			//I need my very super slow delayed subscribers for IK.
 			//
 			message_filters::Subscriber<opensimrt_msgs::CommonTimed> sub__;
-			message_filters::TimeSequencer<opensimrt_msgs::CommonTimed> seq__;
+			message_filters::ChangeableTimeSequencer<opensimrt_msgs::CommonTimed> seq__;
 			message_filters::Subscriber<opensimrt_msgs::PosVelAccTimed> sub_filtered__;
-			message_filters::TimeSequencer<opensimrt_msgs::PosVelAccTimed> seq_filtered__;
+			message_filters::ChangeableTimeSequencer<opensimrt_msgs::PosVelAccTimed> seq_filtered__;
 			//TODO: we get the grfs from the buffer in this version of the id, so the call is actually correct to have only IK. I think maybe I should just change the name of this function call.
 			void callback_filtered(const opensimrt_msgs::PosVelAccTimedConstPtr& message_ik) override;
 
@@ -103,7 +104,8 @@ namespace Pipeline
 
 			
 			ros::Publisher pub_ik;
-			//other stuff
+
+
 	};
 
 }

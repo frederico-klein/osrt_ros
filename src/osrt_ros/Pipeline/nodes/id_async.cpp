@@ -1,8 +1,10 @@
 
+#include "ros/duration.h"
 #include "ros/node_handle.h"
 #include "ros/ros.h"
 #include "ros/service_server.h"
 #include "signal.h"
+#include <memory>
 #include "osrt_ros/Pipeline/id_async.h"
 
 void mySigintHandler(int sig)
@@ -18,7 +20,8 @@ int main(int argc, char **argv) {
 	ros::NodeHandle nh("~");
 	double delay;
 	nh.param("ik_delay", delay, 0.5);
-	Pipeline::IdAsync perenial(delay);
+	auto Delay = std::make_shared<ros::Duration>(delay);
+	Pipeline::IdAsync perenial(Delay);
 
 	//	signal(SIGINT, mySigintHandler);
 	perenial.onInit();		
