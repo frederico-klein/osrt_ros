@@ -390,6 +390,8 @@ void Pipeline::IdAsync::reconfigure_delay_callback(osrt_ros::delayConfig &config
 	ROS_WARN("not implemented yet");
 
 	ik_delay = std::make_shared<ros::Duration>(config.global_delay);
+	seq__.modify_delay(ik_delay);
+	seq_filtered__.modify_delay(ik_delay);
 }
 
 void Pipeline::IdAsync::onInit() {

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
 	Pipeline::IdAsync perenial(Delay);
 
-		ros::NodeHandle nh1(nh, "heading");
+		ros::NodeHandle nh1(nh, "delay");
 		dynamic_reconfigure::Server<osrt_ros::delayConfig> delay_server_(nh1);
 		dynamic_reconfigure::Server<osrt_ros::delayConfig>::CallbackType f;
 		f = boost::bind(&Pipeline::IdAsync::reconfigure_delay_callback, &perenial, _1, _2);
