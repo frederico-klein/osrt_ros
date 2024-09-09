@@ -166,7 +166,7 @@ void Pipeline::IdCommon::onInit() {
 	{
 		ROS_WARN_STREAM("CREATING VISUALIZER FROM ID!");
 		visualizer = new BasicModelVisualizer(*model);
-		rightGRFDecorator = new ForceDecorator(Blue, 0.001, 3);
+		rightGRFDecorator = new ForceDecorator(Blue, 0.002, 50);
 		//Now if the reference isnt ground I need to set the body index here. 
 		//TODO:: this is wrong, i need to add the bodyset thing for it to find it, but here it doesnt like it,  so i need to change something
 		rightGRFDecorator->setOriginByName(*model, grfRightFootPar.pointExpressedInBody);
@@ -175,7 +175,7 @@ void Pipeline::IdCommon::onInit() {
 
 		//rightGRFDecorator->setOriginByName(*model, grfRightFootPar.appliedToBody);
 		visualizer->addDecorationGenerator(rightGRFDecorator);
-		leftGRFDecorator = new ForceDecorator(Red, 0.02, 50);
+		leftGRFDecorator = new ForceDecorator(Red, 0.002, 50);
 		leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.pointExpressedInBody);
 		//leftGRFDecorator->setOriginByName(*model, grfLeftFootPar.appliedToBody);
 		
