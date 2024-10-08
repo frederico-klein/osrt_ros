@@ -1,3 +1,4 @@
+#include "XmlRpcValue.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/UIMU/IMUCalibrator.h"
 //#include "INIReader.h"
@@ -24,14 +25,21 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "opensimrt_msgs/Labels.h"
 
+#include <SimTKcommon/SmallMatrix.h>
+#include <SimTKcommon/internal/Array.h>
 #include <SimTKcommon/internal/BigMatrix.h>
 #include <SimTKcommon/internal/Quaternion.h>
 #include <SimTKcommon/internal/ReinitOnCopy.h>
 #include <chrono>
 #include <exception>
+#include <string>
+#include <vector>
 #include "osrt_ros/UIMU/TfServer.h"
 #include "Ros/include/common_node.h"
 #include "std_srvs/Empty.h"
+#include "tf/transform_datatypes.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #define BOOST_STACKTRACE_USE_ADDR2LINE
 #include <boost/stacktrace.hpp>
 
@@ -55,11 +63,83 @@ const std::string reset("\033[0m");
 
 const std::string bar("\n======================================================\n");
 
+class GetPointFromSomeTF
+{
+	public:
+		tf::TransformListener tl;
+		std::vector<std::string> markerNames;
+		std::vector<std::string> tfNames;
+		ros::NodeHandle nh{"~/marker"};
+		std::map<std::string, std::string> markerDefList;
+		std::string tf_frame_prefix;
+		std::string world_tf_reference;
+
+		GetPointFromSomeTF() 
+		{
+			nh.param<std::string>("world_tf_reference",world_tf_reference,"map");
+			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
+		
+			XmlRpc::XmlRpcValue markerList;
+			nh.getParam("observation_order", markerList);
+			ROS_ASSERT(markerList.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+			if (markerList.size() == 0)
+			{
+				ROS_FATAL("Marker observation order not defined!");
+				throw(std::invalid_argument("markerNames not defined."));
+			}
+			else
+			{
+				ROS_DEBUG_STREAM("parsing points and tf map");
+				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
+				for (int32_t i = 0; i < markerList.size(); ++i) 
+				{
+					XmlRpc::XmlRpcValue markerDef = markerList[i]; 
+					std::string this_marker_name = markerDef["marker_name"];
+					std::string this_marker_tf   = tf_frame_prefix + (std::string)markerDef["marker_tf"];
+					markerDefList[this_marker_name] = this_marker_tf;
+					markerNames.push_back(this_marker_name);
+					tfNames.push_back(this_marker_tf);
+
+				  //ROS_ASSERT(markerDef[i].getType() == XmlRpc::XmlRpcValue::TypeString);
+				}
+				for (auto& marker:markerNames)
+					marker+=tf_frame_prefix;
+			}
+
+		}
+
+		SimTK::Array_<SimTK::Vec3> get_translations()
+		{
+			SimTK::Array_<SimTK::Vec3> markerObservations;
+
+			for (const auto& [this_marker_name, this_marker_tf] : markerDefList)
+			{
+				tf::StampedTransform transform;
+				SimTK::Vec3 v;
+				try{
+					tl.lookupTransform(world_tf_reference, this_marker_tf, ros::Time(0), transform);
+				}
+				catch (tf::TransformException& ex){
+					ROS_ERROR("Transform exception! %s",ex.what());
+				}
+				v.set(0, transform.getOrigin().getX()); //???
+				v.set(1, transform.getOrigin().getY()); //???
+				v.set(2, transform.getOrigin().getZ()); //???
+				markerObservations.push_back(v);
+
+			}
+
+			return markerObservations;
+		}
+};
+
+
 class UIMUnode: Ros::CommonNode
 {
 	public:
 		UIMUnode(): Ros::CommonNode(true) //if true debugs
-		//UIMUnode(): Ros::CommonNode()
+						  //UIMUnode(): Ros::CommonNode()
 	{}
 		std::string imuDirectionAxis;
 		std::string imuBaseBody;
@@ -83,7 +163,7 @@ class UIMUnode: Ros::CommonNode
 		IMUCalibrator * clb;
 		bool clb_is_ready =false;
 		BasicModelVisualizer *visualizer;
-		bool showMarkers;
+		bool usePositionMarkers;
 		bool visualiseIt= false;
 		//ros::Publisher re_pub;
 		//filter parameters
@@ -94,6 +174,9 @@ class UIMUnode: Ros::CommonNode
 		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig> server;
 		//dynamic_reconfigure::Server<osrt_ros::UIMUConfig>::CallbackType f;
 		OpenSim::Model model;
+
+		GetPointFromSomeTF* tfPointGetter;
+
 		void get_params()
 		{
 			ros::NodeHandle nh("~");
@@ -121,6 +204,7 @@ class UIMUnode: Ros::CommonNode
 				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
 			}
 
+
 			// driver send rate
 			nh.param<double>("rate", rate, 0.0);
 			r = new ros::Rate(rate);
@@ -131,7 +215,7 @@ class UIMUnode: Ros::CommonNode
 			nh.param<std::string>("logger_filename_ik", loggerFileNameIK, "test_ik");
 			nh.param<std::string>("logger_filename_imus", loggerFileNameIMUs, "test_imus");
 
-			nh.param<bool>("show_markers", showMarkers, false);
+			nh.param<bool>("use_position_markers", usePositionMarkers, false);
 
 			nh.param<bool>("filter_output",publish_filtered, true);
 			nh.param<double>("cutoff_freq", cutoffFreq, 0.0);
@@ -139,8 +223,14 @@ class UIMUnode: Ros::CommonNode
 			nh.param<int>("spline_order", splineOrder, 0);
 			nh.param<int>("delay", delay, 0);
 
+			if( usePositionMarkers)
+				{
+					tfPointGetter = new GetPointFromSomeTF();
+					ROS_INFO_STREAM("Also using position Markers!");
+				}
 
 			ROS_DEBUG_STREAM("Finished getting params.");
+
 
 		}
 		void registerType(Object* muscleModel) //do I even need this?
@@ -180,15 +270,15 @@ class UIMUnode: Ros::CommonNode
 		}
 		void start_ik()
 		{
-	chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
+			chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
 
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
 			vector<InverseKinematics::MarkerTask> markerTasks;
-			if (showMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
+			if (usePositionMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
 			{
 				vector<string> markerObservationOrder;
-				InverseKinematics::createMarkerTasksFromMarkerNames(model, {}, markerTasks,
+				InverseKinematics::createMarkerTasksFromMarkerNames(model, tfPointGetter->markerNames, markerTasks,
 						markerObservationOrder);
 			}
 
@@ -226,9 +316,9 @@ class UIMUnode: Ros::CommonNode
 			//TODO: publish correct ROS topics
 			output.labels = qRawLogger.getColumnLabels();
 			ROS_INFO_STREAM("done with start_ik");
-	chrono::high_resolution_clock::time_point t2=chrono::high_resolution_clock::now() ;
+			chrono::high_resolution_clock::time_point t2=chrono::high_resolution_clock::now() ;
 
-	ROS_WARN_STREAM(bar << "start_ik call duration in ms:"<<magenta<<chrono::duration_cast<chrono::milliseconds>(t2-t1).count()<<bar <<reset);
+			ROS_WARN_STREAM(bar << "start_ik call duration in ms:"<<magenta<<chrono::duration_cast<chrono::milliseconds>(t2-t1).count()<<bar <<reset);
 		}
 
 		SimTK::RowVector fromVectorOfSimTKQuaternionsToARowVector(std::vector<SimTK::Quaternion> vv)
@@ -373,6 +463,14 @@ class UIMUnode: Ros::CommonNode
 					// get input from imus
 					ROS_DEBUG_STREAM("Getting frame:");
 					auto imuData = driver->getFrame();
+
+					SimTK::Array_<SimTK::Vec3> markerObservations;
+					if (usePositionMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
+					{
+						markerObservations = tfPointGetter->get_translations();
+
+					}
+
 					ROS_DEBUG_STREAM("Solving inverse kinematics:" );
 					numFrames++;
 
@@ -381,7 +479,7 @@ class UIMUnode: Ros::CommonNode
 					t1 = chrono::high_resolution_clock::now();
 
 					auto pose = ik->solve(
-							{imuData.first, {}, clb->transform(imuData.second)});
+							{imuData.first, markerObservations, clb->transform(imuData.second)});
 
 					addEvent("ik",msg);
 					chrono::high_resolution_clock::time_point t2;
