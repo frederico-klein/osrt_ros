@@ -1,4 +1,6 @@
+#include "XmlRpcException.h"
 #include "XmlRpcValue.h"
+#include "geometry_msgs/TransformStamped.h"
 #include "opensimrt_msgs/PosVelAccTimed.h"
 #include "osrt_ros/UIMU/IMUCalibrator.h"
 //#include "INIReader.h"
@@ -15,6 +17,7 @@
 
 #include "ros/init.h"
 #include "ros/message_traits.h"
+#include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "ros/rate.h"
 #include "ros/ros.h"
@@ -66,46 +69,67 @@ const std::string bar("\n======================================================\
 class GetPointFromSomeTF
 {
 	public:
-		tf::TransformListener tl;
+		//tf::TransformListener tl;
+  tf2_ros::Buffer tfBuffer;
+  tf2_ros::TransformListener tfListener;
 		std::vector<std::string> markerNames;
 		std::vector<std::string> tfNames;
 		ros::NodeHandle nh{"~/marker"};
 		std::map<std::string, std::string> markerDefList;
 		std::string tf_frame_prefix;
 		std::string world_tf_reference;
-
-		GetPointFromSomeTF() 
+		double tf_timeout;
+		GetPointFromSomeTF(): tfListener(tfBuffer) 
 		{
+			
+			nh.param<double>("tf_timeout",tf_timeout,1.0);
 			nh.param<std::string>("world_tf_reference",world_tf_reference,"map");
 			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
-		
+			try{	
 			XmlRpc::XmlRpcValue markerList;
 			nh.getParam("observation_order", markerList);
-			ROS_ASSERT(markerList.getType() == XmlRpc::XmlRpcValue::TypeArray);
+			if(markerList.valid())
+				ROS_WARN_STREAM("AR markerObservationOrder:" << markerList.toXml());
+			else 
+				throw(XmlRpc::XmlRpcException("Couldn't parse observation_order"));
+			//ROS_ASSERT(markerList.getType() == XmlRpc::XmlRpcValue::TypeArray); //
 
 			if (markerList.size() == 0)
 			{
-				ROS_FATAL("Marker observation order not defined!");
+				ROS_FATAL("AR Marker observation order not defined!");
 				throw(std::invalid_argument("markerNames not defined."));
 			}
 			else
 			{
-				ROS_DEBUG_STREAM("parsing points and tf map");
-				ROS_INFO_STREAM("Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
+				ROS_INFO_STREAM("AR: parsing points and tf map");
+				ROS_INFO_STREAM("AR: Adding tf_frame_prefix [" << tf_frame_prefix<< "] to tfs to be read.");
 				for (int32_t i = 0; i < markerList.size(); ++i) 
 				{
+					ROS_INFO("AR: Entered loop");
 					XmlRpc::XmlRpcValue markerDef = markerList[i]; 
+					ROS_INFO("AR: Loaded MarkerDef");
 					std::string this_marker_name = markerDef["marker_name"];
-					std::string this_marker_tf   = tf_frame_prefix + (std::string)markerDef["marker_tf"];
-					markerDefList[this_marker_name] = this_marker_tf;
+					ROS_INFO_STREAM("AR: Assigned name: " << this_marker_name);
 					markerNames.push_back(this_marker_name);
+					ROS_INFO_STREAM("AR: ADDED TO MARKER LIST: " << magenta << markerNames.back() );
+					std::string this_marker_tf   = tf_frame_prefix + "/" + (std::string)markerDef["marker_tf"];
+					ROS_INFO_STREAM("AR: assigned tf: " << this_marker_tf);
+					markerDefList[this_marker_name] = this_marker_tf;
+					ROS_INFO("AR: Assigned to map");
 					tfNames.push_back(this_marker_tf);
+					ROS_INFO("AR: ADDED TO TF LIST");
 
 				  //ROS_ASSERT(markerDef[i].getType() == XmlRpc::XmlRpcValue::TypeString);
 				}
-				for (auto& marker:markerNames)
-					marker+=tf_frame_prefix;
+				//for (auto& marker:markerNames)
+				//	marker+=tf_frame_prefix;
 			}
+			}
+			catch(XmlRpc::XmlRpcException& e)
+			{
+				ROS_ERROR_STREAM("AR: Could not setup markers" << e.getMessage());
+			}
+			ROS_INFO("AR: Finished serring up markers");
 
 		}
 
@@ -115,17 +139,17 @@ class GetPointFromSomeTF
 
 			for (const auto& [this_marker_name, this_marker_tf] : markerDefList)
 			{
-				tf::StampedTransform transform;
+				geometry_msgs::TransformStamped transform;
 				SimTK::Vec3 v;
 				try{
-					tl.lookupTransform(world_tf_reference, this_marker_tf, ros::Time(0), transform);
+					transform = tfBuffer.lookupTransform( this_marker_tf, world_tf_reference, ros::Time::now(), ros::Duration(tf_timeout) ); //
 				}
 				catch (tf::TransformException& ex){
 					ROS_ERROR("Transform exception! %s",ex.what());
 				}
-				v.set(0, transform.getOrigin().getX()); //???
-				v.set(1, transform.getOrigin().getY()); //???
-				v.set(2, transform.getOrigin().getZ()); //???
+				v.set(0, transform.transform.translation.x); //???
+				v.set(1, transform.transform.translation.y); //???
+				v.set(2, transform.transform.translation.z); //???
 				markerObservations.push_back(v);
 
 			}
@@ -225,8 +249,8 @@ class UIMUnode: Ros::CommonNode
 
 			if( usePositionMarkers)
 				{
-					tfPointGetter = new GetPointFromSomeTF();
 					ROS_INFO_STREAM("Also using position Markers!");
+					tfPointGetter = new GetPointFromSomeTF;
 				}
 
 			ROS_DEBUG_STREAM("Finished getting params.");
@@ -278,6 +302,9 @@ class UIMUnode: Ros::CommonNode
 			if (usePositionMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
 			{
 				vector<string> markerObservationOrder;
+				for (auto some_marker_name:tfPointGetter->markerNames)
+					ROS_WARN_STREAM("thename:"<<some_marker_name);
+
 				InverseKinematics::createMarkerTasksFromMarkerNames(model, tfPointGetter->markerNames, markerTasks,
 						markerObservationOrder);
 			}

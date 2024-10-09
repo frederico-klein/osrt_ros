@@ -59,6 +59,22 @@
 		<param name="bypass_everything" 	value="$(arg bypass_heading_computation)"/>
 		<param name="heading_debug"		value="$(arg heading_debug)"/>
 		<param name="heading_offset"		value="$(arg heading_offset)"/>
+
+		<!-- this is how you add vicon marker style stuff rn. I sort of invented a new standard here because of time crunch. Ideally I would use the package from ETH zurick for vicon and use the same standard so I could avoid doing this twice -->
+		<param name="use_position_markers" 	value="true"/>
+		<param name="marker/tf_timeout" 	value="1.1" />
+		<param name="marker/tf_frame_prefix" 	value="ar" />
+		<param name="marker/world_tf_reference" value="usb_cam_brio" />
+		<!-- Currently the implementation only allows you to set the center of the AR marker to be exactly the mocap marker, you can either change the osim model or extend this to use points with a coordinate system to allow fixed rigid body translations -->
+		<rosparam>
+marker:
+ observation_order:
+  - marker_name: C7
+    marker_tf: thorax
+</rosparam>
+
+
+
 	</node>
 
 	<include file="$(find osrt_ros)/launch/ext_avg_quaternions_gait1992.launch" if="false">
