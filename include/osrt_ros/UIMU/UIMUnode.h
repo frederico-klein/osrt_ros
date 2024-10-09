@@ -142,7 +142,7 @@ class GetPointFromSomeTF
 				geometry_msgs::TransformStamped transform;
 				SimTK::Vec3 v;
 				try{
-					transform = tfBuffer.lookupTransform( this_marker_tf, world_tf_reference, ros::Time::now(), ros::Duration(tf_timeout) ); //
+					transform = tfBuffer.lookupTransform( this_marker_tf, world_tf_reference, ros::Time(0), ros::Duration(tf_timeout) ); //
 				}
 				catch (tf::TransformException& ex){
 					ROS_ERROR("Transform exception! %s",ex.what());
