@@ -171,7 +171,6 @@ namespace OpenSimRT {
 					return imuObservations;
 				}
 			SimTK::Rotation R_GoGi1;    // ground-to-ground transformation
-			SimTK::Rotation R_GoGi2;    // ground-to-ground transformation
 
 		private:
 			bool externalAveragingMethod = false;

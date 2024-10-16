@@ -82,7 +82,6 @@ void IMUCalibrator::setup(const std::vector<std::string>& observationOrder) {
 	R_heading = SimTK::Rotation();
 	//why?
 	R_GoGi1 = SimTK::Rotation();
-	R_GoGi2 = SimTK::Rotation();
 
 	// copy observation order list
 	imuBodiesObservationOrder = std::vector<std::string>(
@@ -209,13 +208,10 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 		auto inverseq0_rotation_matrix = ~Rotation(q0);
 
 		ROS_INFO_STREAM(cyan << "inverseq0_rotation_matrix: "<< inverseq0_rotation_matrix<<reset);
-		const auto base_R = R_GoGi2 * Rotation(q0);
-		//const auto base_R = R_GoGi2 * ~Rotation(q0);
+		const auto base_R = R_GoGi1 * Rotation(q0);
 
 		if (true)
 		{
-			tb.sendTransform(publish_tf(R_GoGi2,0.3,.1,"R_GoGi2",debug_reference_frame));
-			tb.sendTransform(publish_tf(~R_GoGi2,0.3,0.15,"R_GoGi2_inverse",debug_reference_frame));
 			tb.sendTransform(publish_tf(R_GoGi1,0.35,.1,"R_GoGi1",debug_reference_frame));
 			tb.sendTransform(publish_tf(~R_GoGi1,0.35,0.15,"R_GoGi1_inverse",debug_reference_frame));
 			tb.sendTransform(publish_tf(q0,0.2,.1,"just_q0_base",debug_reference_frame));
@@ -279,15 +275,6 @@ IMUCalibrator::computeHeadingRotation(const std::string& baseImuName,
 		ROS_WARN_STREAM("angularDifference: " << angularDifference << " rad ( " << angularDifference/3.14159205*180.0 << " degrees)");
 		// set heading rotation (rotation about Y axis)
 		R_heading = Rotation(angularDifference , SimTK::YAxis);
-
-		//auto baseq = base_R.convertRotationToQuaternion();
-		auto baseq = Rotation(inverseq0_rotation_matrix).convertRotationToQuaternion();
-		tf2::Quaternion qqqq(baseq[1],baseq[2],baseq[3],baseq[0]);
-		tf2::Matrix3x3 m(qqqq);
-		double roll, pitch, yaw;
-		m.getRPY(roll, pitch, yaw);
-		//R_heading = Rotation(yaw, SimTK::YAxis);
-		//ROS_WARN_STREAM("yaw: " << yaw << "(" << yaw*180.0/3.14159205);
 
 	} else {
 		ROS_WARN("No heading correction is applied. Heading rotation is set to "
