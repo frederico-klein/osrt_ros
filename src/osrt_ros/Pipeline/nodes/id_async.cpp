@@ -19,14 +19,14 @@ int main(int argc, char **argv) {
 	ROS_INFO_STREAM("called node IdAsync: InverseDynamics.");
     try {
 	ros::NodeHandle nh("~");
-	double delay;
-	nh.param("ik_delay", delay, 0.5);
+	double delay=0.01; //10 ms as a default delay
+	//nh.param("ik_delay", delay, 0.5);
 	auto Delay = std::make_shared<ros::Duration>(delay);
 	
 
 	Pipeline::IdAsync perenial(Delay);
 
-		ros::NodeHandle nh1(nh, "delay");
+		ros::NodeHandle nh1(nh, "run_delay"); //this was colliding with the filter delay value. I probably want to namespace filters
 		dynamic_reconfigure::Server<osrt_ros::delayConfig> delay_server_(nh1);
 		dynamic_reconfigure::Server<osrt_ros::delayConfig>::CallbackType f;
 		f = boost::bind(&Pipeline::IdAsync::reconfigure_delay_callback, &perenial, _1, _2);

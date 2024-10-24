@@ -290,13 +290,13 @@ class UIMUnode: Ros::CommonNode
 				ROS_WARN("calibrator not yet defined.");
 
 		}
-		void start_ik()
+			vector<InverseKinematics::MarkerTask> markerTasks;
+			vector<InverseKinematics::IMUTask> imuTasks;
+		void define_tasks()
 		{
-			chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
 
 			// marker tasks
 			ROS_DEBUG_STREAM("Setting up markerTasks");
-			vector<InverseKinematics::MarkerTask> markerTasks;
 			if (usePositionMarkers) //not sure what this does, some interface for VICON .trc files. we are not using it here.
 			{
 				vector<string> markerObservationOrder;
@@ -309,7 +309,6 @@ class UIMUnode: Ros::CommonNode
 
 			// imu tasks
 			ROS_DEBUG_STREAM("Setting up imuTasks");
-			vector<InverseKinematics::IMUTask> imuTasks;
 			InverseKinematics::createIMUTasksFromObservationOrder(
 					model, imuObservationOrder, imuTasks);
 
@@ -322,6 +321,10 @@ class UIMUnode: Ros::CommonNode
 				}
 				ROS_INFO_STREAM("Using imu observation " << imuObservationOrderStr);
 			}
+		}
+		void start_ik()
+		{
+			chrono::high_resolution_clock::time_point t1=chrono::high_resolution_clock::now() ;
 			ROS_DEBUG_STREAM("setGroundOrientationSeq");
 			clb->R_GoGi1 = clb->setGroundOrientationSeq(xGroundRotDeg1, yGroundRotDeg1, zGroundRotDeg1);
 			ROS_DEBUG_STREAM("heading");
@@ -417,7 +420,8 @@ class UIMUnode: Ros::CommonNode
 			ROS_DEBUG_STREAM("Setting up IMUCalibrator");
 			clb = new IMUCalibrator(model, driver, imuObservationOrder);
 			doCalibrate();
-
+			
+			define_tasks();
 			start_ik();
 
 			string all_labels;

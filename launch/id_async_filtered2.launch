@@ -36,7 +36,7 @@
 		<rosparam command="load" file="$(find osrt_ros)/config/filter.yaml"/>
 		
 
-		<param name="ik_delay"			value="$(arg ik_delay)" />
+		<param name="run_delay/global_delay"			value="$(arg ik_delay)" />
 		<param name="max_buffer_length"		value="$(arg max_buffer_length)" />
 
 		<!-- TODO: if I really want to generalize the number of wrenches i also need to change how async gets called-->
