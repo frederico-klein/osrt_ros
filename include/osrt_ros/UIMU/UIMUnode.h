@@ -36,6 +36,7 @@
 #include <chrono>
 #include <exception>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "osrt_ros/UIMU/TfServer.h"
 #include "Ros/include/common_node.h"
@@ -75,14 +76,15 @@ class GetPointFromSomeTF
 		std::vector<std::string> markerNames;
 		std::vector<std::string> tfNames;
 		ros::NodeHandle nh{"~/marker"};
-		std::map<std::string, std::string> markerDefList;
+		std::unordered_map<std::string, std::string> markerDefList;
+		std::unordered_map<std::string, geometry_msgs::TransformStamped> latest_marker_tfs;
 		std::string tf_frame_prefix;
 		std::string world_tf_reference;
 		double tf_timeout;
 		GetPointFromSomeTF(): tfListener(tfBuffer) 
 		{
 			
-			nh.param<double>("tf_timeout",tf_timeout,1.0);
+			nh.param<double>("tf_timeout",tf_timeout,0.05);
 			nh.param<std::string>("world_tf_reference",world_tf_reference,"map");
 			nh.param<std::string>("tf_frame_prefix",tf_frame_prefix,"not_set");
 			try{	
@@ -118,7 +120,22 @@ class GetPointFromSomeTF
 					ROS_INFO("AR: Assigned to map");
 					tfNames.push_back(this_marker_tf);
 					ROS_INFO("AR: ADDED TO TF LIST");
+					//We also add the default position of the marker so that if the AR is broken, it doesnt affect the measurement too much
+					XmlRpc::XmlRpcValue this_marker_default_position = markerDef["default_position"];
+					ROS_INFO_STREAM(cyan <<"read default_position ok"<<reset);
+					ROS_ASSERT(this_marker_default_position.getType() == XmlRpc::XmlRpcValue::TypeArray); //
+					double x = this_marker_default_position[0];
+					double y = this_marker_default_position[1];
+					double z = this_marker_default_position[2];
+					ROS_INFO_STREAM(cyan <<"setting x,y,z okay"<<reset);
+					geometry_msgs::TransformStamped transform;
+					transform.transform.translation.x = x;
+					transform.transform.translation.y = y;
+					transform.transform.translation.z = z;
+					latest_marker_tfs[this_marker_tf] = transform;
+						
 
+					ROS_INFO_STREAM(cyan <<"FINISHED SETTING UP ONE MARKER AT LEAST"<<reset);
 				  //ROS_ASSERT(markerDef[i].getType() == XmlRpc::XmlRpcValue::TypeString);
 				}
 				//for (auto& marker:markerNames)
@@ -139,15 +156,17 @@ class GetPointFromSomeTF
 
 			for (const auto& [this_marker_name, this_marker_tf] : markerDefList)
 			{
-				geometry_msgs::TransformStamped transform;
 				SimTK::Vec3 v;
 				try{
+					geometry_msgs::TransformStamped transform;
 					//transform = tfBuffer.lookupTransform( this_marker_tf, world_tf_reference, ros::Time(0), ros::Duration(tf_timeout) ); //
 					transform = tfBuffer.lookupTransform( world_tf_reference, this_marker_tf, ros::Time(0), ros::Duration(tf_timeout) ); //
+					latest_marker_tfs[this_marker_tf] = transform;
 				}
 				catch (tf::TransformException& ex){
-					ROS_ERROR("Transform exception! %s",ex.what());
+					ROS_ERROR_THROTTLE(60,"Translation part Transform exception! %s",ex.what());
 				}
+				auto transform = latest_marker_tfs[this_marker_tf];
 				//I am really bad at this, so I am hard coding this transformation. 
 				v.set(0, - transform.transform.translation.x); //???
 				v.set(2, transform.transform.translation.y); //???

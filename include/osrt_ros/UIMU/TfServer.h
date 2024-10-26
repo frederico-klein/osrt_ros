@@ -25,10 +25,14 @@ class TfServer: public OrientationProvider {
 
 	tf::TransformListener listener;
 	//std::vector<double> output;
+	void readTransform(std::string);
 	std::vector<double> readTransformIntoOpensim(std::string);
 	std::vector<std::string> tf_strs;
 	std::string world_tf_reference = "/map";
 	void set_world_reference(std::string);
 	void set_tfs(std::vector<std::string> tf_names, std::string tf_frame_prefix);
+	std::map<std::string,tf::StampedTransform> last_transforms;
+	
+
 };
 #endif

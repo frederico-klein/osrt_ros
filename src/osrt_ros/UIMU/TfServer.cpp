@@ -65,6 +65,7 @@ bool TfServer::receive()
 
 	for (auto i:tf_strs)
 	{
+		readTransform(i); //updates map
 		std::vector<double> anImu = readTransformIntoOpensim(i);
 		combined_imu_data_vec.insert(combined_imu_data_vec.end(),anImu.begin(), anImu.end());
 	}
@@ -77,18 +78,23 @@ bool TfServer::receive()
 
 }
 
-std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
+void TfServer::readTransform(std::string tf_name)
 {
 	ROS_DEBUG_STREAM("Trying to find transform " << tf_name);
 	tf::StampedTransform transform;
 	try{
-		listener.waitForTransform(tf_name, world_tf_reference, ros::Time(0), ros::Duration(3.0));
+		//listener.waitForTransform(tf_name, world_tf_reference, ros::Time(0), ros::Duration(3.0));
 		listener.lookupTransform(world_tf_reference, tf_name, ros::Time(0), transform); // this would give OpenSim the raw quaternions, however, it seems to be incorrect as it is not possible to find the correct R matrix to put all the axis in the correct orientation. To solve this we either changed the order of some vectors or inverted w.
 		//listener.lookupTransform(tf_name, world_tf_reference, ros::Time(0), transform); //flipped, new attempt to try to avoid -w
 	}
 	catch (tf::TransformException& ex){
-		ROS_ERROR("Transform exception! %s",ex.what());
+		ROS_ERROR_THROTTLE(5,"Orientation: Transform exception! %s",ex.what());
 	}
+	last_transforms[tf_name] = transform;
+}
+std::vector<double> TfServer::readTransformIntoOpensim(std::string tf_name)
+{
+	auto transform = last_transforms[tf_name];
 	std::vector<double> imu_data_vec;
 	// now i need to set this imu_data_vec with the values i read for the quaternions somehow
 
