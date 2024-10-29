@@ -9,6 +9,7 @@
 	<arg name="visualise" 				default="true" />
 	<arg name="wait_to_start"	default="true"/>
 	<arg name="model_file" 		default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
+	<arg name="use_ar"		default="true"/>
 	<node pkg="osrt_ros" type="OnlineLowerLimb" 	name="$(arg ik_node_name)" output="screen" >
 		<!-- param name="resample_period" 		value="0.01" / -->
 		<param name="model_file" 		value="$(arg model_file)" />
@@ -61,7 +62,7 @@
 		<param name="heading_offset"		value="$(arg heading_offset)"/>
 
 		<!-- this is how you add vicon marker style stuff rn. I sort of invented a new standard here because of time crunch. Ideally I would use the package from ETH zurick for vicon and use the same standard so I could avoid doing this twice -->
-		<param name="use_position_markers" 	value="true"/>
+		<param name="use_position_markers" 	value="$(arg use_ar)"/>
 		<param name="marker/tf_timeout" 	value="0.01" />
 		<param name="marker/tf_frame_prefix" 	value="ar" />
 		<param name="marker/world_tf_reference" value="base_link" />
