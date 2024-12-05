@@ -7,6 +7,7 @@
 	<arg name="use_exact_sync"		default="false"/>
 	<arg name="max_buffer_length"		default="100"/>
 	<arg name="ik_delay"			default="0.26"/>
+	<arg name="visualise"			default="true"/>
 
 	<!-- If no_rotation is true then I will neglect the reference rotation transformation -->
 	<arg name="grf_no_rotation"		default="true"/>
@@ -43,6 +44,7 @@
 		<param name="left_no_rotation"			value="$(arg grf_no_rotation)"/>
 
 		<param name="right_no_rotation"			value="$(arg grf_no_rotation)"/>
+		<param name="visualise"				value="$(arg visualise)"/>
 	</node>
 
 </launch>
